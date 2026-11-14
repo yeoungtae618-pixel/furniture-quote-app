@@ -1,0 +1,92 @@
+[
+  {
+    "id": "yl-pet-white",
+    "vendor": "영림도어",
+    "style": "flat",
+    "name": "영림 프리미엄 매트화이트 PET",
+    "finish": "무광 친환경 PET (18T MDF)",
+    "colorHex": "#fcfcfc",
+    "sqmPrice": 42000
+  },
+  {
+    "id": "yl-pet-cashmere",
+    "vendor": "영림도어",
+    "style": "flat",
+    "name": "영림 소프트 캐시미어 크림",
+    "finish": "무광 PET (18T MDF)",
+    "colorHex": "#ede5d8",
+    "sqmPrice": 43000
+  },
+  {
+    "id": "yl-shaker-fog",
+    "vendor": "영림도어",
+    "style": "shaker",
+    "name": "영림 쉐이커 엣지 포그그레이",
+    "finish": "수성 도장 마감 (22T MDF 프레임)",
+    "colorHex": "#c8cbd0",
+    "sqmPrice": 58000
+  },
+  {
+    "id": "yr-pet-charcoal",
+    "vendor": "예림임업",
+    "style": "flat",
+    "name": "예림 벨벳 차콜그레이",
+    "finish": "지문방지 하이퍼PET (18T MDF)",
+    "colorHex": "#30343f",
+    "sqmPrice": 45000
+  },
+  {
+    "id": "yr-classic-cream",
+    "vendor": "예림임업",
+    "style": "shaker",
+    "name": "예림 로열 클래식 크림도어",
+    "finish": "우레탄 5회 도장 (20T MDF)",
+    "colorHex": "#f5f0e6",
+    "sqmPrice": 72000
+  },
+  {
+    "id": "yr-pet-sage",
+    "vendor": "예림임업",
+    "style": "flat",
+    "name": "예림 세이지 올리브 그린",
+    "finish": "무광 실키PET (18T MDF)",
+    "colorHex": "#6b7a69",
+    "sqmPrice": 47000
+  },
+  {
+    "id": "hs-milan-white",
+    "vendor": "한샘제휴",
+    "style": "flat",
+    "name": "한샘 밀란 퓨어화이트",
+    "finish": "친환경 ASA 무광 마감",
+    "colorHex": "#fafafa",
+    "sqmPrice": 49000
+  },
+  {
+    "id": "hs-euro-oak",
+    "vendor": "한샘제휴",
+    "style": "flat",
+    "name": "한샘 유로 내추럴 오크우드",
+    "finish": "입체 동조 엠보 우드 (18T MDF)",
+    "colorHex": "#cbb08b",
+    "sqmPrice": 54000
+  },
+  {
+    "id": "dj-warm-taupe",
+    "vendor": "대진/동화",
+    "style": "flat",
+    "name": "동화자연마루 웜 토프베이지",
+    "finish": "내지문 슈퍼E0 무광",
+    "colorHex": "#d8cbba",
+    "sqmPrice": 44000
+  },
+  {
+    "id": "dj-walnut-line",
+    "vendor": "대진/동화",
+    "style": "flat",
+    "name": "대진 프리미엄 다크월넛",
+    "finish": "천연 질감 무늬목 래핑",
+    "colorHex": "#483526",
+    "sqmPrice": 59000
+  }
+]

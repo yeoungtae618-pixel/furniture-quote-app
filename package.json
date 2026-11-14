@@ -1,0 +1,13 @@
+{
+  "name": "furniture-quote-3d",
+  "version": "1.0.0",
+  "description": "맞춤 가구 실시간 견적 산출 및 고화질 3D 시각화 모바일 웹 어플리케이션",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

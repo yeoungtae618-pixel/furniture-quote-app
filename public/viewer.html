@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>맞춤 가구 제작 및 시공 공급계약서</title>
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script src="/js/furniture3d.js"></script>
+  <script src="/js/plan2d.js"></script>
+  <script src="/js/viewer.js"></script>
+</head>
+<body>
+
+  <!-- 상단 모바일/웹 헤더 -->
+  <header class="mobile-header no-print" style="display:flex; max-width:820px; margin:0 auto; border-left:1px solid var(--border); border-right:1px solid var(--border);">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div class="brand-mark" style="width:32px; height:32px; font-size:14px;">W</div>
+      <div>
+        <div id="view-company-name" style="font-size:11.5px; font-weight:700; color:var(--brand);">WOODCRAFT STUDIO</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary);"><span id="view-cust-name">고객</span>님 맞춤 가구 공급계약서</div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <div id="view-status-badge"></div>
+      <button id="btn-print-contract" class="btn-outline btn-sm" type="button">인쇄 / PDF</button>
+    </div>
+  </header>
+
+  <main style="max-width: 820px; margin: 0 auto; padding: 14px 14px 40px; display:flex; flex-direction:column; gap:18px;">
+
+    <!-- 1. 3D 씽크대 + 2D 평면/입면 치수 도면 확인 -->
+    <div id="viewer-3d-card" class="card no-print">
+      <div class="card-header" style="flex-wrap:wrap; gap:8px;">
+        <div class="card-title">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          3D 실물 도면 · 2D 치수 평면도
+        </div>
+        <div class="view-mode-switch">
+          <button type="button" class="view-mode-btn active" data-viewer-mode="3d">3D 모델뷰</button>
+          <button type="button" class="view-mode-btn" data-viewer-mode="2d">2D 평면 · 치수도면</button>
+        </div>
+      </div>
+
+      <div id="viewer-canvas" style="height: 380px;">
+        <div class="viewer-toolbar">
+          <button type="button" class="tool-chip active" data-cam="iso">투시도</button>
+          <button type="button" class="tool-chip" data-cam="front">정면</button>
+          <button type="button" class="tool-chip" data-cam="top">항공</button>
+          <span class="toolbar-divider"></span>
+          <button id="btn-door-toggle" class="tool-chip" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+            <span>도어 열기</span>
+          </button>
+          <button id="btn-dim-toggle" class="tool-chip active" type="button">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/></svg>
+            <span>치수선</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="viewer-plan2d" style="display:none;"></div>
+    </div>
+
+    <!-- 2. 정식 공급계약서 문서 본문 -->
+    <article class="contract-paper">
+      <div class="contract-top-meta">
+        <span>계약(관리)번호: <strong id="doc-quote-id">-</strong></span>
+        <span>작성일자: <strong id="doc-created-date">-</strong></span>
+      </div>
+
+      <h1 class="contract-doc-title">맞춤 가구 제작 및 시공 공급계약서</h1>
+
+      <p class="contract-lead">
+        주문자(이하 <strong>'갑'</strong>이라 한다)와 제작·공급 및 시공업체(이하 <strong>'을'</strong>이라 한다)는 아래 표시된 맞춤 가구 품목의 제작, 납품 및 현장 시공에 관하여 상호 합의하고, 신의성실의 원칙에 따라 본 공급계약을 체결한다.
+      </p>
+
+      <!-- 제1. 계약 당사자 -->
+      <div class="contract-section-title">1. 계약 당사자 표시</div>
+      <table class="contract-table">
+        <tbody>
+          <tr>
+            <th style="width:18%;">수요자 (갑)</th>
+            <td style="width:32%;">성명: <strong id="doc-cust-name">-</strong></td>
+            <th style="width:18%;">연락처</th>
+            <td style="width:32%;" id="doc-cust-phone">-</td>
+          </tr>
+          <tr>
+            <th>시공 현장 주소</th>
+            <td colspan="3" id="doc-cust-address">-</td>
+          </tr>
+          <tr>
+            <th>공급자 (을)</th>
+            <td>상호: <strong id="doc-sup-name">-</strong></td>
+            <th>대표자 / 번호</th>
+            <td><span id="doc-sup-owner">-</span> (<span id="doc-sup-phone">-</span>)</td>
+          </tr>
+          <tr>
+            <th>사업자등록번호</th>
+            <td id="doc-sup-bizno">-</td>
+            <th>사업장 소재지</th>
+            <td id="doc-sup-address">-</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 제2. 공급 품목 및 사양 명세 -->
+      <div class="contract-section-title">2. 공급 품목 및 제작 사양 (실측 기준)</div>
+      <table class="contract-table">
+        <thead>
+          <tr>
+            <th style="width:24%;">공급 품목</th>
+            <th>세부 제작 사양 및 구성</th>
+            <th class="center" style="width:16%;">구분 / 기준</th>
+          </tr>
+        </thead>
+        <tbody id="doc-items-tbody">
+          <!-- viewer.js 에서 동적 삽입 -->
+        </tbody>
+      </table>
+
+      <!-- 제3. 계약 금액 및 대금 지급 조건 -->
+      <div class="contract-section-title">3. 계약 공급가액 및 대금 지급 조건</div>
+      <table class="contract-table">
+        <tbody>
+          <tr class="contract-total-row">
+            <th style="width:36%;">총 계약 공급가액 (제작 · 시공 일체)</th>
+            <td class="num" style="font-size:16px; color:var(--brand-dark);" id="view-total-price">0원</td>
+          </tr>
+          <tr class="contract-accent-row">
+            <th>계약금 (<span id="doc-deposit-pct">10</span>% · 발주 확정 시 즉시 납입)</th>
+            <td class="num" style="color:var(--brand);" id="view-deposit-price">0원</td>
+          </tr>
+          <tr>
+            <th>잔금 (현장 시공 완료 및 검수 직후 당일 완납)</th>
+            <td class="num" style="font-weight:700;" id="view-balance-price">0원</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="contract-bank-strip">
+        <div>
+          <span style="font-weight:700; color:var(--brand-dark);">계약금 · 잔금 입금 계좌:</span>
+          <strong id="view-bank-info">-</strong>
+        </div>
+        <span style="font-size:11.5px; color:var(--text-secondary);">* 계약자(갑) 성함으로 송금 확인 시 발주 착수</span>
+      </div>
+
+      <!-- 제4. 계약 일반 및 공급자 보호 특약 조항 -->
+      <div class="contract-section-title">4. 제작·시공 일반 및 공급자('을') 권리 보호 특약 조항</div>
+      <div class="contract-clauses">
+        <div class="contract-clause-item">
+          <strong>제1조 (계약의 성립 및 공정 착수)</strong> 본 계약은 '갑'이 본 계약서에 전자서명(또는 날인)하고 약정 계약금이 '을'의 지정 계좌에 입금 확인된 시점에 효력이 발생한다. '을'은 입금 확인 후 원목 자재 재단 및 외주 기성 도어 발주에 착수한다.
+        </div>
+        <div class="contract-clause-item">
+          <strong>제2조 (대금 지급 및 제작 착수 후 해지·환불 불가 특약)</strong> ① '갑'은 계약 체결 시 계약금을 즉시 지급하며, 현장 설치 완료 검수 직후 지체 없이 잔금 전액을 현금 또는 계좌이체로 완납하여야 한다. ② 본 목적물은 현장 실측 치수에 맞추어 제작되는 맞춤형 주문 가구이므로, <strong>계약금 입금 후 자재 재단 또는 외주 도어 발주가 시작된 이후에는 '갑'의 단순 변심, 인테리어 계획 변경 등을 사유로 계약을 해지하거나 계약금 반환을 청구할 수 없다.</strong> '갑'의 귀책사유로 해지될 경우 기 투입된 자재비·외주발주비·제작 가공비 및 위약금 일체는 '갑'이 부담한다.
+        </div>
+        <div class="contract-clause-item">
+          <strong>제3조 (현장 설비·기초 공사 제외 및 사양 오차 면책)</strong> ① 기존 가구 철거, 수도·배관·가스 이설, 전기 콘센트 증설, 벽면 타일 및 바닥 수평 작업 등 기반 설비 공사는 본 계약에 포함되지 않으며 시공 예정일 전까지 '갑'의 책임과 비용으로 완료하여야 한다. 현장 미비로 인한 재출장·대기·양중비(사다리차 등)는 별도 정산한다. ② 계약 시 미확정 또는 '갑'이 부정확하게 고지한 매립형 가전(인덕션·후드·식기세척기 등) 규격 차이로 발생하는 추가 타공·모듈 수정 비용은 '갑'의 부담으로 한다.
+        </div>
+        <div class="contract-clause-item">
+          <strong>제4조 (원목 자재 특성 및 현장 마감 기준)</strong> 친환경 원목(자작합판 등)은 천연 목재의 특성상 나뭇결, 미세 옹이, 색상 톤의 자연스러운 차이가 있을 수 있으며 이는 하자에 해당하지 않는다. 또한 기존 건축물 벽체 및 바닥의 수직·수평 오차 보정을 위한 현장 마감(실리콘·몰딩 처리)은 정상 시공 범위로 인정한다.
+        </div>
+        <div class="contract-clause-item">
+          <strong>제5조 (소유권 유보 및 미수금 회수)</strong> 현장에 납품 및 설치된 모든 가구·부자재의 소유권은 '갑'이 계약 대금 및 추가 정산금 전액을 완납할 때까지 '을'에게 유보된다. '갑'이 정당한 사유 없이 잔금 지급을 지체할 경우 '을'은 목적물 사용 제한 및 회수 등 필요한 법적 조치를 취할 수 있다.
+        </div>
+        <div class="contract-clause-item">
+          <strong>제6조 (하자보수 및 납기 면책)</strong> ① 설치 완료일로부터 1년간 정상적인 사용 상태에서 발생한 제작·시공상 결함에 한하여 무상 보수를 제공하며, 누수 방치·과도한 습기·고객 부주의 또는 임의 변형으로 인한 파손은 유상 처리한다. ② 외주 도어·상판·기기 제조사 사정 또는 천재지변 등 '을'의 고의·중과실 없는 사유로 납기가 조정될 경우 '을'은 '갑'에게 사전 통보하며 지체상금 등 별도의 손해배상 책임을 지지 않는다.
+        </div>
+      </div>
+
+      <!-- 제5. 서명 및 날인 확인 -->
+      <div class="contract-section-title">5. 계약 체결 확인 및 당사자 날인</div>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+        '갑'과 '을'은 위 계약 내용과 3D 도면 사양 및 특약 조항을 충분히 설명받고 동의하였음을 증명하기 위하여 아래와 같이 서명·날인한다. (<span id="doc-sign-date">-</span>)
+      </p>
+
+      <div class="contract-sign-grid">
+        <!-- 갑 (주문자) -->
+        <div class="contract-party-box">
+          <div class="contract-party-role">수요자 (갑)</div>
+          <div class="contract-party-meta">
+            <div>성 명 : <strong id="sign-box-cust-name">-</strong></div>
+            <div>연락처 : <span id="sign-box-cust-phone">-</span></div>
+            <div>주 소 : <span id="sign-box-cust-addr">-</span></div>
+          </div>
+          <div class="supplier-stamp-row" style="min-height:60px;">
+            <span style="font-size:12px; font-weight:700;">전자서명 (인)</span>
+            <div id="doc-buyer-sign-slot" style="text-align:right;">
+              <span style="font-size:11.5px; color:var(--brand); font-weight:600;">아래 서명란에서 날인 대기중</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 을 (공급자) -->
+        <div class="contract-party-box">
+          <div class="contract-party-role">공급자 (을)</div>
+          <div class="contract-party-meta">
+            <div>상 호 : <strong id="sign-box-sup-name">-</strong></div>
+            <div>사업자번호 : <span id="sign-box-sup-bizno">-</span></div>
+            <div>주 소 : <span id="sign-box-sup-addr">-</span></div>
+          </div>
+          <div class="supplier-stamp-row">
+            <div style="font-size:12px;">
+              대표자 : <strong id="sign-box-sup-owner">-</strong> <span style="color:var(--text-secondary);">(인)</span>
+            </div>
+            <!-- 공식 직인 SVG -->
+            <svg class="supplier-seal-svg" viewBox="0 0 64 64" aria-label="공급자 직인">
+              <rect x="6" y="6" width="52" height="52" rx="6" fill="none" stroke="#B83227" stroke-width="3"/>
+              <rect x="11" y="11" width="42" height="42" rx="3" fill="none" stroke="#B83227" stroke-width="1"/>
+              <text x="32" y="29" text-anchor="middle" fill="#B83227" font-size="13" font-weight="800" font-family="serif">공급</text>
+              <text x="32" y="46" text-anchor="middle" fill="#B83227" font-size="13" font-weight="800" font-family="serif">계약인</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- 3. 모바일 전자서명 입력 패드 (미서명 상태에서만 표시) -->
+    <div id="sign-section" class="card no-print">
+      <div class="card-header">
+        <div class="card-title">계약서 전자서명 (갑 날인)</div>
+        <span style="font-size:11px; color:var(--text-secondary);">손가락 또는 마우스로 서명해 주세요</span>
+      </div>
+      <div class="card-body">
+        <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:12px;">
+          위 공급계약서 제1조~제6조 특약 조항 및 제작 사양·공급가액을 확인하였으며, 이에 동의하여 전자서명을 완료합니다.
+        </p>
+
+        <div style="position:relative;">
+          <canvas id="sign-pad"></canvas>
+          <button id="btn-clear-sign" class="btn-outline btn-sm" style="position:absolute; top:8px; right:8px;" type="button">다시 쓰기</button>
+        </div>
+
+        <button id="btn-submit-sign" class="btn-primary" style="margin-top:12px;" type="button">
+          공급계약서 전자서명 및 주문 확정하기
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. 서명 완료 안내 카드 -->
+    <div id="signed-complete-card" class="card no-print" style="display:none;">
+      <div class="card-body" style="text-align:center; padding:24px 20px;">
+        <div style="width:42px; height:42px; border-radius:50%; background:var(--status-paid-bg); color:var(--status-paid-text); display:inline-flex; align-items:center; justify-content:center; margin-bottom:10px;">
+          <svg class="icon icon-lg" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3 style="font-size:15.5px; font-weight:700; color:var(--text-primary); margin-bottom:6px;">공급계약서 전자서명이 정상 완료되었습니다</h3>
+        <p style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px;">
+          계약서에 기재된 계좌로 계약금을 입금해 주시면 확인 후 원목 재단 및 발주 공정이 즉시 시작됩니다.
+        </p>
+        <button type="button" id="btn-print-signed" class="btn-outline btn-sm">계약서 인쇄 / PDF 보관</button>
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

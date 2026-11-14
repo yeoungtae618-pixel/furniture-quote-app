@@ -1,0 +1,1282 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap');
+
+:root {
+  /* 밝은 브라운 & 크림 우드 팔레트 */
+  --bg-canvas: #F7F4EF;
+  --bg-sidebar: #EFEAE2;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F4EFE8;
+  --bg-hover: #EAE2D7;
+
+  --brand: #8C6239;          /* 라이트 월넛 / 오크 브라운 */
+  --brand-hover: #734F2C;
+  --brand-dark: #4A3423;
+  --brand-soft: #F3ECE3;
+
+  --text-primary: #2A211B;   /* 딥 에스프레소 */
+  --text-secondary: #6E6157; /* 웜 토프 */
+  --text-tertiary: #9C8F84;
+
+  --border: #E5DDD2;
+  --border-strong: #D4C8B8;
+
+  --status-pending-bg: #FEF5E7;
+  --status-pending-text: #B9770E;
+  --status-signed-bg: #EBF5FB;
+  --status-signed-text: #21618C;
+  --status-paid-bg: #EAFAF1;
+  --status-paid-text: #1E8449;
+
+  --radius-lg: 14px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+
+  --shadow-sm: 0 2px 8px rgba(42, 33, 27, 0.04);
+  --shadow-md: 0 8px 24px rgba(42, 33, 27, 0.06);
+  --shadow-lg: 0 16px 40px rgba(42, 33, 27, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  line-height: 1.5;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* 아이콘 유틸 */
+.icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.icon-lg {
+  width: 20px;
+  height: 20px;
+}
+
+/* =========================================================
+   홈페이지형 관리자 포털 레이아웃 (PC & 모바일 반응형)
+   ========================================================= */
+
+.portal-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .portal-shell {
+    flex-direction: row;
+  }
+}
+
+/* 좌측 사이드바 (PC) */
+.sidebar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 250px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    flex-shrink: 0;
+    justify-content: space-between;
+  }
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 24px 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.brand-mark {
+  width: 36px;
+  height: 36px;
+  background: var(--brand);
+  color: #FFFFFF;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.5px;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--bg-surface);
+  color: var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.mobile-connect-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+/* 모바일 전용 상단 헤더 & 하단 탭 */
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.mobile-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  z-index: 50;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+
+.mobile-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.mobile-nav-btn.active {
+  color: var(--brand);
+}
+
+@media (min-width: 1024px) {
+  .mobile-header, .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* 메인 컨텐츠 영역 */
+.main-content {
+  flex: 1;
+  padding: 16px 16px 84px 16px;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding: 28px 36px;
+  }
+}
+
+/* PC 상단 페이지 타이틀 바 */
+.page-top-bar {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .page-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+}
+
+.page-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.4px;
+}
+
+.page-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* =========================================================
+   뷰 1: 3D 설계 및 현장 실측 그리드
+   ========================================================= */
+.studio-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .studio-grid {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.card-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 3D 캔버스 영역 */
+#canvas-container, #viewer-canvas {
+  width: 100%;
+  height: 360px;
+  position: relative;
+  background: #F6F3EE;
+  touch-action: none;
+}
+
+@media (min-width: 1024px) {
+  #canvas-container {
+    height: 540px;
+  }
+}
+
+.viewer-toolbar {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  padding: 6px 10px;
+  border-radius: 30px;
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-md);
+  z-index: 10;
+}
+
+.tool-chip {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tool-chip:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.tool-chip.active {
+  background: var(--brand);
+  color: #FFFFFF;
+}
+
+/* 폼 컨트롤 스타일 */
+.form-section {
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preset-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.preset-pill {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-pill:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.range-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.range-value {
+  font-weight: 700;
+  color: var(--brand);
+}
+
+input[type="range"].styled-range {
+  width: 100%;
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.input-control {
+  width: 100%;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.input-control:focus {
+  outline: none;
+  border-color: var(--brand);
+  background: #FFFFFF;
+}
+
+/* 선택된 기성 도어 박스 */
+.door-selector-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.door-selector-box:hover {
+  border-color: var(--brand);
+}
+
+.swatch-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+
+/* 실시간 견적서 박스 */
+.quote-box {
+  background: var(--brand-soft);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.quote-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.quote-row span.amt {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.quote-divider {
+  height: 1px;
+  background: var(--border-strong);
+  margin: 10px 0;
+}
+
+.quote-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.quote-total-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.quote-total-price {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.quote-deposit-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--brand);
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+/* 버튼 */
+.btn-primary {
+  width: 100%;
+  background: var(--brand);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.15s;
+}
+
+.btn-primary:hover {
+  background: var(--brand-hover);
+}
+
+.btn-outline {
+  background: #FFFFFF;
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s;
+}
+
+.btn-outline:hover {
+  background: var(--bg-subtle);
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* =========================================================
+   관리자 테이블 & KPI 카드 (PC 홈페이지 포털용)
+   ========================================================= */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+  .kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+.kpi-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.data-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  text-align: left;
+  padding: 12px 16px;
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-pending { background: var(--status-pending-bg); color: var(--status-pending-text); }
+.badge-signed { background: var(--status-signed-bg); color: var(--status-signed-text); }
+.badge-paid { background: var(--status-paid-bg); color: var(--status-paid-text); }
+
+/* 고정 단가 설정 폼 행 */
+.fixed-item-row {
+  display: grid;
+  grid-template-columns: auto 1fr 120px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+/* 모달 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(42, 33, 27, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-window {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  padding: 22px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.door-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.door-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  cursor: pointer;
+  background: var(--bg-surface);
+  transition: all 0.15s;
+}
+
+.door-card:hover {
+  border-color: var(--brand);
+}
+
+.door-card.selected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+/* 서명 패드 */
+#sign-pad {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: #FAF8F5;
+  width: 100%;
+  height: 150px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* 토스트 알림 */
+.toast-msg {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brand-dark);
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  z-index: 200;
+  display: none;
+}
+
+/* =========================================
+   정식 공급계약서 (A4 공식 문서 스타일)
+   ========================================= */
+.contract-paper {
+  background: #FFFFFF;
+  border: 1px solid #C8BFB3;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 34px 30px;
+  color: #1F1915;
+}
+
+.contract-top-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.contract-doc-title {
+  text-align: center;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #1F1915;
+  padding: 12px 0 14px;
+  border-top: 2px solid #2A211B;
+  border-bottom: 2px solid #2A211B;
+  margin-bottom: 18px;
+}
+
+.contract-lead {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #2E2620;
+  margin-bottom: 16px;
+}
+
+.contract-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2A211B;
+  margin: 18px 0 8px;
+  padding-left: 8px;
+  border-left: 3px solid var(--brand);
+}
+
+.contract-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.contract-table th,
+.contract-table td {
+  border: 1px solid #BFB4A5;
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: middle;
+  line-height: 1.45;
+}
+
+.contract-table th {
+  background: #F5F0E8;
+  color: #2A211B;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.contract-table td.num,
+.contract-table th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.contract-table td.center,
+.contract-table th.center {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.contract-table tr.contract-total-row td,
+.contract-table tr.contract-total-row th {
+  background: #EFE7DC;
+  font-weight: 700;
+  color: #2A211B;
+  font-size: 13px;
+}
+
+.contract-table tr.contract-accent-row td,
+.contract-table tr.contract-accent-row th {
+  background: #FAF6F0;
+  font-weight: 700;
+  color: var(--brand-dark);
+}
+
+.contract-clauses {
+  background: #FAF8F5;
+  border: 1px solid #D8CFC3;
+  border-radius: 4px;
+  padding: 14px 16px;
+  font-size: 11.8px;
+  line-height: 1.65;
+  color: #2E2620;
+}
+
+.contract-clause-item {
+  margin-bottom: 9px;
+}
+
+.contract-clause-item:last-child {
+  margin-bottom: 0;
+}
+
+.contract-clause-item strong {
+  color: #1F1915;
+}
+
+.contract-bank-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #F4EFE8;
+  border: 1px solid #D4C8B8;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  margin-top: 10px;
+}
+
+.contract-sign-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.contract-party-box {
+  border: 1px solid #BFB4A5;
+  padding: 12px 14px;
+  background: #FFFFFF;
+}
+
+.contract-party-role {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #E5DDD2;
+}
+
+.contract-party-meta {
+  font-size: 12px;
+  line-height: 1.65;
+  color: #2E2620;
+}
+
+.supplier-stamp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed #DED5C8;
+}
+
+.supplier-seal-svg {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .contract-paper {
+    padding: 20px 14px;
+  }
+  .contract-doc-title {
+    font-size: 17px;
+    letter-spacing: 0.06em;
+  }
+  .contract-sign-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  .no-print,
+  .mobile-header,
+  #viewer-3d-card,
+  #sign-section,
+  .viewer-toolbar {
+    display: none !important;
+  }
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .contract-paper {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  .contract-clauses,
+  .contract-party-box,
+  .contract-table tr {
+    break-inside: avoid;
+  }
+}
+
+/* =========================================
+   2D 평면/입면 CAD 도면 뷰 & 공간 디자인 탭
+   ========================================= */
+.view-mode-switch {
+  display: inline-flex;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.view-mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.view-mode-btn.active {
+  background: var(--brand);
+  color: #FFFFFF;
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-strong);
+  margin: 0 2px;
+  align-self: center;
+}
+
+.studio-panel-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+}
+
+.studio-panel-tab {
+  border: none;
+  background: transparent;
+  padding: 13px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.studio-panel-tab.active {
+  background: var(--bg-surface);
+  color: var(--brand-dark);
+  border-bottom-color: var(--brand);
+}
+
+.layout-pill-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.layout-pill {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.layout-pill.active {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+.wing-config-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.design-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.design-swatch-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.design-swatch-card:hover {
+  border-color: var(--brand);
+  background: var(--bg-subtle);
+}
+
+.design-swatch-card.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+.design-chip {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  flex-shrink: 0;
+}
+
+.design-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+/* 2D CAD 평면/입면 컨테이너 */
+.plan2d-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #FCFBF8;
+  min-height: 360px;
+}
+
+@media (min-width: 1024px) {
+  .plan2d-wrapper {
+    min-height: 540px;
+  }
+}
+
+.plan2d-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #F4EFE8;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan2d-mode-tabs {
+  display: inline-flex;
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.plan2d-tab-btn {
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 5px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.plan2d-tab-btn.active {
+  background: var(--brand);
+  color: #FFFFFF;
+}
+
+.plan2d-hint {
+  font-size: 11px;
+  color: var(--brand-dark);
+  font-weight: 600;
+}
+
+.plan2d-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.p2d-dim-click:hover rect {
+  stroke: #8C6239;
+  stroke-width: 1.8;
+}
+
+.p2d-drag-handle:hover circle,
+.p2d-drag-wing:hover circle {
+  r: 8.5;
+}
+
+.plan2d-popover {
+  position: absolute;
+  z-index: 40;
+  background: #FFFFFF;
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 10px 12px;
+}
+
+.plan2d-popover-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin-bottom: 6px;
+}

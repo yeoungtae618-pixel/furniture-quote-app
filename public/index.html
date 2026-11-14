@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WOODCRAFT STUDIO — 맞춤 씽크대 3D 견적 & 관리자 포털</title>
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <!-- Three.js & OrbitControls & QRCode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  
+  <script src="/js/furniture3d.js"></script>
+  <script src="/js/plan2d.js"></script>
+  <script src="/js/app.js"></script>
+</head>
+<body>
+
+<div class="portal-shell">
+
+  <!-- [PC 전용] 좌측 홈페이지형 관리자 사이드바 -->
+  <aside class="sidebar">
+    <div>
+      <div class="brand-header">
+        <div class="brand-mark">W</div>
+        <div>
+          <div class="brand-name">WOODCRAFT</div>
+          <div class="brand-sub">맞춤 씽크대 견적 & 설계 포털</div>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-nav="studio">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          3D 도면 설계 및 실측
+        </button>
+        <button class="nav-item" data-nav="orders">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          수주 및 고객 관리
+        </button>
+        <button class="nav-item" data-nav="settings">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          고정 단가표 및 계좌 설정
+        </button>
+        <button class="nav-item" data-nav="doors">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          기성 도어 단가 관리
+        </button>
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="mobile-connect-box">
+        <div style="font-weight:700; color:var(--text-primary); margin-bottom:4px;">현장 모바일 앱 접속</div>
+        <div style="font-size:10.5px; color:var(--text-secondary); margin-bottom:4px;">동일 Wi-Fi 스마트폰 접속 주소:</div>
+        <div id="sidebar-mobile-url" style="font-weight:700; color:var(--brand); font-size:11.5px; word-break:break-all;">로딩 중...</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- [모바일 전용] 미니멀 상단 헤더 -->
+  <header class="mobile-header">
+    <div style="display:flex; align-items:center; gap:9px;">
+      <div class="brand-mark" style="width:30px; height:30px; font-size:14px;">W</div>
+      <div>
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary);">WOODCRAFT STUDIO</div>
+        <div style="font-size:10px; color:var(--text-secondary);">맞춤 씽크대 3D 실측</div>
+      </div>
+    </div>
+    <span class="badge badge-signed" style="background:var(--brand-soft); color:var(--brand-dark);">현장 실측 모드</span>
+  </header>
+
+  <!-- 메인 작업 공간 -->
+  <main class="main-content">
+
+    <!-- PC 상단 페이지 타이틀 바 -->
+    <div class="page-top-bar">
+      <div>
+        <h1 id="pc-page-title" class="page-heading">3D 도면 설계 및 현장 실측</h1>
+        <p id="pc-page-desc" class="page-desc">주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.</p>
+      </div>
+    </div>
+
+    <!-- ===================================================
+         뷰 1: 3D 도면 설계 및 현장 실측
+         =================================================== -->
+    <section id="view-studio">
+      <div class="studio-grid">
+        
+        <!-- 좌측: 3D 모델뷰 + 2D 평면/입면 CAD 도면 뷰어 -->
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap; gap:8px;">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              실시간 3D · 2D 통합 도면
+            </div>
+            <div class="view-mode-switch">
+              <button type="button" class="view-mode-btn active" data-viewmode="3d">3D 모델뷰</button>
+              <button type="button" class="view-mode-btn" data-viewmode="2d">2D 평면 · 입면도</button>
+            </div>
+          </div>
+
+          <div id="canvas-container">
+            <div class="viewer-toolbar">
+              <button type="button" class="tool-chip active" data-cam="iso">투시도</button>
+              <button type="button" class="tool-chip" data-cam="front">정면</button>
+              <button type="button" class="tool-chip" data-cam="top">항공</button>
+              <span class="toolbar-divider"></span>
+              <button type="button" id="btn-door-toggle" class="tool-chip">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/></svg>
+                <span>도어 열기</span>
+              </button>
+              <button type="button" id="btn-dim-toggle" class="tool-chip active">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/></svg>
+                <span>치수선</span>
+              </button>
+              <button type="button" id="btn-capture-3d" class="tool-chip">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>3D 캡처</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="plan2d-container" style="display:none;"></div>
+        </div>
+
+        <!-- 우측: 현장 실측/견적 & 벽면/공간 디자인 탭 -->
+        <div class="card">
+          <div class="studio-panel-tabs">
+            <button type="button" class="studio-panel-tab active" data-studiotab="spec">치수 · 자재 · 견적</button>
+            <button type="button" class="studio-panel-tab" data-studiotab="space">벽면 · 바닥 · 공간 디자인</button>
+          </div>
+
+          <!-- 탭 1: 현장 실측 & 견적 -->
+          <div id="tab-panel-spec" class="card-body">
+
+            <!-- 0. 주방 구조 레이아웃 (일자형 / ㄱ자 코너형) -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>0. 주방 구조 레이아웃</span>
+                <span style="font-size:11px; color:var(--brand); font-weight:600;">평면 · 3D 즉시 반영</span>
+              </div>
+              <div class="layout-pill-group">
+                <button type="button" class="layout-pill active" data-layout="straight">일자형 (I-Type)</button>
+                <button type="button" class="layout-pill" data-layout="l_left">ㄱ자 (좌측 코너)</button>
+                <button type="button" class="layout-pill" data-layout="l_right">ㄱ자 (우측 코너)</button>
+              </div>
+              <div id="wing-config-box" class="wing-config-box" style="display:none;">
+                <div class="grid-2" style="align-items:end; margin-bottom:8px;">
+                  <div>
+                    <label class="field-label">세로 전체 길이 (mm)</label>
+                    <input type="number" id="input-side-len" class="input-control" value="1800" step="50">
+                  </div>
+                  <div class="preset-group" style="margin-bottom:0;">
+                    <button type="button" class="preset-pill side-preset-pill" data-side="1500">1,500</button>
+                    <button type="button" class="preset-pill side-preset-pill" data-side="1800">1,800</button>
+                    <button type="button" class="preset-pill side-preset-pill" data-side="2100">2,100</button>
+                    <button type="button" class="preset-pill side-preset-pill" data-side="2400">2,400</button>
+                  </div>
+                </div>
+                <label style="display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-primary); cursor:pointer;">
+                  <input type="checkbox" id="check-wing-upper">
+                  <span>코너 날개 구간 상부장(벽장) 연장 포함</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 1. 주방 전체 길이 -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>1. 주방 벽면 실측 (전체 길이)</span>
+                <span id="val-total-w" class="range-value">2,700 mm</span>
+              </div>
+              <div class="preset-group">
+                <button class="preset-pill" data-w="2400">8자 (2,400)</button>
+                <button class="preset-pill" data-w="2700">9자 (2,700)</button>
+                <button class="preset-pill" data-w="3000">10자 (3,000)</button>
+                <button class="preset-pill" data-w="3600">12자 (3,600)</button>
+              </div>
+              <input type="range" id="slider-total-w" class="styled-range" min="1800" max="4200" step="50" value="2700">
+              <div style="margin-top:8px;">
+                <input type="number" id="input-total-w" class="input-control" value="2700" placeholder="직접 입력 (mm)">
+              </div>
+            </div>
+
+            <!-- 2. 하부장 모듈별 분할 -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>2. 하부장 모듈별 세부 치수 (mm)</span>
+              </div>
+              <div class="grid-3">
+                <div>
+                  <label class="field-label">개수대장 (싱크)</label>
+                  <input type="number" id="input-sink-w" class="input-control" value="1000">
+                </div>
+                <div>
+                  <label class="field-label">조리대 (3단서랍)</label>
+                  <input type="number" id="input-prep-w" class="input-control" value="800">
+                </div>
+                <div>
+                  <label class="field-label">가열대 (쿡탑)</label>
+                  <input type="number" id="input-cook-w" class="input-control" value="900">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 높이 & 깊이 & 상부장 -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>3. 높이 · 깊이 및 상부장 구성</span>
+              </div>
+              <div class="grid-3" style="margin-bottom:10px;">
+                <div>
+                  <label class="field-label">하부장 높이</label>
+                  <input type="number" id="input-lower-h" class="input-control" value="860">
+                </div>
+                <div>
+                  <label class="field-label">하부장 깊이</label>
+                  <input type="number" id="input-lower-d" class="input-control" value="600">
+                </div>
+                <div>
+                  <label class="field-label">상부장 높이</label>
+                  <input type="number" id="input-upper-h" class="input-control" value="700">
+                </div>
+              </div>
+              <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-primary); cursor:pointer;">
+                <input type="checkbox" id="check-upper-cabinets" checked>
+                <span>상부장(벽장) 및 히든 슬림 후드장 포함</span>
+              </label>
+            </div>
+
+            <!-- 4. 기성품 MDF 도어 선택 -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>4. 기성품 MDF 도어 선택</span>
+                <span style="font-size:11px; color:var(--text-secondary); font-weight:500;">업체별 단가 연동</span>
+              </div>
+              <div id="door-selected-trigger" class="door-selector-box">
+                <div style="display:flex; align-items:center; gap:10px; overflow:hidden;">
+                  <div id="cur-door-swatch" class="swatch-box" style="background:#fcfcfc;"></div>
+                  <div style="overflow:hidden;">
+                    <div id="cur-door-name" style="font-size:13px; font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">영림 프리미엄 매트화이트 PET</div>
+                    <div id="cur-door-meta" style="font-size:11px; color:var(--text-secondary);">로딩 중...</div>
+                  </div>
+                </div>
+                <span style="font-size:12px; font-weight:700; color:var(--brand); flex-shrink:0;">선택 &rsaquo;</span>
+              </div>
+            </div>
+
+            <!-- 4-1. 주방 기기 및 수전 모델 선택 (카탈로그 연동) -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>4-1. 주방 기기 · 수전 모델 (3D 실시간 반영)</span>
+              </div>
+              <div class="grid-3">
+                <div>
+                  <label class="field-label">후드 타입</label>
+                  <select id="select-hood-type" class="input-control">
+                    <option value="hidden">빌트인 히든후드</option>
+                    <option value="chimney">T자 침니후드</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">쿡탑 기기</label>
+                  <select id="select-cooktop-type" class="input-control">
+                    <option value="black_ind">블랙 3구 인덕션</option>
+                    <option value="white_ind">화이트 인덕션</option>
+                    <option value="gas_3">3구 가스레인지</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">수전 디자인</label>
+                  <select id="select-faucet-type" class="input-control">
+                    <option value="gooseneck">거위목 수전</option>
+                    <option value="square_l">모던 직각 L형</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- 5. 고정 부자재 항목 토글 -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>5. 기본 고정 부자재 옵션</span>
+                <span style="font-size:11px; color:var(--brand); cursor:pointer;" onclick="document.querySelector('[data-nav=settings]').click()">단가 수정 &rsaquo;</span>
+              </div>
+              <div id="active-fixed-summary"></div>
+            </div>
+
+            <!-- 6. 실시간 견적 요약 -->
+            <div class="quote-box">
+              <div class="quote-row">
+                <span>공장 직영 원목 몸통</span>
+                <span id="cost-wood-body" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>기성 도어 외주 매입</span>
+                <span id="cost-door-vendor" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>인조대리석 상판 (타공 포함)</span>
+                <span id="cost-countertop" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>고정 부자재 / 하드웨어</span>
+                <span id="cost-fixed-items" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>현장 시공 및 물류비</span>
+                <span id="cost-install" class="amt">0원</span>
+              </div>
+              <div class="quote-row" style="font-size:11px; color:var(--text-tertiary);">
+                <span id="quote-margin-label">영업/제작 마진 (25%) 포함</span>
+                <span>반영됨</span>
+              </div>
+
+              <div class="quote-divider"></div>
+
+              <div class="quote-total-row">
+                <span class="quote-total-label">최종 견적 금액</span>
+                <span id="quote-total-price" class="quote-total-price">0원</span>
+              </div>
+              <div class="quote-deposit-row">
+                <span id="quote-deposit-label">발주 확정 계약금 (10%)</span>
+                <span id="quote-deposit-price">0원</span>
+              </div>
+            </div>
+
+            <button id="btn-open-submit" class="btn-primary" style="margin-top:14px;">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              견적서 확정 및 고객 전송
+            </button>
+
+          </div>
+
+          <!-- 탭 2: 벽면 · 타일 · 바닥 · 공간 디자인 -->
+          <div id="tab-panel-space" class="card-body" style="display:none;">
+
+            <div class="form-section">
+              <div class="section-label">
+                <span>1. 전체 벽면 마감 디자인 (벽지 · 미장 · 루버)</span>
+              </div>
+              <div class="design-swatch-grid">
+                <button type="button" class="design-swatch-card active" data-wall="warm_greige">
+                  <span class="design-chip" style="background:#cbc2b5;"></span>
+                  <span class="design-label">웜 그레이지<br><small style="color:var(--text-secondary);">스톤 매트</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="creamy_plaster">
+                  <span class="design-chip" style="background:#e6ded2;"></span>
+                  <span class="design-label">파리지앵 크림<br><small style="color:var(--text-secondary);">유럽 미장</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="sage_olive">
+                  <span class="design-chip" style="background:#b3bdb0;"></span>
+                  <span class="design-label">세이지 올리브<br><small style="color:var(--text-secondary);">내추럴 톤</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="deep_charcoal">
+                  <span class="design-chip" style="background:#46423d;"></span>
+                  <span class="design-label">딥 차콜 월<br><small style="color:var(--text-secondary);">고급 대비</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="walnut_temba" style="grid-column: span 2;">
+                  <span class="design-chip" style="background:repeating-linear-gradient(90deg, #5c402c 0px, #5c402c 3px, #8c674c 3px, #8c674c 6px);"></span>
+                  <span class="design-label">월넛 우드 템바보드 (세로 루버 인테리어 월)</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-label">
+                <span>2. 미드웨이 주방 벽타일 · 패널</span>
+              </div>
+              <div class="design-swatch-grid">
+                <button type="button" class="design-swatch-card active" data-tile="white_subway">
+                  <span class="design-chip" style="background:#f3f1ed;"></span>
+                  <span class="design-label">화이트 유광<br><small style="color:var(--text-secondary);">서브웨이 타일</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-tile="calacatta_slab">
+                  <span class="design-chip" style="background:linear-gradient(135deg, #f6f4f0 40%, #dcd4c8 100%);"></span>
+                  <span class="design-label">칼라카타 마블<br><small style="color:var(--text-secondary);">무줄눈 빅슬랩</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-tile="beige_terrazzo">
+                  <span class="design-chip" style="background:#ded5c8;"></span>
+                  <span class="design-label">베이지 테라조<br><small style="color:var(--text-secondary);">포세린 타일</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-tile="herringbone_cream">
+                  <span class="design-chip" style="background:#ece6dc;"></span>
+                  <span class="design-label">크림 헤링본<br><small style="color:var(--text-secondary);">사선 패턴</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-tile="deep_mocha_kitkat" style="grid-column: span 2;">
+                  <span class="design-chip" style="background:repeating-linear-gradient(90deg, #523e31 0px, #523e31 2px, #7d6350 2px, #7d6350 5px);"></span>
+                  <span class="design-label">딥모카 세로 키트캣 모자이크 타일</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-label">
+                <span>3. 인조대리석 상판 스톤 컬러</span>
+              </div>
+              <div class="design-swatch-grid">
+                <button type="button" class="design-swatch-card active" data-countertop="white_marble" data-label="오로라 비앙코 화이트 마블">
+                  <span class="design-chip" style="background:#f5f2ed;"></span>
+                  <span class="design-label">비앙코 마블</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-countertop="cream_staron" data-label="오로라 크림 샌드 스톤">
+                  <span class="design-chip" style="background:#efe6d6;"></span>
+                  <span class="design-label">크림 샌드</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-countertop="nero_black" data-label="네로 마퀴나 블랙 스톤">
+                  <span class="design-chip" style="background:#232426;"></span>
+                  <span class="design-label">네로 블랙</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-countertop="terrazzo_stone" data-label="라이트 테라조 인조대리석">
+                  <span class="design-chip" style="background:#e8e1d7;"></span>
+                  <span class="design-label">라이트 테라조</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-label">
+                <span>4. 바닥재 마루 · 타일</span>
+              </div>
+              <div class="design-swatch-grid">
+                <button type="button" class="design-swatch-card active" data-floor="natural_oak">
+                  <span class="design-chip" style="background:#c5a883;"></span>
+                  <span class="design-label">내추럴 오크 마루</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-floor="light_ash">
+                  <span class="design-chip" style="background:#e2d6c5;"></span>
+                  <span class="design-label">화이트 애쉬 마루</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-floor="smoked_walnut">
+                  <span class="design-chip" style="background:#6b5341;"></span>
+                  <span class="design-label">스모크드 월넛</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-floor="limestone_tile">
+                  <span class="design-chip" style="background:#cfc9bf;"></span>
+                  <span class="design-label">그레이지 석재 타일</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-label">
+                <span>5. 손잡이 · 조명 · 천장고</span>
+              </div>
+              <div class="grid-3">
+                <div>
+                  <label class="field-label">도어 손잡이</label>
+                  <select id="select-handle-type" class="input-control">
+                    <option value="j_channel">무손잡이 C찬넬</option>
+                    <option value="bar_matte_black">매트 블랙 바</option>
+                    <option value="bar_champagne_gold">샴페인 골드</option>
+                    <option value="bar_brushed_nickel">니켈 실버 바</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">상부 T5 간접등</label>
+                  <select id="select-underlight-temp" class="input-control">
+                    <option value="warm">온백색 (3000K)</option>
+                    <option value="neutral">주백색 (4000K)</option>
+                    <option value="off">조명 끄기</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">천장 높이 (mm)</label>
+                  <input type="number" id="input-ceiling-h" class="input-control" value="2350" step="50">
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn-outline" style="width:100%;" onclick="document.querySelector('[data-studiotab=spec]').click()">
+              &lsaquo; 실측 치수 · 견적서로 돌아가기
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 2: 수주 및 고객 관리 (관리자 포털 테이블)
+         =================================================== -->
+    <section id="view-orders" style="display:none;">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title">누적 견적 발송</div>
+          <div id="kpi-total" class="kpi-value">0건</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">서명 및 계약 확정</div>
+          <div id="kpi-signed" class="kpi-value" style="color:#21618C;">0건</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">계약금 입금 완료</div>
+          <div id="kpi-paid" class="kpi-value" style="color:#1E8449;">0건</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">누적 수주 매출</div>
+          <div id="kpi-revenue" class="kpi-value" style="color:var(--brand);">0원</div>
+        </div>
+      </div>
+
+      <!-- PC용 테이블 -->
+      <div class="card" id="orders-desktop-table">
+        <div class="card-header">
+          <div class="card-title">고객 견적 및 수주 내역</div>
+        </div>
+        <div class="data-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>고객 정보</th>
+                <th>씽크대 규격 및 도어</th>
+                <th>견적 금액 (계약금)</th>
+                <th>진행 상태</th>
+                <th>작성 일시</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 모바일용 카드 리스트 -->
+      <div id="orders-mobile-cards" style="display:none;"></div>
+    </section>
+
+    <!-- ===================================================
+         뷰 3: 고정 단가표 및 회사/계좌 설정 (웹에서 바로 수정!)
+         =================================================== -->
+    <section id="view-settings" style="display:none;">
+      <div style="display:grid; grid-template-columns:1fr; gap:18px; max-width:920px;">
+        
+        <!-- 회사 및 입금 계좌 정보 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">상호명 및 계약금 입금 계좌 설정</div>
+            <span style="font-size:11px; color:var(--text-secondary);">소비자 계약서 화면에 즉시 반영됩니다</span>
+          </div>
+          <div class="card-body">
+            <div class="grid-3" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">상호 / 브랜드명 (공급자 을)</label>
+                <input type="text" id="set-company-name" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">대표자 성명</label>
+                <input type="text" id="set-company-owner" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">대표 전화번호</label>
+                <input type="text" id="set-company-phone" class="input-control">
+              </div>
+            </div>
+            <div class="grid-2" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">사업자등록번호</label>
+                <input type="text" id="set-company-bizno" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">공장 / 사업장 주소</label>
+                <input type="text" id="set-company-address" class="input-control">
+              </div>
+            </div>
+            <div class="grid-3">
+              <div>
+                <label class="field-label">입금 은행</label>
+                <input type="text" id="set-bank-name" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">계좌 번호 (어머니 수신 계좌)</label>
+                <input type="text" id="set-bank-account" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">예금주명</label>
+                <input type="text" id="set-bank-holder" class="input-control">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 기본 제작 단가 및 마진 설정 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">제작 기준 단가 및 마진율 설정</div>
+          </div>
+          <div class="card-body">
+            <div class="grid-2" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">몸통 원목 자재명</label>
+                <input type="text" id="set-wood-name" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">원목 몸통 단가 (1m당 원가)</label>
+                <input type="number" id="set-wood-price" class="input-control">
+              </div>
+            </div>
+
+            <div class="grid-3" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">인조대리석 상판명</label>
+                <input type="text" id="set-top-name" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">상판 단가 (1m당)</label>
+                <input type="number" id="set-top-price" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">싱크/쿡탑 타공비 (고정)</label>
+                <input type="number" id="set-top-hole" class="input-control">
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">기본 시공 및 운반비 (고정)</label>
+                <input type="number" id="set-install-base" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">시공 추가비 (1m당)</label>
+                <input type="number" id="set-install-meter" class="input-control">
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div>
+                <label class="field-label">기본 마진율 (%)</label>
+                <input type="number" id="set-margin" class="input-control">
+              </div>
+              <div>
+                <label class="field-label">계약금 선입금 비율 (%)</label>
+                <input type="number" id="set-deposit" class="input-control">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 고정 부자재/하드웨어 항목 편집기 -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">견적서 고정 부자재 항목 관리</div>
+            <button id="btn-add-fixed-item" class="btn-outline btn-sm">+ 항목 추가</button>
+          </div>
+          <div class="card-body">
+            <p style="font-size:12px; color:var(--text-secondary); margin-bottom:12px;">
+              체크된 항목은 견적 산출 시 기본으로 자동 합산됩니다. 항목명과 금액을 자유롭게 수정하거나 새 항목을 추가할 수 있습니다.
+            </p>
+            <div id="fixed-items-editor-list"></div>
+          </div>
+        </div>
+
+        <div>
+          <button id="btn-save-settings" class="btn-primary" style="max-width:280px;">
+            전체 단가 및 설정 저장하기
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 4: 기성 도어 카탈로그 관리 (단가 수정 & 신규 등록)
+         =================================================== -->
+    <section id="view-doors" style="display:none;">
+      <div class="card" style="margin-bottom:18px;">
+        <div class="card-header">
+          <div class="card-title">신규 기성 도어 모델 등록</div>
+        </div>
+        <div class="card-body">
+          <div class="grid-3" style="margin-bottom:10px;">
+            <div>
+              <label class="field-label">도어 공급업체</label>
+              <select id="new-door-vendor" class="input-control">
+                <option value="영림도어">영림도어</option>
+                <option value="예림임업">예림임업</option>
+                <option value="한샘제휴">한샘제휴</option>
+                <option value="대진/동화">대진/동화</option>
+                <option value="자체등록">기타/직접입력</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">도어 형태 (3D 반영)</label>
+              <select id="new-door-style" class="input-control">
+                <option value="flat">모던 플랫 (민자)</option>
+                <option value="shaker">쉐이커 프레임 (사각 몰딩)</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label">헤베(m²)당 납품단가</label>
+              <input type="number" id="new-door-price" class="input-control" value="48000">
+            </div>
+          </div>
+
+          <div class="grid-3" style="align-items:end;">
+            <div>
+              <label class="field-label">모델명</label>
+              <input type="text" id="new-door-name" class="input-control" placeholder="예: 영림 딥브라운 PET">
+            </div>
+            <div>
+              <label class="field-label">마감 설명</label>
+              <input type="text" id="new-door-finish" class="input-control" value="무광 친환경 PET (18T MDF)">
+            </div>
+            <div style="display:flex; gap:8px;">
+              <div>
+                <label class="field-label">색상</label>
+                <input type="color" id="new-door-color" value="#dcd3c9" style="height:36px; width:46px; border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+              </div>
+              <button id="btn-add-new-door" class="btn-primary" style="flex:1; padding:8px 12px;">도어 등록</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">등록된 기성품 도어 단가표</div>
+        </div>
+        <div class="data-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>공급업체</th>
+                <th>모델명</th>
+                <th>마감 스펙</th>
+                <th>헤베당 단가 (원)</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody id="doors-admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- [모바일 전용] 하단 네비게이션 -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-btn active" data-nav="studio">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span>3D 설계</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="orders">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>수주내역</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="settings">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>단가설정</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="doors">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+      <span>도어관리</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- 기성 도어 선택 모달 -->
+<div id="door-modal" class="modal-backdrop">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title">기성품 MDF 도어 카탈로그</h3>
+      <button id="btn-close-door-modal" class="modal-close">&times;</button>
+    </div>
+    <div style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px;">
+      <button class="preset-pill door-vendor-tab active" data-vendor="전체">전체 업체</button>
+      <button class="preset-pill door-vendor-tab" data-vendor="영림도어">영림도어</button>
+      <button class="preset-pill door-vendor-tab" data-vendor="예림임업">예림임업</button>
+      <button class="preset-pill door-vendor-tab" data-vendor="한샘제휴">한샘제휴</button>
+      <button class="preset-pill door-vendor-tab" data-vendor="대진/동화">대진/동화</button>
+    </div>
+    <div id="door-picker-grid" class="door-grid"></div>
+  </div>
+</div>
+
+<!-- 고객 정보 입력 & 견적 확정 모달 -->
+<div id="submit-modal" class="modal-backdrop">
+  <div class="modal-window">
+    <div class="modal-header">
+      <h3 class="modal-title">견적서 확정 및 고객 정보 입력</h3>
+      <button id="btn-close-submit" class="modal-close">&times;</button>
+    </div>
+
+    <div style="width:100%; height:140px; border-radius:8px; overflow:hidden; border:1px solid var(--border); margin-bottom:12px;">
+      <img id="submit-thumb" src="" alt="3D 도면 미리보기" style="width:100%; height:100%; object-fit:cover;">
+    </div>
+
+    <div style="background:var(--bg-subtle); padding:10px 12px; border-radius:8px; font-size:12px; margin-bottom:14px; line-height:1.6;">
+      <div><strong>규격:</strong> <span id="submit-spec-summary"></span></div>
+      <div><strong>도어:</strong> <span id="submit-door-summary"></span></div>
+      <div><strong>견적가:</strong> <span id="submit-total-summary" style="color:var(--brand-dark); font-weight:700;"></span></div>
+    </div>
+
+    <div style="margin-bottom:10px;">
+      <label class="field-label">고객 성함</label>
+      <input type="text" id="cust-name" class="input-control" placeholder="예: 김민수 고객님">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="field-label">고객 휴대전화</label>
+      <input type="tel" id="cust-phone" class="input-control" placeholder="예: 010-1234-5678">
+    </div>
+    <div style="margin-bottom:14px;">
+      <label class="field-label">시공 주소</label>
+      <input type="text" id="cust-address" class="input-control" placeholder="예: 서울시 서초구 ...">
+    </div>
+
+    <button id="btn-confirm-save-quote" class="btn-primary">견적 확정 및 고객 링크 생성</button>
+  </div>
+</div>
+
+<!-- 링크 생성 완료 & QR 스캔 & SMS 미리보기 모달 -->
+<div id="link-result-modal" class="modal-backdrop">
+  <div class="modal-window" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 class="modal-title">고객 전송 및 미리보기</h3>
+      <button id="btn-close-result" class="modal-close">&times;</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:130px 1fr; gap:16px; align-items:center; margin-bottom:16px; background:var(--bg-subtle); padding:12px; border-radius:10px;">
+      <div id="result-qr-code" style="background:white; padding:6px; border-radius:6px; border:1px solid var(--border); display:flex; align-items:center; justify-content:center;"></div>
+      <div>
+        <div style="font-size:12.5px; font-weight:700; color:var(--text-primary); margin-bottom:4px;">스마트폰으로 바로 확인하기</div>
+        <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:8px;">
+          휴대폰 카메라로 좌측 QR코드를 비추면 고객에게 전송되는 3D 화면이 즉시 열립니다. (동일 Wi-Fi)
+        </div>
+        <input type="text" id="result-mobile-url" class="input-control" readonly style="font-size:11px;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="field-label">고객에게 발송될 문자(SMS) 내용 미리보기</label>
+      <div id="sms-preview-text" style="background:var(--bg-canvas); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; white-space:pre-wrap; color:var(--text-primary); max-height:140px; overflow-y:auto;"></div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+      <a id="btn-trigger-sms" class="btn-primary" style="text-decoration:none;">문자 앱 실행 / 문구 복사</a>
+      <button id="btn-copy-sms" class="btn-outline">문구 전체 복사</button>
+    </div>
+    <button id="btn-open-customer-view" class="btn-outline" style="width:100%; margin-top:8px;">
+      현재 기기에서 소비자 화면 바로 열어보기
+    </button>
+  </div>
+</div>
+
+<!-- 토스트 알림 -->
+<div id="toast-box" class="toast-msg"></div>
+
+<style>
+  @media (max-width: 1023px) {
+    #orders-desktop-table { display: none !important; }
+    #orders-mobile-cards { display: block !important; }
+  }
+</style>
+
+</body>
+</html>

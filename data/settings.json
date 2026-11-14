@@ -1,0 +1,42 @@
+{
+  "companyName": "우드크래프트 키친 스튜디오",
+  "companyPhone": "010-0000-0000",
+  "bankName": "국민은행",
+  "bankAccount": "123402-04-567890",
+  "bankHolder": "우드크래프트 (가구공방)",
+  "woodBodyName": "친환경 E0 자작합판 18T 원목 몸통",
+  "woodBodyPerMeter": 230000,
+  "countertopName": "LG/롯데 40T 오로라 비앙코 인조대리석",
+  "countertopPerMeter": 180000,
+  "countertopHoleCut": 60000,
+  "installBase": 250000,
+  "installPerMeter": 40000,
+  "marginPercent": 25,
+  "depositPercent": 10,
+  "fixedItems": [
+    {
+      "id": "item-sink",
+      "name": "백조 Grand 사각 싱크볼 + 거위목 수전 세트",
+      "price": 210000,
+      "enabled": true
+    },
+    {
+      "id": "item-hinge",
+      "name": "독일식 댐퍼 경첩 & 3단 볼레일 하드웨어 일체",
+      "price": 130000,
+      "enabled": true
+    },
+    {
+      "id": "item-hood",
+      "name": "히든 슬림 빌트인 후드 (기본형)",
+      "price": 150000,
+      "enabled": false
+    },
+    {
+      "id": "item-led",
+      "name": "상부장 하단 T5 온백색 LED 간접조명 시공",
+      "price": 60000,
+      "enabled": true
+    }
+  ]
+}
