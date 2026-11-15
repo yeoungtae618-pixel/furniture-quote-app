@@ -267,15 +267,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? s.includedItems
       : (settings.fixedItems || []).filter(i => i.enabled).map(i => i.name);
 
-    const supName = settings.companyName || 'WOODCRAFT STUDIO';
-    const supOwner = settings.companyOwner || '대표이사';
-    const supPhone = settings.companyPhone || '-';
-    const supBizNo = settings.companyBizNo || '-';
-    const supAddr = settings.companyAddress || '-';
+    const supName = settings.companyName || '피앙세가구';
+    const supOwner = settings.companyOwner || '대표 홍길동';
+    const supPhone = settings.companyPhone || '010-0000-0000';
+    const supBizNo = settings.companyBizNo || '123-45-67890';
+    const supAddr = settings.companyAddress || '경기도 남양주시 가구공단로 123';
+    const sealTop = settings.sealTextTop || (supName.length >= 3 ? supName.substring(0, 3) : supName);
+    const sealBot = settings.sealTextBot || '가구인';
 
     // 상단 헤더 & 문서 기본정보
     setText('view-company-name', supName);
     setText('view-cust-name', cust.name || '고객');
+    setText('view-brand-mark', supName.charAt(0));
+    document.title = `${supName} — 맞춤 가구 제작 및 시공 공급계약서`;
     setText('doc-quote-id', q.id);
     setText('doc-created-date', formatKoreanDate(q.createdAt));
     setText('doc-sign-date', formatKoreanDate(q.signedAt || q.createdAt));
@@ -297,6 +301,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setText('sign-box-sup-bizno', supBizNo);
     setText('sign-box-sup-addr', supAddr);
     setText('sign-box-sup-owner', supOwner);
+
+    setText('seal-text-top', sealTop);
+    setText('seal-text-bot', sealBot);
 
     // 2. 공급 품목 명세표 (간략 사양 자동 반영)
     const layoutNote = (s.layoutType === 'l_left' || s.layoutType === 'l_right')

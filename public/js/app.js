@@ -73,7 +73,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetch('/api/server-info').then(r => r.json())
       ]);
 
-      if (setRes.success) settings = setRes.settings;
+      if (setRes.success) {
+        settings = setRes.settings;
+        updateAppBrandHeaders(settings.companyName);
+      }
       if (doorRes.success) doorCatalog = doorRes.doors;
       if (infoRes.success) serverInfo = infoRes;
 
@@ -89,7 +92,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const ipDisplay = document.getElementById('sidebar-mobile-url');
       if (ipDisplay) ipDisplay.innerText = mobileUrl;
 
-      // 설정 폼 채우기
+      // 설정 및 사업자 정보 폼 채우기
+      populateCompanyForm();
       populateSettingsForm();
       renderDoorAdminTable();
 
@@ -235,12 +239,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 하단 바)
-  const navViews = ['studio', 'orders', 'settings', 'doors'];
+  // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 상단/하단 전환)
+  const navViews = ['studio', 'orders', 'company', 'settings', 'doors'];
   const pageTitles = {
     studio: { title: '3D 도면 설계 및 현장 실측', desc: '주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.' },
     orders: { title: '수주 및 고객 견적 관리', desc: '발송된 견적 현황과 계약서 서명, 입금 완료 및 누적 매출을 관리합니다.' },
-    settings: { title: '고정 단가표 및 회사 설정', desc: '견적서에 들어가는 고정 항목과 단가, 마진율, 입금 계좌를 웹에서 직접 수정합니다.' },
+    company: { title: '피앙세가구 사업자 정보 관리', desc: '상호명, 대표자, 사업자등록번호, 주소, 입금 계좌 및 직인을 관리하며 계약서와 문자에 자동 연동됩니다.' },
+    settings: { title: '자재별 고정 단가표 설정', desc: '원목 몸통, 대리석 상판 단가, 기본 시공비, 마진율 및 고정 부속품을 직접 수정합니다.' },
     doors: { title: '기성품 도어 카탈로그 관리', desc: '외주 도어 업체별 모델과 헤베(m²)당 단가를 등록하고 수정합니다.' }
   };
 
@@ -261,6 +266,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (viewName === 'orders') loadOrdersTable();
+    if (viewName === 'company') populateCompanyForm();
     if (viewName === 'doors') renderDoorAdminTable();
   }
 
@@ -679,14 +685,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 발송될 문자 내용 미리보기
+    const smsCompany = settings.companyName || '피앙세가구';
+    const smsBank = `${settings.bankName || '국민은행'} ${settings.bankAccount || '123402-04-567890'} (예금주: ${settings.bankHolder || smsCompany})`;
     const smsText =
-      `[${settings.companyName || '우드크래프트'} 맞춤 씽크대 공급계약]\n` +
+      `[${smsCompany} 맞춤 씽크대 공급계약]\n` +
       `${quote.customer.name}님, 실측 3D · 2D 평면 도면 및 정식 공급계약서가 도착했습니다.\n\n` +
       `• 규격: ${quote.spec.layoutLabel || getLayoutLabel(quote.spec)}\n` +
       `• 몸통: ${quote.spec.woodBodyName || '친환경 자작합판 원목'}\n` +
       `• 도어: ${quote.spec.selectedDoorName}\n` +
       `• 계약 공급가액: ${quote.pricing.totalPrice.toLocaleString()}원\n` +
-      `• 계약금(${settings.depositPercent || 10}%): ${quote.pricing.depositPrice.toLocaleString()}원\n\n` +
+      `• 계약금(${settings.depositPercent || 10}%): ${quote.pricing.depositPrice.toLocaleString()}원\n` +
+      `• 입금 계좌: ${smsBank}\n` +
+      (settings.companyPhone ? `• 문의/상담: ${settings.companyPhone}\n\n` : '\n') +
       `스마트폰으로 3D/평면 도면 확인 및 전자서명:\n${mobileViewerUrl}`;
 
     document.getElementById('sms-preview-text').innerText = smsText;
@@ -835,21 +845,145 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // 9. 관리자 - 고정 단가표 및 회사 설정 관리 (웹페이지에서 바로 수정!)
+  // 9-1. 전체 앱 상단 / 사이드바 브랜드 헤더 업데이트
+  function updateAppBrandHeaders(name) {
+    const brand = name || '피앙세가구';
+    const mark = brand.charAt(0);
+    const pName = document.getElementById('portal-brand-name');
+    const pMark = document.getElementById('portal-brand-mark');
+    const mName = document.getElementById('mobile-brand-name');
+    const mMark = document.getElementById('mobile-brand-mark');
+    const htmlTitle = document.getElementById('html-page-title');
+
+    if (pName) pName.innerText = brand;
+    if (pMark) pMark.innerText = mark;
+    if (mName) mName.innerText = brand;
+    if (mMark) mMark.innerText = mark;
+    if (htmlTitle) htmlTitle.innerText = `${brand} — 맞춤 씽크대 3D 견적 & 포털`;
+    document.title = `${brand} — 맞춤 씽크대 3D 견적 & 포털`;
+  }
+
+  // 9-2. 피앙세가구 사업자 정보 관리 폼 채우기 및 실시간 미리보기 연동
+  function populateCompanyForm() {
+    if (!settings) return;
+    const nameEl = document.getElementById('biz-company-name');
+    const ownerEl = document.getElementById('biz-company-owner');
+    const biznoEl = document.getElementById('biz-company-bizno');
+    const phoneEl = document.getElementById('biz-company-phone');
+    const addrEl = document.getElementById('biz-company-address');
+    const bankEl = document.getElementById('biz-bank-name');
+    const acctEl = document.getElementById('biz-bank-account');
+    const holderEl = document.getElementById('biz-bank-holder');
+    const sealTopEl = document.getElementById('biz-seal-top');
+    const sealBotEl = document.getElementById('biz-seal-bot');
+
+    if (nameEl) nameEl.value = settings.companyName || '피앙세가구';
+    if (ownerEl) ownerEl.value = settings.companyOwner || '대표 홍길동';
+    if (biznoEl) biznoEl.value = settings.companyBizNo || '123-45-67890';
+    if (phoneEl) phoneEl.value = settings.companyPhone || '010-0000-0000';
+    if (addrEl) addrEl.value = settings.companyAddress || '경기도 남양주시 가구공단로 123';
+    if (bankEl) bankEl.value = settings.bankName || '국민은행';
+    if (acctEl) acctEl.value = settings.bankAccount || '123402-04-567890';
+    if (holderEl) holderEl.value = settings.bankHolder || '피앙세가구';
+    if (sealTopEl) sealTopEl.value = settings.sealTextTop || '피앙세';
+    if (sealBotEl) sealBotEl.value = settings.sealTextBot || '가구인';
+
+    updateCompanyLivePreview();
+  }
+
+  function updateCompanyLivePreview() {
+    const name = (document.getElementById('biz-company-name')?.value || settings.companyName || '피앙세가구').trim();
+    const owner = (document.getElementById('biz-company-owner')?.value || settings.companyOwner || '대표 홍길동').trim();
+    const bizno = (document.getElementById('biz-company-bizno')?.value || settings.companyBizNo || '123-45-67890').trim();
+    const phone = (document.getElementById('biz-company-phone')?.value || settings.companyPhone || '010-0000-0000').trim();
+    const addr = (document.getElementById('biz-company-address')?.value || settings.companyAddress || '경기도 남양주시 가구공단로 123').trim();
+    const bank = (document.getElementById('biz-bank-name')?.value || settings.bankName || '국민은행').trim();
+    const acct = (document.getElementById('biz-bank-account')?.value || settings.bankAccount || '123402-04-567890').trim();
+    const holder = (document.getElementById('biz-bank-holder')?.value || settings.bankHolder || '피앙세가구').trim();
+    const sealTop = (document.getElementById('biz-seal-top')?.value || settings.sealTextTop || '피앙세').trim();
+    const sealBot = (document.getElementById('biz-seal-bot')?.value || settings.sealTextBot || '가구인').trim();
+
+    // 계약서 공급자 날인 박스 미리보기
+    const pvName = document.getElementById('pv-biz-name');
+    const pvOwner = document.getElementById('pv-biz-owner');
+    const pvNo = document.getElementById('pv-biz-no');
+    const pvAddr = document.getElementById('pv-biz-addr');
+    const pvBank = document.getElementById('pv-biz-bank');
+
+    if (pvName) pvName.innerText = name;
+    if (pvOwner) pvOwner.innerText = owner;
+    if (pvNo) pvNo.innerText = bizno;
+    if (pvAddr) pvAddr.innerText = addr;
+    if (pvBank) pvBank.innerText = `${bank} ${acct} (${holder})`;
+
+    // 문자(SMS) 미리보기
+    const smsHeader = document.getElementById('pv-sms-header');
+    const smsBank = document.getElementById('pv-sms-bank');
+    const smsPhone = document.getElementById('pv-sms-phone');
+    if (smsHeader) smsHeader.innerText = `[${name}] 맞춤 씽크대 공급계약`;
+    if (smsBank) smsBank.innerText = `${bank} ${acct} (${holder})`;
+    if (smsPhone) smsPhone.innerText = phone;
+
+    // 직인 도장 미리보기
+    const sTop = document.getElementById('biz-seal-preview-top');
+    const sBot = document.getElementById('biz-seal-preview-bot');
+    if (sTop) sTop.textContent = sealTop;
+    if (sBot) sBot.textContent = sealBot;
+  }
+
+  // 실시간 입력 이벤트 리스너 등록
+  [
+    'biz-company-name', 'biz-company-owner', 'biz-company-bizno', 'biz-company-phone',
+    'biz-company-address', 'biz-bank-name', 'biz-bank-account', 'biz-bank-holder',
+    'biz-seal-top', 'biz-seal-bot'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateCompanyLivePreview);
+    }
+  });
+
+  // 사업자 정보 저장 버튼
+  const btnSaveBiz = document.getElementById('btn-save-biz-info');
+  if (btnSaveBiz) {
+    btnSaveBiz.addEventListener('click', async () => {
+      const updated = {
+        ...settings,
+        companyName: document.getElementById('biz-company-name').value.trim() || '피앙세가구',
+        companyOwner: document.getElementById('biz-company-owner').value.trim() || '대표 홍길동',
+        companyBizNo: document.getElementById('biz-company-bizno').value.trim() || '123-45-67890',
+        companyPhone: document.getElementById('biz-company-phone').value.trim() || '010-0000-0000',
+        companyAddress: document.getElementById('biz-company-address').value.trim() || '경기도 남양주시 가구공단로 123',
+        bankName: document.getElementById('biz-bank-name').value.trim() || '국민은행',
+        bankAccount: document.getElementById('biz-bank-account').value.trim() || '123402-04-567890',
+        bankHolder: document.getElementById('biz-bank-holder').value.trim() || '피앙세가구',
+        sealTextTop: document.getElementById('biz-seal-top').value.trim() || '피앙세',
+        sealTextBot: document.getElementById('biz-seal-bot').value.trim() || '가구인'
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated)
+        });
+        const data = await res.json();
+        if (data.success) {
+          settings = data.settings;
+          updateAppBrandHeaders(settings.companyName);
+          updateCompanyLivePreview();
+          calculateQuote();
+          showToast(`'${settings.companyName}' 사업자 정보가 정상 저장되었습니다. 계약서 및 발송 문자에 즉시 적용되었습니다.`);
+        }
+      } catch (err) {
+        alert('사업자 정보 저장 실패: ' + err.message);
+      }
+    });
+  }
+
+  // 9-3. 관리자 - 고정 단가표 및 마진 설정 관리
   function populateSettingsForm() {
     if (!settings) return;
-    document.getElementById('set-company-name').value = settings.companyName || '';
-    const ownerEl = document.getElementById('set-company-owner');
-    const bizEl = document.getElementById('set-company-bizno');
-    const addrEl = document.getElementById('set-company-address');
-    if (ownerEl) ownerEl.value = settings.companyOwner || '';
-    if (bizEl) bizEl.value = settings.companyBizNo || '';
-    if (addrEl) addrEl.value = settings.companyAddress || '';
-    document.getElementById('set-company-phone').value = settings.companyPhone || '';
-    document.getElementById('set-bank-name').value = settings.bankName || '';
-    document.getElementById('set-bank-account').value = settings.bankAccount || '';
-    document.getElementById('set-bank-holder').value = settings.bankHolder || '';
-
     document.getElementById('set-wood-name').value = settings.woodBodyName || '';
     document.getElementById('set-wood-price').value = settings.woodBodyPerMeter || 230000;
     document.getElementById('set-top-name').value = settings.countertopName || '';
@@ -903,20 +1037,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 설정 전체 저장 버튼
   document.getElementById('btn-save-settings').addEventListener('click', async () => {
-    const ownerEl = document.getElementById('set-company-owner');
-    const bizEl = document.getElementById('set-company-bizno');
-    const addrEl = document.getElementById('set-company-address');
-
     const updated = {
       ...settings,
-      companyName: document.getElementById('set-company-name').value.trim(),
-      companyOwner: ownerEl ? ownerEl.value.trim() : (settings.companyOwner || ''),
-      companyBizNo: bizEl ? bizEl.value.trim() : (settings.companyBizNo || ''),
-      companyAddress: addrEl ? addrEl.value.trim() : (settings.companyAddress || ''),
-      companyPhone: document.getElementById('set-company-phone').value.trim(),
-      bankName: document.getElementById('set-bank-name').value.trim(),
-      bankAccount: document.getElementById('set-bank-account').value.trim(),
-      bankHolder: document.getElementById('set-bank-holder').value.trim(),
       woodBodyName: document.getElementById('set-wood-name').value.trim(),
       woodBodyPerMeter: parseInt(document.getElementById('set-wood-price').value) || 230000,
       countertopName: document.getElementById('set-top-name').value.trim(),
@@ -938,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (data.success) {
         settings = data.settings;
         calculateQuote();
-        showToast('고정 단가표 및 계좌 설정이 저장되어 견적에 즉시 반영되었습니다.');
+        showToast('자재별 기준 단가표 및 시공 마진이 저장되어 견적에 즉시 반영되었습니다.');
       }
     } catch (err) {
       alert('저장 실패: ' + err.message);

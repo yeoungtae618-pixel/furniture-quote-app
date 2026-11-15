@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WOODCRAFT STUDIO — 맞춤 씽크대 3D 견적 & 관리자 포털</title>
+  <title id="html-page-title">피앙세가구 — 맞춤 씽크대 3D 견적 & 포털</title>
   
   <link rel="stylesheet" href="/css/style.css">
   
@@ -24,10 +24,10 @@
   <aside class="sidebar">
     <div>
       <div class="brand-header">
-        <div class="brand-mark">W</div>
+        <div class="brand-mark" id="portal-brand-mark">P</div>
         <div>
-          <div class="brand-name">WOODCRAFT</div>
-          <div class="brand-sub">맞춤 씽크대 견적 & 설계 포털</div>
+          <div class="brand-name" id="portal-brand-name">피앙세가구</div>
+          <div class="brand-sub" id="portal-brand-sub">맞춤 씽크대 견적 & 설계 포털</div>
         </div>
       </div>
 
@@ -40,9 +40,13 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           수주 및 고객 관리
         </button>
+        <button class="nav-item" data-nav="company">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 3h6v4H9z"/></svg>
+          사업자 정보 관리
+        </button>
         <button class="nav-item" data-nav="settings">
           <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          고정 단가표 및 계좌 설정
+          자재 단가 및 시공 설정
         </button>
         <button class="nav-item" data-nav="doors">
           <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
@@ -63,13 +67,13 @@
   <!-- [모바일 전용] 미니멀 상단 헤더 -->
   <header class="mobile-header">
     <div style="display:flex; align-items:center; gap:9px;">
-      <div class="brand-mark" style="width:30px; height:30px; font-size:14px;">W</div>
+      <div class="brand-mark" id="mobile-brand-mark" style="width:30px; height:30px; font-size:14px;">P</div>
       <div>
-        <div style="font-size:14px; font-weight:700; color:var(--text-primary);">WOODCRAFT STUDIO</div>
-        <div style="font-size:10px; color:var(--text-secondary);">맞춤 씽크대 3D 실측</div>
+        <div id="mobile-brand-name" style="font-size:14px; font-weight:700; color:var(--text-primary);">피앙세가구</div>
+        <div style="font-size:10px; color:var(--text-secondary);">맞춤 씽크대 3D 실측 & 도면</div>
       </div>
     </div>
-    <span class="badge badge-signed" style="background:var(--brand-soft); color:var(--brand-dark);">현장 실측 모드</span>
+    <span class="badge badge-signed" style="background:var(--brand-soft); color:var(--brand-dark);">피앙세 직영</span>
   </header>
 
   <!-- 메인 작업 공간 -->
@@ -538,56 +542,200 @@
     </section>
 
     <!-- ===================================================
-         뷰 3: 고정 단가표 및 회사/계좌 설정 (웹에서 바로 수정!)
+         뷰: 피앙세가구 사업자 정보 관리 (계약서·문자·포털 실시간 연동)
+         =================================================== -->
+    <section id="view-company" style="display:none;">
+      <div style="display:grid; grid-template-columns:1fr 340px; gap:20px; max-width:1120px;">
+        
+        <!-- 좌측: 사업자 정보 & 입금 계좌 & 직인 설정 폼 -->
+        <div style="display:flex; flex-direction:column; gap:18px;">
+          
+          <!-- 카드 1: 상호 및 사업자등록 정보 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 3h6v4H9z"/></svg>
+                공급자(을) 기본 사업자 정보
+              </div>
+              <span style="font-size:11px; color:var(--brand); font-weight:600;">계약서 및 문자에 즉시 연동</span>
+            </div>
+            <div class="card-body">
+              <div class="grid-2" style="margin-bottom:12px;">
+                <div>
+                  <label class="field-label">상호 / 가구 브랜드명 <span style="color:var(--brand);">*</span></label>
+                  <input type="text" id="biz-company-name" class="input-control" value="피앙세가구" placeholder="예: 피앙세가구">
+                  <span style="font-size:11px; color:var(--text-secondary); margin-top:3px; display:block;">포털 사이드바, 상단 로고, 계약서 상호로 노출됩니다.</span>
+                </div>
+                <div>
+                  <label class="field-label">대표자 성명 <span style="color:var(--brand);">*</span></label>
+                  <input type="text" id="biz-company-owner" class="input-control" value="대표 홍길동" placeholder="예: 대표 홍길동">
+                  <span style="font-size:11px; color:var(--text-secondary); margin-top:3px; display:block;">계약서 공급자 서명란에 대표자로 표기됩니다.</span>
+                </div>
+              </div>
+
+              <div class="grid-2" style="margin-bottom:12px;">
+                <div>
+                  <label class="field-label">사업자등록번호</label>
+                  <input type="text" id="biz-company-bizno" class="input-control" value="123-45-67890" placeholder="예: 123-45-67890">
+                </div>
+                <div>
+                  <label class="field-label">대표 고객센터 / 상담 전화</label>
+                  <input type="text" id="biz-company-phone" class="input-control" value="010-0000-0000" placeholder="예: 010-1234-5678">
+                </div>
+              </div>
+
+              <div>
+                <label class="field-label">사업장 / 가구 제작 공장 주소</label>
+                <input type="text" id="biz-company-address" class="input-control" value="경기도 남양주시 가구공단로 123" placeholder="예: 경기도 남양주시 가구공단로 123">
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 2: 계약금 및 대금 입금 계좌 정보 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                계약금 입금 지정 계좌 관리
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">공급계약서 제1조 및 문자 안내에 표기</span>
+            </div>
+            <div class="card-body">
+              <div class="grid-3">
+                <div>
+                  <label class="field-label">입금 은행</label>
+                  <input type="text" id="biz-bank-name" class="input-control" value="국민은행" placeholder="예: 국민은행">
+                </div>
+                <div>
+                  <label class="field-label">계좌번호</label>
+                  <input type="text" id="biz-bank-account" class="input-control" value="123402-04-567890" placeholder="예: 123402-04-567890">
+                </div>
+                <div>
+                  <label class="field-label">예금주</label>
+                  <input type="text" id="biz-bank-holder" class="input-control" value="피앙세가구" placeholder="예: 피앙세가구">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 3: 공급자 공식 직인(도장) 텍스트 커스텀 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+                계약서 공식 직인(인감) 도장 설정
+              </div>
+              <span style="font-size:11px; color:var(--text-secondary);">전자계약서 우측 하단에 공식 날인됩니다</span>
+            </div>
+            <div class="card-body">
+              <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:240px;">
+                  <div class="grid-2" style="margin-bottom:8px;">
+                    <div>
+                      <label class="field-label">직인 상단 문구 (3~4자)</label>
+                      <input type="text" id="biz-seal-top" class="input-control" value="피앙세" maxlength="4">
+                    </div>
+                    <div>
+                      <label class="field-label">직인 하단 문구 (3~4자)</label>
+                      <input type="text" id="biz-seal-bot" class="input-control" value="가구인" maxlength="4">
+                    </div>
+                  </div>
+                  <p style="font-size:11.5px; color:var(--text-secondary); margin:0;">
+                    붉은색 정통 인감 도장 스타일로 자동 조합되어 전자공급계약서에 인쇄·표시됩니다.
+                  </p>
+                </div>
+
+                <!-- 직인 실시간 미리보기 스탬프 -->
+                <div style="text-align:center; padding:10px 14px; background:var(--bg-subtle); border-radius:8px; border:1px solid var(--border);">
+                  <div style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">직인 도장 미리보기</div>
+                  <svg id="biz-preview-seal" class="supplier-seal-svg" style="width:58px; height:58px;" viewBox="0 0 64 64">
+                    <rect x="6" y="6" width="52" height="52" rx="6" fill="none" stroke="#B83227" stroke-width="3"/>
+                    <rect x="11" y="11" width="42" height="42" rx="3" fill="none" stroke="#B83227" stroke-width="1"/>
+                    <text id="biz-seal-preview-top" x="32" y="29" text-anchor="middle" fill="#B83227" font-size="13" font-weight="800" font-family="serif">피앙세</text>
+                    <text id="biz-seal-preview-bot" x="32" y="46" text-anchor="middle" fill="#B83227" font-size="13" font-weight="800" font-family="serif">가구인</text>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 저장 버튼 -->
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="button" id="btn-save-biz-info" class="btn-primary" style="width:auto; padding:12px 28px; font-size:14px;">
+              사업자 정보 저장 및 전체 계약서·문자 동기화
+            </button>
+          </div>
+        </div>
+
+        <!-- 우측: 실시간 반영 시뮬레이션 미리보기 (계약서 날인란 & 문자 안내) -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- 미리보기 1: 공급계약서 날인 박스 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="font-size:13px;">계약서 '을(공급자)' 날인 미리보기</div>
+            </div>
+            <div class="card-body" style="padding:14px; background:#fdfdfc; border-radius:0 0 10px 10px;">
+              <div style="border:1px solid #d4c8be; padding:12px; border-radius:6px; font-size:11.5px; line-height:1.6; background:#fff;">
+                <div style="font-weight:700; color:#5c4d42; border-bottom:1px solid #eee; padding-bottom:4px; margin-bottom:6px;">공급자 (을) 정보</div>
+                <div>상 호 : <strong id="pv-biz-name">피앙세가구</strong></div>
+                <div>대표자 : <span id="pv-biz-owner">대표 홍길동</span> (인)</div>
+                <div>사업자번호 : <span id="pv-biz-no">123-45-67890</span></div>
+                <div>주 소 : <span id="pv-biz-addr">경기도 남양주시 가구공단로 123</span></div>
+                <div style="margin-top:6px; padding-top:6px; border-top:1px dashed #eee; color:var(--brand-dark); font-weight:600;">
+                  입금 : <span id="pv-biz-bank">국민은행 123402-04-567890 (피앙세가구)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 미리보기 2: 고객 발송 SMS 말풍선 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title" style="font-size:13px;">고객 발송 문자(SMS) 미리보기</div>
+            </div>
+            <div class="card-body" style="padding:14px;">
+              <div style="background:#e9f0ea; padding:12px; border-radius:12px; font-size:11.5px; line-height:1.6; color:#233026; border:1px solid #d0e0d2;">
+                <div style="font-weight:700; color:#2e5c38; margin-bottom:4px;" id="pv-sms-header">[피앙세가구] 맞춤 씽크대 공급계약</div>
+                <div style="margin-bottom:6px;">김민수 고객님, 실측 3D · 2D 평면 도면 및 정식 공급계약서가 도착했습니다.</div>
+                <div style="font-size:11px; color:#4a5c4e;">
+                  • 계약 공급가액: 3,450,000원<br>
+                  • 계약금(10%): 340,000원<br>
+                  • 입금: <span id="pv-sms-bank">국민은행 123402-04-567890 (피앙세가구)</span><br>
+                  • 문의: <span id="pv-sms-phone">010-0000-0000</span>
+                </div>
+                <div style="margin-top:6px; font-weight:600; color:#1b4324; word-break:break-all;">
+                  스마트폰 3D도면 확인 & 서명:<br>
+                  https://.../viewer.html?id=...
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 4: 자재 단가 및 시공 마진 설정
          =================================================== -->
     <section id="view-settings" style="display:none;">
       <div style="display:grid; grid-template-columns:1fr; gap:18px; max-width:920px;">
         
-        <!-- 회사 및 입금 계좌 정보 -->
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">상호명 및 계약금 입금 계좌 설정</div>
-            <span style="font-size:11px; color:var(--text-secondary);">소비자 계약서 화면에 즉시 반영됩니다</span>
-          </div>
-          <div class="card-body">
-            <div class="grid-3" style="margin-bottom:12px;">
+        <!-- 회사 및 사업자 정보 바로가기 안내 배너 -->
+        <div class="card" style="background:var(--brand-soft); border-color:var(--brand);">
+          <div class="card-body" style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:14px 18px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:36px; height:36px; border-radius:8px; background:var(--brand); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px;">🏢</div>
               <div>
-                <label class="field-label">상호 / 브랜드명 (공급자 을)</label>
-                <input type="text" id="set-company-name" class="input-control">
-              </div>
-              <div>
-                <label class="field-label">대표자 성명</label>
-                <input type="text" id="set-company-owner" class="input-control">
-              </div>
-              <div>
-                <label class="field-label">대표 전화번호</label>
-                <input type="text" id="set-company-phone" class="input-control">
+                <div style="font-size:13.5px; font-weight:700; color:var(--brand-dark);">피앙세가구 사업자 및 입금 계좌 관리</div>
+                <div style="font-size:11.5px; color:var(--text-secondary);">상호, 대표자, 사업자번호, 계좌 및 계약서 직인은 전용 탭에서 관리하실 수 있습니다.</div>
               </div>
             </div>
-            <div class="grid-2" style="margin-bottom:12px;">
-              <div>
-                <label class="field-label">사업자등록번호</label>
-                <input type="text" id="set-company-bizno" class="input-control">
-              </div>
-              <div>
-                <label class="field-label">공장 / 사업장 주소</label>
-                <input type="text" id="set-company-address" class="input-control">
-              </div>
-            </div>
-            <div class="grid-3">
-              <div>
-                <label class="field-label">입금 은행</label>
-                <input type="text" id="set-bank-name" class="input-control">
-              </div>
-              <div>
-                <label class="field-label">계좌 번호 (어머니 수신 계좌)</label>
-                <input type="text" id="set-bank-account" class="input-control">
-              </div>
-              <div>
-                <label class="field-label">예금주명</label>
-                <input type="text" id="set-bank-holder" class="input-control">
-              </div>
-            </div>
+            <button type="button" class="btn-primary btn-sm" onclick="document.querySelector('[data-nav=\'company\']').click()" style="width:auto; padding:8px 14px; white-space:nowrap;">
+              사업자 정보 관리로 이동 &rsaquo;
+            </button>
           </div>
         </div>
 
