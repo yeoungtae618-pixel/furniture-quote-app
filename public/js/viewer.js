@@ -92,6 +92,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     ? new KitchenPlan2DEngine(planContainer, normalizedSpec, { isViewerMode: true })
     : null;
 
+  // 뷰어 툴바 모바일 터치 슬라이드 & 마우스 휠 가로 스크롤 최적화
+  const viewerToolbar = canvasContainer ? canvasContainer.querySelector('.viewer-toolbar') : null;
+  if (viewerToolbar) {
+    ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove'].forEach(ev => {
+      viewerToolbar.addEventListener(ev, e => e.stopPropagation(), { passive: true });
+    });
+    viewerToolbar.addEventListener('wheel', e => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        viewerToolbar.scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+  }
+
   // 다중 품목 전환 탭 바 렌더링 (2개 이상 발주 시 활성화)
   const itemsBar = document.getElementById('viewer-items-bar');
   if (itemsBar && itemsList.length > 1) {

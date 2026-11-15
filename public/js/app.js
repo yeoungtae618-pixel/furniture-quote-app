@@ -171,6 +171,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         onSpecChange: handlePlan2DSync
       });
     }
+
+    // 모바일 터치 슬라이드 & 마우스 휠 가로 스크롤 최적화
+    const toolbar = container ? container.querySelector('.viewer-toolbar') : null;
+    if (toolbar) {
+      ['touchstart', 'touchmove', 'touchend', 'pointerdown', 'pointermove'].forEach(ev => {
+        toolbar.addEventListener(ev, e => e.stopPropagation(), { passive: true });
+      });
+      toolbar.addEventListener('wheel', e => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          toolbar.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
+
+    const pillsBar = document.getElementById('order-items-pills');
+    if (pillsBar) {
+      pillsBar.addEventListener('wheel', e => {
+        if (e.deltaY !== 0) {
+          e.preventDefault();
+          pillsBar.scrollLeft += e.deltaY;
+        }
+      }, { passive: false });
+    }
   }
 
   function syncVisualEngines() {
