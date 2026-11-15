@@ -120,6 +120,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     dimBtn.classList.toggle('active', isShow);
   });
 
+  const cadBtn = document.getElementById('btn-cad-toggle');
+  if (cadBtn) {
+    cadBtn.addEventListener('click', () => {
+      if (!engine) return;
+      const isShow = engine.toggleCadEdges();
+      cadBtn.classList.toggle('active', isShow);
+    });
+  }
+
+  const calloutBtn = document.getElementById('btn-callout-toggle');
+  if (calloutBtn) {
+    calloutBtn.addEventListener('click', () => {
+      if (!engine) return;
+      const isShow = engine.toggleCallouts();
+      calloutBtn.classList.toggle('active', isShow);
+    });
+  }
+
   // 모바일 전자서명 패드 (미서명 시 활성화)
   const signCanvas = document.getElementById('sign-pad');
   const ctx = signCanvas.getContext('2d');

@@ -52,12 +52,16 @@ class Furniture3DEngine {
 
       isDoorOpen: false,
       showDimensions: true,
+      showCadEdges: options.showCadEdges !== false,
+      showCallouts: options.showCallouts !== false,
       showProps: options.showProps !== false
     };
 
     this.doors = [];
     this.dimensionLines = [];
+    this.cadEdgeLines = [];
     this.dimBadges = {};
+    this.calloutBadges = {};
     this.textures = {};
     this.cameraAnim = null;
 
@@ -715,10 +719,17 @@ class Furniture3DEngine {
     });
 
     this.dimLineMat = new THREE.LineBasicMaterial({
-      color: 0x8c6239,
+      color: 0x2b2118,
       depthTest: false,
       transparent: true,
-      opacity: 0.9
+      opacity: 0.88
+    });
+
+    this.cadLineMat = new THREE.LineBasicMaterial({
+      color: 0x1f2429,
+      depthTest: true,
+      transparent: true,
+      opacity: 0.82
     });
 
     this.refreshDynamicMaterials();
@@ -816,30 +827,72 @@ class Furniture3DEngine {
   setupDimensionOverlay() {
     this.overlay = document.createElement('div');
     this.overlay.className = 'dimension-overlay';
-    this.overlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden;';
+    this.overlay.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden; z-index:10;';
     this.container.style.position = 'relative';
     this.container.appendChild(this.overlay);
 
     this.dimBadges = {
-      totalW: this.createDimBadge('전체 폭: 2,700mm', '#8C6239'),
-      sinkW: this.createDimBadge('개수대 1,000mm', '#3A2E26'),
-      prepW: this.createDimBadge('조리대 800mm', '#3A2E26'),
-      cookW: this.createDimBadge('가열대 900mm', '#3A2E26'),
-      lowerH: this.createDimBadge('하부 H:860', '#5C4D42'),
-      upperH: this.createDimBadge('상부 H:700', '#5C4D42'),
-      depth: this.createDimBadge('깊이 D:600', '#7A6F66'),
-      wingLen: this.createDimBadge('세로 1,800mm', '#8C6239')
+      totalW: this.createDimBadge('전체 폭: 2,700mm'),
+      sinkW: this.createDimBadge('개수대 1,000mm'),
+      prepW: this.createDimBadge('조리대 800mm'),
+      cookW: this.createDimBadge('가열대 900mm'),
+      lowerH: this.createDimBadge('하부 H:860'),
+      midwayH: this.createDimBadge('벽면 H:650'),
+      upperH: this.createDimBadge('상부 H:700'),
+      totalH: this.createDimBadge('총 높이 2,210mm'),
+      depth: this.createDimBadge('깊이 D:600'),
+      wingLen: this.createDimBadge('세로 1,800mm')
+    };
+
+    this.calloutBadges = {
+      sink: this.createCalloutBadge('싱크볼 (사각볼 W850)'),
+      prep: this.createCalloutBadge('조리대 (3단 서랍장)'),
+      cook: this.createCalloutBadge('가열대 (3구 인덕션)'),
+      top: this.createCalloutBadge('대리석 상판 (T40)'),
+      upper: this.createCalloutBadge('상부장 (플랩/스윙장)'),
+      wing: this.createCalloutBadge('코너 날개장 (식탁/아일랜드)')
     };
   }
 
-  createDimBadge(text, bgColor) {
+  createDimBadge(text) {
     const el = document.createElement('div');
+    el.className = 'cad-dim-badge';
     el.innerText = text;
     el.style.cssText = `
-      position: absolute; background: ${bgColor}; color: #fff;
-      padding: 3px 8px; border-radius: 5px; font-size: 11px; font-weight: 600;
-      box-shadow: 0 2px 6px rgba(42,33,27,0.22); transform: translate(-50%, -50%);
-      white-space: nowrap; display: ${this.spec.showDimensions ? 'block' : 'none'};
+      position: absolute;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1.2px solid #3d312a;
+      color: #2b2118;
+      padding: 2.5px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 2px 5px rgba(42,33,27,0.18);
+      transform: translate(-50%, -50%);
+      white-space: nowrap;
+      display: ${this.spec.showDimensions ? 'block' : 'none'};
+      pointer-events: none;
+    `;
+    this.overlay.appendChild(el);
+    return el;
+  }
+
+  createCalloutBadge(text) {
+    const el = document.createElement('div');
+    el.className = 'cad-callout-badge';
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:5px; background:rgba(37,30,24,0.92); color:#fff; padding:3px 8px; border-radius:12px; font-size:10.5px; font-weight:600; box-shadow:0 3px 8px rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.22); letter-spacing:-0.2px;">
+        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#d4a373;"></span>
+        <span>${text}</span>
+      </div>
+    `;
+    el.style.cssText = `
+      position: absolute;
+      transform: translate(-50%, -100%);
+      white-space: nowrap;
+      display: ${this.spec.showCallouts ? 'block' : 'none'};
+      pointer-events: none;
     `;
     this.overlay.appendChild(el);
     return el;
@@ -854,6 +907,11 @@ class Furniture3DEngine {
       this.doors = [];
       this.dimensionLines.forEach(l => this.scene.remove(l));
       this.dimensionLines = [];
+      this.cadEdgeLines.forEach(l => {
+        if (l.parent) l.parent.remove(l);
+        if (l.geometry) l.geometry.dispose();
+      });
+      this.cadEdgeLines = [];
     }
 
     this.kitchenGroup = new THREE.Group();
@@ -920,8 +978,27 @@ class Furniture3DEngine {
       this.buildShowroomProps(startX, totalW, lowerH, lowerD, sinkW, prepW, sideLen);
     }
 
-    // F. 도면 치수선
+    // F. 도면 치수선 (CAD 표준 45° 사선 틱 & 연장선)
     this.buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen);
+
+    // G. 건축 CAD 윤곽선 생성 (SketchUp / AutoCAD 3D 투시도 스타일)
+    this.addCadEdgesRecursively(this.kitchenGroup);
+  }
+
+  addCadEdgesRecursively(obj) {
+    if (!obj) return;
+    obj.traverse(child => {
+      if (child.isMesh && child.geometry && !child.userData.isCadEdge && !child.userData.isProp) {
+        try {
+          const edges = new THREE.EdgesGeometry(child.geometry, 22);
+          const line = new THREE.LineSegments(edges, this.cadLineMat);
+          line.userData.isCadEdge = true;
+          line.visible = Boolean(this.spec.showCadEdges);
+          child.add(line);
+          this.cadEdgeLines.push(line);
+        } catch(e) {}
+      }
+    });
   }
 
   updateUnderLights(lowerH, midwayH, sinkW, prepW, totalW, startX) {
@@ -1602,6 +1679,7 @@ class Furniture3DEngine {
     board.position.set(prepCX - 0.14, topY + 0.175, 0.07);
     board.rotation.x = -0.12;
     board.castShadow = true;
+    board.userData.isProp = true;
     this.kitchenGroup.add(board);
 
     // 2. 도자기 오일병 2종
@@ -1609,12 +1687,14 @@ class Furniture3DEngine {
     const bottle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.036, 0.19, 18), bottleMat1);
     bottle1.position.set(prepCX + 0.12, topY + 0.095, 0.11);
     bottle1.castShadow = true;
+    bottle1.userData.isProp = true;
     this.kitchenGroup.add(bottle1);
 
     const bottleMat2 = new THREE.MeshStandardMaterial({ color: 0xded6ca, roughness: 0.35 });
     const bottle2 = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.03, 0.14, 18), bottleMat2);
     bottle2.position.set(prepCX + 0.2, topY + 0.07, 0.14);
     bottle2.castShadow = true;
+    bottle2.userData.isProp = true;
     this.kitchenGroup.add(bottle2);
 
     // 3. ㄱ자 날개 코너가 있는 경우 에스프레소/드립 케틀 실루엣 + 도자기 화병
@@ -1629,6 +1709,7 @@ class Furniture3DEngine {
       );
       vase.position.set(kx, topY + 0.085, kz);
       vase.castShadow = true;
+      vase.userData.isProp = true;
       this.kitchenGroup.add(vase);
 
       const stemMat = new THREE.MeshStandardMaterial({ color: 0x5d6e52, roughness: 0.7 });
@@ -1638,6 +1719,7 @@ class Furniture3DEngine {
         leaf.position.set(kx + (i - 1) * 0.03, topY + 0.21 + i * 0.015, kz + (i % 2) * 0.02);
         leaf.rotation.z = (i - 1) * 0.25;
         leaf.castShadow = true;
+        leaf.userData.isProp = true;
         this.kitchenGroup.add(leaf);
       }
     }
@@ -1645,55 +1727,123 @@ class Furniture3DEngine {
 
   buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen) {
     const halfW = totalW / 2;
-    const offset = 0.16;
+    const offset = 0.18;
+    const isL = (this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right');
+    const isLeftL = this.spec.layoutType === 'l_left';
 
-    const totalTopY = lowerH + midwayH + upperH + 0.08;
+    // 1. 최상단 전체 폭 (Total Width) 치수선 + 45° 사선 틱
+    const totalTopY = lowerH + midwayH + upperH + 0.12;
     this.createLine([-halfW, totalTopY, upperD], [halfW, totalTopY, upperD]);
-    this.createLine([-halfW, totalTopY - 0.04, upperD], [-halfW, totalTopY + 0.04, upperD]);
-    this.createLine([halfW, totalTopY - 0.04, upperD], [halfW, totalTopY + 0.04, upperD]);
+    // 보조 연장선 (Extension Lines)
+    this.createLine([-halfW, totalTopY - 0.08, upperD], [-halfW, totalTopY + 0.04, upperD]);
+    this.createLine([halfW, totalTopY - 0.08, upperD], [halfW, totalTopY + 0.04, upperD]);
+    // 45° 건축 사선 틱 (Architectural slash ticks)
+    this.createArchitecturalTick(-halfW, totalTopY, upperD, 'xy');
+    this.createArchitecturalTick(halfW, totalTopY, upperD, 'xy');
 
-    const dimY = 0.03;
+    // 2. 하부장 전면 모듈별 분할 치수선 (Sink / Prep / Cooktop)
+    const dimY = 0.02;
     const dimZ = lowerD + offset;
-
     const x1 = startX;
     const x2 = startX + sinkW;
     const x3 = x2 + prepW;
     const x4 = x3 + cookW;
 
+    // 메인 전면 치수 기준선
     this.createLine([x1, dimY, dimZ], [x4, dimY, dimZ]);
     [x1, x2, x3, x4].forEach(x => {
-      this.createLine([x, 0, lowerD], [x, dimY + 0.04, dimZ]);
+      // 바닥 연장선
+      this.createLine([x, 0, lowerD], [x, dimY, dimZ + 0.03]);
+      // 틱 마크
+      this.createArchitecturalTick(x, dimY, dimZ, 'xz');
     });
 
+    // 3. 우측면 수직 높이 치수선 (하부장, 미드웨이 타일, 상부장, 전체 높이)
     const rightX = halfW + offset;
-    this.createLine([rightX, 0, lowerD], [rightX, lowerH, lowerD]);
-    this.createLine([halfW, lowerH, lowerD], [rightX + 0.04, lowerH, lowerD]);
-
     const uBotY = lowerH + midwayH;
     const uTopY = uBotY + upperH;
-    this.createLine([rightX, uBotY, upperD], [rightX, uTopY, upperD]);
-    this.createLine([halfW, uBotY, upperD], [rightX + 0.04, uBotY, upperD]);
-    this.createLine([halfW, uTopY, upperD], [rightX + 0.04, uTopY, upperD]);
 
-    if ((this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right') && sideLen > lowerD) {
-      const wx = this.spec.layoutType === 'l_left' ? (-halfW - offset) : (halfW + offset);
-      this.createLine([wx, 0.03, 0], [wx, 0.03, sideLen]);
+    // 하부장 높이
+    this.createLine([rightX, 0, lowerD], [rightX, lowerH, lowerD]);
+    this.createLine([halfW, lowerH, lowerD], [rightX + 0.05, lowerH, lowerD]);
+    this.createLine([halfW, 0, lowerD], [rightX + 0.05, 0, lowerD]);
+    this.createArchitecturalTick(rightX, 0, lowerD, 'xy');
+    this.createArchitecturalTick(rightX, lowerH, lowerD, 'xy');
+
+    if (this.spec.hasUpperCabinets) {
+      // 미드웨이 높이
+      this.createLine([rightX, lowerH, upperD], [rightX, uBotY, upperD]);
+      this.createLine([halfW, uBotY, upperD], [rightX + 0.05, uBotY, upperD]);
+      this.createArchitecturalTick(rightX, uBotY, upperD, 'xy');
+
+      // 상부장 높이
+      this.createLine([rightX, uBotY, upperD], [rightX, uTopY, upperD]);
+      this.createLine([halfW, uTopY, upperD], [rightX + 0.05, uTopY, upperD]);
+      this.createArchitecturalTick(rightX, uTopY, upperD, 'xy');
+
+      // 전체 높이 (Total Height) 바깥선
+      const farRightX = rightX + 0.12;
+      this.createLine([farRightX, 0, upperD], [farRightX, uTopY, upperD]);
+      this.createLine([rightX, 0, upperD], [farRightX + 0.03, 0, upperD]);
+      this.createLine([rightX, uTopY, upperD], [farRightX + 0.03, uTopY, upperD]);
+      this.createArchitecturalTick(farRightX, 0, upperD, 'xy');
+      this.createArchitecturalTick(farRightX, uTopY, upperD, 'xy');
     }
+
+    // 4. 하부장 깊이 치수선
+    const depthY = 0.02;
+    const depthX = halfW + offset;
+    this.createLine([depthX, depthY, 0], [depthX, depthY, lowerD]);
+    this.createLine([halfW, depthY, 0], [depthX + 0.03, depthY, 0]);
+    this.createLine([halfW, depthY, lowerD], [depthX + 0.03, depthY, lowerD]);
+    this.createArchitecturalTick(depthX, depthY, 0, 'xz');
+    this.createArchitecturalTick(depthX, depthY, lowerD, 'xz');
+
+    // 5. ㄱ자 코너 날개 구간 치수선
+    if (isL && sideLen > lowerD) {
+      const wx = isLeftL ? (-halfW - offset) : (halfW + offset);
+      this.createLine([wx, 0.02, 0], [wx, 0.02, sideLen]);
+      this.createLine([wx, 0.02, 0], [isLeftL ? -halfW : halfW, 0.02, 0]);
+      this.createLine([wx, 0.02, sideLen], [isLeftL ? (-halfW + lowerD) : (halfW - lowerD), 0.02, sideLen]);
+      this.createArchitecturalTick(wx, 0.02, 0, 'xz');
+      this.createArchitecturalTick(wx, 0.02, sideLen, 'xz');
+    }
+  }
+
+  createArchitecturalTick(x, y, z, plane = 'xy') {
+    const s = 0.024;
+    let p1, p2;
+    if (plane === 'xy') {
+      p1 = [x - s, y - s, z];
+      p2 = [x + s, y + s, z];
+    } else if (plane === 'xz') {
+      p1 = [x - s, y, z - s];
+      p2 = [x + s, y, z + s];
+    } else if (plane === 'yz') {
+      p1 = [x, y - s, z - s];
+      p2 = [x, y + s, z + s];
+    }
+    this.createLine(p1, p2);
   }
 
   createLine(p1, p2) {
     const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...p1), new THREE.Vector3(...p2)]);
     const line = new THREE.Line(geo, this.dimLineMat);
-    line.visible = this.spec.showDimensions;
+    line.visible = Boolean(this.spec.showDimensions);
     this.scene.add(line);
     this.dimensionLines.push(line);
   }
 
   updateDimensionBadges() {
-    if (!this.spec.showDimensions || !this.overlay) {
+    if (!this.overlay) return;
+
+    if (!this.spec.showDimensions) {
       Object.values(this.dimBadges).forEach(b => b.style.display = 'none');
-      return;
     }
+    if (!this.spec.showCallouts) {
+      Object.values(this.calloutBadges).forEach(b => b.style.display = 'none');
+    }
+    if (!this.spec.showDimensions && !this.spec.showCallouts) return;
 
     const totalW = this.spec.totalWidth / 1000;
     const lowerH = this.spec.lowerHeight / 1000;
@@ -1706,51 +1856,80 @@ class Furniture3DEngine {
     const cookW = this.spec.cooktopBayWidth / 1000;
     const sideLen = this.spec.sideLength / 1000;
     const startX = -totalW / 2;
-    const offset = 0.16;
+    const offset = 0.18;
     const isL = this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right';
-
-    this.dimBadges.totalW.innerText = `전체 폭: ${this.spec.totalWidth.toLocaleString()}mm`;
-    this.dimBadges.sinkW.innerText = `개수대 ${this.spec.sinkBayWidth}mm`;
-    this.dimBadges.prepW.innerText = `조리대 ${this.spec.prepBayWidth}mm`;
-    this.dimBadges.cookW.innerText = `가열대 ${this.spec.cooktopBayWidth}mm`;
-    this.dimBadges.lowerH.innerText = `하부 H:${this.spec.lowerHeight}`;
-    this.dimBadges.upperH.innerText = `상부 H:${this.spec.upperHeight}`;
-    this.dimBadges.depth.innerText = `깊이 D:${this.spec.lowerDepth}`;
-    this.dimBadges.wingLen.innerText = `세로 ${this.spec.sideLength.toLocaleString()}mm`;
-
-    const wingX = this.spec.layoutType === 'l_left' ? (startX + lowerD / 2) : (totalW / 2 - lowerD / 2);
-
-    const points = {
-      totalW: new THREE.Vector3(0, lowerH + midwayH + upperH + 0.1, upperD),
-      sinkW: new THREE.Vector3(startX + sinkW / 2, 0.05, lowerD + offset),
-      prepW: new THREE.Vector3(startX + sinkW + prepW / 2, 0.05, lowerD + offset),
-      cookW: new THREE.Vector3(startX + sinkW + prepW + cookW / 2, 0.05, lowerD + offset),
-      lowerH: new THREE.Vector3(totalW / 2 + offset, lowerH / 2, lowerD),
-      upperH: new THREE.Vector3(totalW / 2 + offset, lowerH + midwayH + upperH / 2, upperD),
-      depth: new THREE.Vector3(totalW / 2 + offset, 0.05, lowerD / 2),
-      wingLen: new THREE.Vector3(wingX, lowerH + 0.06, sideLen)
-    };
+    const isLeftL = this.spec.layoutType === 'l_left';
 
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
 
-    for (const key of Object.keys(this.dimBadges)) {
-      if (key === 'wingLen' && !isL) {
-        this.dimBadges[key].style.display = 'none';
-        continue;
+    // 1. 치수선 텍스트 업데이트
+    if (this.spec.showDimensions) {
+      this.dimBadges.totalW.innerText = `전체 W: ${this.spec.totalWidth.toLocaleString()}mm`;
+      this.dimBadges.sinkW.innerText = `개수대 ${this.spec.sinkBayWidth}mm`;
+      this.dimBadges.prepW.innerText = `조리대 ${this.spec.prepBayWidth}mm`;
+      this.dimBadges.cookW.innerText = `가열대 ${this.spec.cooktopBayWidth}mm`;
+      this.dimBadges.lowerH.innerText = `하부 H:${this.spec.lowerHeight}`;
+      this.dimBadges.midwayH.innerText = `벽면 H:${this.spec.midwayHeight}`;
+      this.dimBadges.upperH.innerText = `상부 H:${this.spec.upperHeight}`;
+      this.dimBadges.depth.innerText = `깊이 D:${this.spec.lowerDepth}`;
+      this.dimBadges.wingLen.innerText = `날개 L:${this.spec.sideLength.toLocaleString()}mm`;
+      this.dimBadges.totalH.innerText = `총 높이 ${(this.spec.lowerHeight + this.spec.midwayHeight + this.spec.upperHeight).toLocaleString()}mm`;
+
+      const wingX = isLeftL ? (startX + lowerD / 2) : (totalW / 2 - lowerD / 2);
+      const points = {
+        totalW: new THREE.Vector3(0, lowerH + midwayH + upperH + 0.16, upperD),
+        sinkW: new THREE.Vector3(startX + sinkW / 2, 0.04, lowerD + offset + 0.02),
+        prepW: new THREE.Vector3(startX + sinkW + prepW / 2, 0.04, lowerD + offset + 0.02),
+        cookW: new THREE.Vector3(startX + sinkW + prepW + cookW / 2, 0.04, lowerD + offset + 0.02),
+        lowerH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH / 2, lowerD),
+        midwayH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH + midwayH / 2, upperD),
+        upperH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH + midwayH + upperH / 2, upperD),
+        totalH: new THREE.Vector3(totalW / 2 + offset + 0.14, (lowerH + midwayH + upperH) / 2, upperD),
+        depth: new THREE.Vector3(totalW / 2 + offset + 0.02, 0.04, lowerD / 2),
+        wingLen: new THREE.Vector3(wingX, lowerH + 0.06, sideLen)
+      };
+
+      for (const [key, badge] of Object.entries(this.dimBadges)) {
+        if (key === 'wingLen' && !isL) { badge.style.display = 'none'; continue; }
+        if ((key === 'upperH' || key === 'midwayH' || key === 'totalH') && !this.spec.hasUpperCabinets) {
+          badge.style.display = 'none'; continue;
+        }
+        const pt = points[key];
+        if (!pt) continue;
+        const pos = pt.clone().project(this.camera);
+        if (pos.z > 1.0) { badge.style.display = 'none'; continue; }
+        badge.style.display = 'block';
+        badge.style.left = `${(pos.x * 0.5 + 0.5) * w}px`;
+        badge.style.top = `${(-(pos.y * 0.5) + 0.5) * h}px`;
       }
-      if (key === 'upperH' && !this.spec.hasUpperCabinets) {
-        this.dimBadges[key].style.display = 'none';
-        continue;
+    }
+
+    // 2. 부품 명칭 핀 (Callouts) 업데이트
+    if (this.spec.showCallouts) {
+      let sinkCX = startX + sinkW / 2;
+      let cookCX = startX + sinkW + prepW + cookW / 2;
+      let prepCX = startX + sinkW + prepW / 2;
+      const calloutPts = {
+        sink: new THREE.Vector3(sinkCX, lowerH + 0.04, lowerD * 0.45),
+        cook: new THREE.Vector3(cookCX, lowerH + 0.04, lowerD * 0.5),
+        prep: new THREE.Vector3(prepCX, lowerH * 0.55, lowerD + 0.015),
+        top: new THREE.Vector3(startX + 0.15, lowerH + 0.03, lowerD + 0.02),
+        upper: new THREE.Vector3(startX + totalW * 0.35, lowerH + midwayH + upperH * 0.55, upperD + 0.015),
+        wing: new THREE.Vector3(isLeftL ? (startX + lowerD * 0.5) : (totalW / 2 - lowerD * 0.5), lowerH + 0.03, Math.min(sideLen * 0.7, sideLen - 0.2))
+      };
+
+      for (const [key, badge] of Object.entries(this.calloutBadges)) {
+        if (key === 'wing' && !isL) { badge.style.display = 'none'; continue; }
+        if (key === 'upper' && !this.spec.hasUpperCabinets) { badge.style.display = 'none'; continue; }
+        const pt = calloutPts[key];
+        if (!pt) continue;
+        const pos = pt.clone().project(this.camera);
+        if (pos.z > 1.0) { badge.style.display = 'none'; continue; }
+        badge.style.display = 'block';
+        badge.style.left = `${(pos.x * 0.5 + 0.5) * w}px`;
+        badge.style.top = `${(-(pos.y * 0.5) + 0.5) * h}px`;
       }
-      const pos = points[key].clone().project(this.camera);
-      if (pos.z > 1.0) {
-        this.dimBadges[key].style.display = 'none';
-        continue;
-      }
-      this.dimBadges[key].style.display = 'block';
-      this.dimBadges[key].style.left = `${(pos.x * 0.5 + 0.5) * w}px`;
-      this.dimBadges[key].style.top = `${(-(pos.y * 0.5) + 0.5) * h}px`;
     }
   }
 
@@ -1835,13 +2014,30 @@ class Furniture3DEngine {
 
   toggleDimensions() {
     this.spec.showDimensions = !this.spec.showDimensions;
-    this.dimensionLines.forEach(l => l.visible = this.spec.showDimensions);
+    this.dimensionLines.forEach(l => l.visible = Boolean(this.spec.showDimensions));
     return this.spec.showDimensions;
+  }
+
+  toggleCadEdges() {
+    this.spec.showCadEdges = !this.spec.showCadEdges;
+    this.cadEdgeLines.forEach(l => l.visible = Boolean(this.spec.showCadEdges));
+    return this.spec.showCadEdges;
+  }
+
+  toggleCallouts() {
+    this.spec.showCallouts = !this.spec.showCallouts;
+    if (this.overlay) {
+      Object.values(this.calloutBadges).forEach(b => {
+        b.style.display = this.spec.showCallouts ? 'block' : 'none';
+      });
+    }
+    return this.spec.showCallouts;
   }
 
   captureImage(resolutionMultiplier = 2) {
     const origRatio = this.renderer.getPixelRatio();
     const prevDim = this.spec.showDimensions;
+    const prevCallouts = this.spec.showCallouts;
     this.dimensionLines.forEach(l => l.visible = false);
     if (this.overlay) this.overlay.style.display = 'none';
 

@@ -489,6 +489,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnDimToggle.classList.toggle('active', isShow);
   });
 
+  const btnCadToggle = document.getElementById('btn-cad-toggle');
+  if (btnCadToggle) {
+    btnCadToggle.addEventListener('click', () => {
+      if (!engine) return;
+      const isShow = engine.toggleCadEdges();
+      btnCadToggle.classList.toggle('active', isShow);
+    });
+  }
+
+  const btnCalloutToggle = document.getElementById('btn-callout-toggle');
+  if (btnCalloutToggle) {
+    btnCalloutToggle.addEventListener('click', () => {
+      if (!engine) return;
+      const isShow = engine.toggleCallouts();
+      btnCalloutToggle.classList.toggle('active', isShow);
+    });
+  }
+
   document.getElementById('btn-capture-3d').addEventListener('click', () => {
     if (!engine) return;
     const url = engine.captureImage(2);
