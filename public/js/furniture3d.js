@@ -595,82 +595,162 @@ class Furniture3DEngine {
     c.height = 1024;
     const ctx = c.getContext('2d');
 
+    const b = document.createElement('canvas');
+    b.width = 1024;
+    b.height = 1024;
+    const bctx = b.getContext('2d');
+
     if (topType === 'nero_black') {
-      ctx.fillStyle = '#212224';
+      // Nero Marquina (스페인 최고급 네로 마퀴나 블랙 마블)
+      ctx.fillStyle = '#18191c';
       ctx.fillRect(0, 0, 1024, 1024);
-      ctx.strokeStyle = 'rgba(235, 228, 215, 0.28)';
-      ctx.lineWidth = 2.2;
-      for (let i = 0; i < 8; i++) {
+      bctx.fillStyle = '#808080';
+      bctx.fillRect(0, 0, 1024, 1024);
+
+      // 미세 백색 안개 구름
+      for (let i = 0; i < 45; i++) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.022)';
         ctx.beginPath();
-        let x = Math.random() * 1024;
-        let y = 0;
-        ctx.moveTo(x, y);
-        while (y < 1024) {
-          y += 28;
-          x += (Math.random() - 0.45) * 42;
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-    } else if (topType === 'terrazzo_stone') {
-      ctx.fillStyle = '#ebe5dc';
-      ctx.fillRect(0, 0, 1024, 1024);
-      const flecks = ['#9b8b7a', '#c9b8a3', '#6b635b', '#ffffff', '#bfa382'];
-      for (let i = 0; i < 700; i++) {
-        ctx.fillStyle = flecks[i % flecks.length];
-        ctx.beginPath();
-        ctx.arc(Math.random() * 1024, Math.random() * 1024, 1.5 + Math.random() * 5, 0, Math.PI * 2);
+        ctx.arc(Math.random() * 1024, Math.random() * 1024, 60 + Math.random() * 120, 0, Math.PI * 2);
         ctx.fill();
       }
-    } else if (topType === 'cream_staron') {
-      ctx.fillStyle = '#f2eadc';
+
+      this.drawMarbleVeins(ctx, bctx, 'rgba(242, 238, 230, 0.85)', 'rgba(255, 255, 255, 0.92)', 7, true);
+    } else if (topType === 'calacatta_gold' || topType === 'cream_staron') {
+      // Calacatta Gold (이탈리아 프리미엄 칼라카타 골드 / 웜 비앙코)
+      const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+      grad.addColorStop(0, '#f9f6f0');
+      grad.addColorStop(0.5, '#f5f0e6');
+      grad.addColorStop(1, '#fbf8f2');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 1024, 1024);
-      ctx.strokeStyle = 'rgba(195, 175, 145, 0.25)';
-      ctx.lineWidth = 3;
-      for (let i = 0; i < 7; i++) {
+      bctx.fillStyle = '#808080';
+      bctx.fillRect(0, 0, 1024, 1024);
+
+      for (let i = 0; i < 60; i++) {
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(215, 178, 125, 0.045)' : 'rgba(182, 170, 152, 0.038)';
         ctx.beginPath();
-        let x = i * 150;
-        let y = 0;
-        ctx.moveTo(x, y);
-        while (y < 1024) {
-          y += 30;
-          x += Math.sin(y * 0.015 + i) * 16;
-          ctx.lineTo(x, y);
+        ctx.arc(Math.random() * 1024, Math.random() * 1024, 80 + Math.random() * 140, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      this.drawMarbleVeins(ctx, bctx, 'rgba(190, 158, 115, 0.65)', 'rgba(148, 136, 122, 0.45)', 7, false);
+      this.drawMarbleVeins(ctx, bctx, 'rgba(135, 125, 114, 0.42)', 'rgba(175, 145, 105, 0.55)', 5, false);
+    } else if (topType === 'terrazzo_stone') {
+      // Terrazzo Concrete (모던 하이엔드 테라조 칩 스톤)
+      ctx.fillStyle = '#eee9e0';
+      ctx.fillRect(0, 0, 1024, 1024);
+      bctx.fillStyle = '#808080';
+      bctx.fillRect(0, 0, 1024, 1024);
+      const chips = ['#8a7b6d', '#3e3a36', '#c4b5a3', '#faf6f0', '#b5926b', '#5c544d', '#ded7cc'];
+      for (let i = 0; i < 850; i++) {
+        ctx.fillStyle = chips[i % chips.length];
+        const cx = Math.random() * 1024;
+        const cy = Math.random() * 1024;
+        const cr = 1.5 + Math.random() * 6;
+        ctx.beginPath();
+        const pts = 4 + Math.floor(Math.random() * 4);
+        for (let p = 0; p < pts; p++) {
+          const ang = (p / pts) * Math.PI * 2;
+          const rad = cr * (0.6 + Math.random() * 0.8);
+          const px = cx + Math.cos(ang) * rad;
+          const py = cy + Math.sin(ang) * rad;
+          if (p === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         }
-        ctx.stroke();
+        ctx.closePath();
+        ctx.fill();
       }
     } else {
-      // white_marble
-      ctx.fillStyle = '#f5f2ed';
+      // Aurora Bianco (LG/롯데 프리미엄 오로라 비앙코 대리석 - 실사급 베이닝)
+      const grad = ctx.createLinearGradient(0, 0, 1024, 1024);
+      grad.addColorStop(0, '#fbfaf8');
+      grad.addColorStop(0.35, '#f5f3ee');
+      grad.addColorStop(0.7, '#f9f8f4');
+      grad.addColorStop(1, '#f3f0e8');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, 1024, 1024);
-      ctx.strokeStyle = 'rgba(170, 160, 148, 0.34)';
-      ctx.lineWidth = 2.4;
-      for (let i = 0; i < 8; i++) {
+      bctx.fillStyle = '#808080';
+      bctx.fillRect(0, 0, 1024, 1024);
+
+      for (let i = 0; i < 55; i++) {
+        ctx.fillStyle = 'rgba(195, 188, 178, 0.045)';
         ctx.beginPath();
-        let x = Math.random() * 1024;
-        let y = 0;
-        ctx.moveTo(x, y);
-        while (y < 1024) {
-          y += 26;
-          x += (Math.random() - 0.48) * 44;
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+        ctx.arc(Math.random() * 1024, Math.random() * 1024, 90 + Math.random() * 150, 0, Math.PI * 2);
+        ctx.fill();
       }
+
+      this.drawMarbleVeins(ctx, bctx, 'rgba(150, 142, 130, 0.55)', 'rgba(122, 115, 106, 0.72)', 8, false);
+      this.drawMarbleVeins(ctx, bctx, 'rgba(180, 172, 162, 0.42)', 'rgba(165, 156, 145, 0.55)', 6, false);
     }
 
     const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    // ExtrudeGeometry UV가 미터 단위이므로 0.55 배율로 자연스럽게 매핑
-    tex.repeat.set(0.55, 0.55);
+    const btex = new THREE.CanvasTexture(b);
+    [tex, btex].forEach(t => {
+      t.wrapS = THREE.RepeatWrapping;
+      t.wrapT = THREE.RepeatWrapping;
+      t.repeat.set(0.65, 0.65);
+    });
     tex.encoding = THREE.sRGBEncoding;
 
+    // 실사급 고광택 대리석 PBR (빛 반사 하이라이트 및 클리어코트 질감)
     return new THREE.MeshStandardMaterial({
       map: tex,
-      roughness: 0.18,
-      metalness: 0.06
+      bumpMap: btex,
+      bumpScale: 0.003,
+      roughness: 0.12,
+      metalness: 0.05
     });
+  }
+
+  drawMarbleVeins(ctx, bctx, subColor, mainColor, count, isDark) {
+    for (let v = 0; v < count; v++) {
+      ctx.save();
+      ctx.strokeStyle = mainColor;
+      ctx.lineWidth = 1.3 + Math.random() * 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      let x = Math.random() * 1024;
+      let y = Math.random() * 250;
+      const angle = 0.52 + (Math.random() - 0.5) * 0.55;
+      const length = 550 + Math.random() * 550;
+      let curDist = 0;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+
+      while (curDist < length && y < 1024 && x < 1024 && x > 0) {
+        const step = 18 + Math.random() * 24;
+        curDist += step;
+        x += Math.cos(angle) * step + (Math.random() - 0.5) * 28;
+        y += Math.sin(angle) * step + (Math.random() - 0.5) * 16;
+        ctx.lineTo(x, y);
+
+        if (Math.random() < 0.28) {
+          ctx.stroke();
+          ctx.save();
+          ctx.strokeStyle = subColor;
+          ctx.lineWidth = Math.max(0.6, ctx.lineWidth * 0.55);
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          let bx = x;
+          let by = y;
+          const bAngle = angle + (Math.random() < 0.5 ? 0.68 : -0.68);
+          for (let b = 0; b < 4; b++) {
+            bx += Math.cos(bAngle) * 24 + (Math.random() - 0.5) * 16;
+            by += Math.sin(bAngle) * 24 + (Math.random() - 0.5) * 16;
+            ctx.lineTo(bx, by);
+          }
+          ctx.stroke();
+          ctx.restore();
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        }
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   createBirchWoodTexture() {
@@ -735,6 +815,44 @@ class Furniture3DEngine {
       metalness: 0.94
     });
 
+    // 장식장 강화 유리문 (브론즈/스모크 틴티드 반투명 글래스)
+    this.glassDoorMat = new THREE.MeshStandardMaterial({
+      color: 0x42382f,
+      transparent: true,
+      opacity: 0.38,
+      roughness: 0.04,
+      metalness: 0.35
+    });
+
+    // 장식장 내부 8T 강화유리 선반
+    this.glassShelfMat = new THREE.MeshStandardMaterial({
+      color: 0xcde0e8,
+      transparent: true,
+      opacity: 0.58,
+      roughness: 0.05,
+      metalness: 0.25
+    });
+
+    // 신발장 거울 도어
+    this.mirrorMat = new THREE.MeshStandardMaterial({
+      color: 0xe8ecf0,
+      roughness: 0.02,
+      metalness: 0.98
+    });
+
+    // 슬림 알루미늄 프레임 (매트 블랙 / 샴페인 골드)
+    this.aluminumFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x222428,
+      roughness: 0.32,
+      metalness: 0.8
+    });
+
+    this.goldMetalMat = new THREE.MeshStandardMaterial({
+      color: 0xd4af37,
+      roughness: 0.25,
+      metalness: 0.85
+    });
+
     this.dimLineMat = new THREE.LineBasicMaterial({
       color: 0x2b2118,
       depthTest: false,
@@ -795,8 +913,11 @@ class Furniture3DEngine {
     backBase.position.set(0, 0.04, 0.005);
     this.roomGroup.add(backBase);
 
-    // 3. ㄱ자 레이아웃일 때 해당 측벽(내측면) 자동 생성
-    if (this.spec.layoutType === 'l_right') {
+    // 3. ㄱ자 및 ㄷ자 레이아웃일 때 해당 측벽(내측면) 자동 생성
+    const isR = this.spec.layoutType === 'l_right' || this.spec.layoutType === 'u_shape';
+    const isL = this.spec.layoutType === 'l_left' || this.spec.layoutType === 'u_shape';
+
+    if (isR) {
       const rwD = sideLen + 2.8;
       const rWall = new THREE.Mesh(new THREE.PlaneGeometry(rwD, ceilH + 1.2), this.wallMat);
       rWall.rotation.y = -Math.PI / 2;
@@ -807,7 +928,8 @@ class Furniture3DEngine {
       const rBase = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.08, rwD), baseMat);
       rBase.position.set(totalW / 2 - 0.005, 0.04, rwD / 2);
       this.roomGroup.add(rBase);
-    } else if (this.spec.layoutType === 'l_left') {
+    }
+    if (isL) {
       const lwD = sideLen + 2.8;
       const lWall = new THREE.Mesh(new THREE.PlaneGeometry(lwD, ceilH + 1.2), this.wallMat);
       lWall.rotation.y = Math.PI / 2;
@@ -920,7 +1042,10 @@ class Furniture3DEngine {
   // =========================================================
   // 3. 주방 씽크대 전체 빌드
   // =========================================================
-  buildKitchen() {
+  // =========================================================
+  // 3. 맞춤 가구 다중 카테고리 3D 통합 빌더 (씽크대, 붙박이장, 신발장, 아일랜드, 장식장 등)
+  // =========================================================
+  buildFurniture() {
     if (this.kitchenGroup) {
       this.scene.remove(this.kitchenGroup);
       this.doors = [];
@@ -936,6 +1061,44 @@ class Furniture3DEngine {
     this.kitchenGroup = new THREE.Group();
     this.scene.add(this.kitchenGroup);
 
+    const cat = this.spec.category || 'sink';
+    if (cat === 'wardrobe') {
+      this.buildWardrobe();
+    } else if (cat === 'shoe_cabinet') {
+      this.buildShoeCabinet();
+    } else if (cat === 'island') {
+      this.buildIslandTable();
+    } else if (cat === 'display_glass') {
+      this.buildGlassDisplayCabinet();
+    } else if (cat === 'tv_console') {
+      this.buildTvConsole();
+    } else if (cat === 'drawers') {
+      this.buildDrawersUnit();
+    } else if (cat === 'storage') {
+      this.buildStorageCabinet();
+    } else if (cat === 'prep_counter') {
+      this.buildPrepCounter();
+    } else if (cat === 'tall_cabinet') {
+      this.buildStandaloneTallCabinet();
+    } else if (cat === 'hood_cabinet') {
+      this.buildDedicatedHoodCabinet();
+    } else if (cat === 'base_corner') {
+      this.buildDedicatedBaseCorner();
+    } else if (cat === 'upper_corner') {
+      this.buildDedicatedUpperCorner();
+    } else {
+      this.buildKitchenLayout();
+    }
+
+    // CAD 윤곽선 생성
+    this.addCadEdgesRecursively(this.kitchenGroup);
+  }
+
+  buildKitchen() {
+    this.buildFurniture();
+  }
+
+  buildKitchenLayout() {
     const totalW = this.spec.totalWidth / 1000;
     const lowerH = this.spec.lowerHeight / 1000;
     const lowerD = this.spec.lowerDepth / 1000;
@@ -952,6 +1115,7 @@ class Furniture3DEngine {
     const startX = -totalW / 2;
     const isLeftL = this.spec.layoutType === 'l_left';
     const isRightL = this.spec.layoutType === 'l_right';
+    const isU = this.spec.layoutType === 'u_shape';
 
     // 키큰장 (가전수납장 / 롱팬트리 / 냉장고장) 계산
     const hasTall = Boolean(this.spec.tallCabinet && this.spec.tallCabinet !== 'none');
@@ -959,10 +1123,31 @@ class Furniture3DEngine {
     const isRightTall = this.spec.tallCabinet === 'right';
     const tallW = hasTall ? Math.min(1.2, (Number(this.spec.tallCabinetWidth) || 600) / 1000) : 0;
     const tallH = lowerH + midwayH + upperH;
-    const counterW = hasTall ? Math.max(1.2, totalW - tallW) : totalW;
-    const lowerStartX = isLeftTall ? (startX + tallW) : startX;
 
-    // A. 미드웨이 타일/빅슬랩 벽면 패널 (메인 + ㄱ자 측벽)
+    // 메인 하부장 및 상판 구간 계산 (키큰장 및 코너 간섭 완벽 회피)
+    let lowerStartX = startX;
+    let counterW = totalW;
+
+    if (this.spec.layoutType === 'straight') {
+      if (isLeftTall) {
+        lowerStartX = startX + tallW;
+        counterW = Math.max(1.0, totalW - tallW);
+      } else if (isRightTall) {
+        lowerStartX = startX;
+        counterW = Math.max(1.0, totalW - tallW);
+      }
+    } else if (isLeftL) {
+      lowerStartX = startX + lowerD;
+      counterW = isRightTall ? Math.max(1.0, totalW - lowerD - tallW) : Math.max(1.0, totalW - lowerD);
+    } else if (isRightL) {
+      lowerStartX = isLeftTall ? (startX + tallW) : startX;
+      counterW = isLeftTall ? Math.max(1.0, totalW - lowerD - tallW) : Math.max(1.0, totalW - lowerD);
+    } else if (isU) {
+      lowerStartX = startX + lowerD;
+      counterW = Math.max(1.0, totalW - lowerD * 2);
+    }
+
+    // A. 미드웨이 타일/빅슬랩 벽면 패널 (메인 + 코너 측벽)
     const tilePanel = new THREE.Mesh(
       new THREE.BoxGeometry(counterW + 0.04, midwayH + 0.14, 0.008),
       this.tileWallMat
@@ -971,27 +1156,61 @@ class Furniture3DEngine {
     tilePanel.receiveShadow = true;
     this.kitchenGroup.add(tilePanel);
 
-    if ((isLeftL || isRightL) && sideLen > lowerD) {
-      const sideTile = new THREE.Mesh(
+    if ((isLeftL || isU) && sideLen > lowerD) {
+      const lSideTile = new THREE.Mesh(
         new THREE.BoxGeometry(0.008, midwayH + 0.14, sideLen + 0.02),
         this.tileWallMat
       );
-      sideTile.position.set(
-        isLeftL ? (startX + 0.004) : (startX + totalW - 0.004),
-        lowerH + midwayH / 2,
-        sideLen / 2
+      lSideTile.position.set(startX + 0.004, lowerH + midwayH / 2, sideLen / 2);
+      lSideTile.receiveShadow = true;
+      this.kitchenGroup.add(lSideTile);
+    }
+    if ((isRightL || isU) && sideLen > lowerD) {
+      const rSideTile = new THREE.Mesh(
+        new THREE.BoxGeometry(0.008, midwayH + 0.14, sideLen + 0.02),
+        this.tileWallMat
       );
-      sideTile.receiveShadow = true;
-      this.kitchenGroup.add(sideTile);
+      rSideTile.position.set(startX + totalW - 0.004, lowerH + midwayH / 2, sideLen / 2);
+      rSideTile.receiveShadow = true;
+      this.kitchenGroup.add(rSideTile);
     }
 
-    // A-2. 키큰장 캐비닛 (밥솥/오븐장 / 냉장고장 / 롱팬트리)
+    // A-2. 키큰장 캐비닛 (밥솥/오븐장 / 냉장고장) — 레이아웃별 충돌 없는 정확한 위치 배치
     if (hasTall) {
-      const tallCX = isLeftTall ? (startX + tallW / 2) : (lowerStartX + counterW + tallW / 2);
-      this.buildTallCabinet(tallCX, tallW, tallH, lowerD, plinthH, this.spec.tallCabinetType || 'appliance');
+      let tallCX = 0;
+      let tallCZ = lowerD / 2;
+
+      if (this.spec.layoutType === 'straight') {
+        tallCX = isLeftTall ? (startX + tallW / 2) : (startX + totalW - tallW / 2);
+      } else if (isLeftL) {
+        if (isLeftTall) {
+          // 좌측 ㄱ자 날개 끝단에 배치하여 코너 충돌 완전 방지
+          tallCX = startX + lowerD / 2;
+          tallCZ = sideLen - tallW / 2;
+        } else {
+          tallCX = startX + totalW - tallW / 2;
+        }
+      } else if (isRightL) {
+        if (isRightTall) {
+          // 우측 ㄴ자 날개 끝단에 배치하여 코너 충돌 완전 방지
+          tallCX = startX + totalW - lowerD / 2;
+          tallCZ = sideLen - tallW / 2;
+        } else {
+          tallCX = startX + tallW / 2;
+        }
+      } else if (isU) {
+        if (isLeftTall) {
+          tallCX = startX + lowerD / 2;
+          tallCZ = sideLen - tallW / 2;
+        } else {
+          tallCX = startX + totalW - lowerD / 2;
+          tallCZ = sideLen - tallW / 2;
+        }
+      }
+      this.buildTallCabinet(tallCX, tallW, tallH, lowerD, plinthH, this.spec.tallCabinetType || 'appliance', tallCZ);
     }
 
-    // B. 하부장 캐비닛 (메인 라인 + ㄱ자 코너 날개장)
+    // B. 하부장 캐비닛 (메인 라인 + ㄱ/ㄴ/ㄷ자 코너 날개장)
     const curSum = sinkW + prepW + cookW;
     const scaleFactor = counterW / curSum;
     const adjSinkW = sinkW * scaleFactor;
@@ -1000,12 +1219,18 @@ class Furniture3DEngine {
 
     this.buildLowerCabinets(lowerStartX, counterW, lowerH, lowerD, plinthH, topT, adjSinkW, adjPrepW, adjCookW);
 
-    if ((isLeftL || isRightL) && sideLen > lowerD + 0.1) {
-      this.buildWingCabinets(isLeftL ? 'left' : 'right', startX, totalW, lowerH, lowerD, plinthH, topT, sideLen, upperH, upperD, midwayH);
+    // 날개장 (좌측 / 우측 / 양쪽)
+    if ((isLeftL || isU) && sideLen > lowerD + 0.1) {
+      const wingLen = isLeftTall ? (sideLen - tallW) : sideLen;
+      this.buildWingCabinets('left', startX, totalW, lowerH, lowerD, plinthH, topT, wingLen, upperH, upperD, midwayH);
+    }
+    if ((isRightL || isU) && sideLen > lowerD + 0.1) {
+      const wingLen = isRightTall ? (sideLen - tallW) : sideLen;
+      this.buildWingCabinets('right', startX, totalW, lowerH, lowerD, plinthH, topT, wingLen, upperH, upperD, midwayH);
     }
 
     // C. Seamless Monolithic Beveled 인조대리석 상판 + 3D 싱크볼 + 수전 + 쿡탑
-    this.buildMonolithicCountertopAndAppliances(lowerStartX, counterW, lowerH, lowerD, topT, adjSinkW, adjPrepW, adjCookW, sideLen);
+    this.buildMonolithicCountertopAndAppliances(startX, totalW, lowerH, lowerD, topT, adjSinkW, adjPrepW, adjCookW, sideLen);
 
     // D. 상부장 + 천장 써라운딩 몰딩 + 후드 + 간접조명
     if (this.spec.hasUpperCabinets) {
@@ -1020,9 +1245,6 @@ class Furniture3DEngine {
 
     // F. 도면 치수선 (CAD 표준 45° 사선 틱 & 연장선)
     this.buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, adjSinkW, adjPrepW, adjCookW, sideLen, hasTall, isLeftTall, tallW, counterW, lowerStartX);
-
-    // G. 건축 CAD 윤곽선 생성 (SketchUp / AutoCAD 3D 투시도 스타일)
-    this.addCadEdgesRecursively(this.kitchenGroup);
   }
 
   addCadEdgesRecursively(obj) {
@@ -1054,10 +1276,13 @@ class Furniture3DEngine {
   }
 
   // B-0. 키큰장 / 가전수납장 (밥솥 슬라이딩장 / 오븐장 / 냉장고장 / 롱팬트리)
-  buildTallCabinet(cx, tallW, tallH, tallD, plinthH, type = 'appliance') {
+  buildTallCabinet(cx, tallW, tallH, tallD, plinthH, type = 'appliance', cz = null) {
     const bodyH = tallH - plinthH;
     const bodyY = plinthH + bodyH / 2;
     const T = 0.018;
+    const centerZ = cz !== null ? cz : (tallD / 2);
+    const frontZ = centerZ + tallD / 2;
+    const backZ = centerZ - tallD / 2;
 
     const group = new THREE.Group();
 
@@ -1066,41 +1291,41 @@ class Furniture3DEngine {
       new THREE.BoxGeometry(tallW - 0.01, plinthH, tallD - 0.07),
       this.darkGapMat
     );
-    plinth.position.set(cx, plinthH / 2, (tallD - 0.07) / 2);
+    plinth.position.set(cx, plinthH / 2, centerZ - 0.035);
     plinth.castShadow = true;
     plinth.receiveShadow = true;
     group.add(plinth);
 
     // 2. 몸통 측판 / 뒷판 / 상하판
     const leftSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, tallD), this.carcassWoodMat);
-    leftSide.position.set(cx - tallW / 2 + T / 2, bodyY, tallD / 2);
+    leftSide.position.set(cx - tallW / 2 + T / 2, bodyY, centerZ);
     leftSide.castShadow = true;
     leftSide.receiveShadow = true;
     group.add(leftSide);
 
     const rightSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, tallD), this.carcassWoodMat);
-    rightSide.position.set(cx + tallW / 2 - T / 2, bodyY, tallD / 2);
+    rightSide.position.set(cx + tallW / 2 - T / 2, bodyY, centerZ);
     rightSide.castShadow = true;
     rightSide.receiveShadow = true;
     group.add(rightSide);
 
     const backPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, bodyH, 0.009), this.carcassWoodMat);
-    backPanel.position.set(cx, bodyY, 0.005);
+    backPanel.position.set(cx, bodyY, backZ + 0.005);
     group.add(backPanel);
 
     const topPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
-    topPanel.position.set(cx, plinthH + bodyH - T / 2, tallD / 2);
+    topPanel.position.set(cx, plinthH + bodyH - T / 2, centerZ);
     group.add(topPanel);
 
     const botPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
-    botPanel.position.set(cx, plinthH + T / 2, tallD / 2);
+    botPanel.position.set(cx, plinthH + T / 2, centerZ);
     group.add(botPanel);
 
     // 3. 천장 써라운딩 몰딩 마감
     const ceilH = Math.max(tallH + 0.05, this.spec.ceilingHeight / 1000);
     const surroundH = Math.max(0.04, ceilH - tallH);
     const filler = new THREE.Mesh(new THREE.BoxGeometry(tallW, surroundH, tallD), this.doorMat);
-    filler.position.set(cx, tallH + surroundH / 2, tallD / 2);
+    filler.position.set(cx, tallH + surroundH / 2, centerZ);
     filler.castShadow = true;
     group.add(filler);
 
@@ -1111,7 +1336,7 @@ class Furniture3DEngine {
 
       // 하부장과 중간 가전구역 분할 선반
       const midShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
-      midShelf.position.set(cx, plinthH + lowerSecH, tallD / 2);
+      midShelf.position.set(cx, plinthH + lowerSecH, centerZ);
       group.add(midShelf);
 
       // 하부 2도어 (또는 2단 레일 서랍)
@@ -1121,33 +1346,33 @@ class Furniture3DEngine {
           new THREE.BoxGeometry(lowerDoorW - 0.003, lowerSecH - 0.008, 0.018),
           this.doorMat
         );
-        dMesh.position.set(cx + dir * (lowerDoorW / 2 + 0.0015), plinthH + lowerSecH / 2, tallD + 0.009);
+        dMesh.position.set(cx + dir * (lowerDoorW / 2 + 0.0015), plinthH + lowerSecH / 2, frontZ + 0.009);
         dMesh.castShadow = true;
         group.add(dMesh);
       });
 
       // 가전구역 상단 선반
       const nicheTop = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
-      nicheTop.position.set(cx, plinthH + lowerSecH + nicheH, tallD / 2);
+      nicheTop.position.set(cx, plinthH + lowerSecH + nicheH, centerZ);
       group.add(nicheTop);
 
       // 밥솥 슬라이딩 인출 선반
       const tray = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.08, 0.02, tallD - 0.08), this.darkGapMat);
-      tray.position.set(cx, plinthH + lowerSecH + 0.02, tallD / 2);
+      tray.position.set(cx, plinthH + lowerSecH + 0.02, centerZ);
       group.add(tray);
 
       // 밥솥 모형
       const cooker = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.18, 20), this.stainlessDarkMat);
-      cooker.position.set(cx - 0.08, plinthH + lowerSecH + 0.02 + 0.09, tallD / 2);
+      cooker.position.set(cx - 0.08, plinthH + lowerSecH + 0.02 + 0.09, centerZ);
       group.add(cooker);
 
       // 광파오븐 중간 분할선반 & 오븐 모형
       const ovenShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD - 0.04), this.carcassWoodMat);
-      ovenShelf.position.set(cx, plinthH + lowerSecH + 0.44, tallD / 2);
+      ovenShelf.position.set(cx, plinthH + lowerSecH + 0.44, centerZ);
       group.add(ovenShelf);
 
       const oven = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.12, 0.28, 0.38), this.stainlessMat);
-      oven.position.set(cx, plinthH + lowerSecH + 0.44 + 0.15, tallD / 2 - 0.02);
+      oven.position.set(cx, plinthH + lowerSecH + 0.44 + 0.15, centerZ - 0.02);
       group.add(oven);
 
       // 상부 수납 도어 (플랩/스윙)
@@ -1159,7 +1384,7 @@ class Furniture3DEngine {
             new THREE.BoxGeometry(upperDoorW - 0.003, upperSecH - 0.008, 0.018),
             this.doorMat
           );
-          uMesh.position.set(cx + dir * (upperDoorW / 2 + 0.0015), plinthH + lowerSecH + nicheH + upperSecH / 2, tallD + 0.009);
+          uMesh.position.set(cx + dir * (upperDoorW / 2 + 0.0015), plinthH + lowerSecH + nicheH + upperSecH / 2, frontZ + 0.009);
           uMesh.castShadow = true;
           group.add(uMesh);
         });
@@ -1173,7 +1398,7 @@ class Furniture3DEngine {
           new THREE.BoxGeometry(doorW - 0.003, doorH, 0.018),
           this.doorMat
         );
-        pDoor.position.set(cx + dir * (doorW / 2 + 0.0015), bodyY, tallD + 0.009);
+        pDoor.position.set(cx + dir * (doorW / 2 + 0.0015), bodyY, frontZ + 0.009);
         pDoor.castShadow = true;
         group.add(pDoor);
       });
@@ -1182,16 +1407,833 @@ class Furniture3DEngine {
       const bridgeH = 0.52;
       const bridgeY = tallH - bridgeH / 2;
       const bShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
-      bShelf.position.set(cx, tallH - bridgeH, tallD / 2);
+      bShelf.position.set(cx, tallH - bridgeH, centerZ);
       group.add(bShelf);
 
       const bDoor = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.006, bridgeH - 0.008, 0.018), this.doorMat);
-      bDoor.position.set(cx, bridgeY, tallD + 0.009);
+      bDoor.position.set(cx, bridgeY, frontZ + 0.009);
       bDoor.castShadow = true;
       group.add(bDoor);
     }
 
     this.kitchenGroup.add(group);
+  }
+
+  // =========================================================
+  // B-1. 맞춤 붙박이장 (Wardrobe / Closet)
+  // =========================================================
+  buildWardrobe() {
+    const W = (this.spec.totalWidth || 3000) / 1000;
+    const CH = (this.spec.ceilingHeight || 2350) / 1000;
+    const D = 0.65;
+    const plinthH = 0.08;
+    const surroundH = 0.05;
+    const T = 0.018;
+    const startX = -W / 2;
+    const bodyH = CH - plinthH - surroundH;
+    const bodyY = plinthH + bodyH / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W, plinthH, D - 0.04), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, (D - 0.04) / 2);
+    group.add(plinth);
+
+    const topSurround = new THREE.Mesh(new THREE.BoxGeometry(W, surroundH, D), this.doorMat);
+    topSurround.position.set(0, CH - surroundH / 2, D / 2);
+    group.add(topSurround);
+
+    const back = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, 0.009), this.carcassWoodMat);
+    back.position.set(0, bodyY, 0.005);
+    group.add(back);
+
+    const leftSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    leftSide.position.set(startX + T / 2, bodyY, D / 2);
+    group.add(leftSide);
+
+    const rightSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    rightSide.position.set(startX + W - T / 2, bodyY, D / 2);
+    group.add(rightSide);
+
+    const botPanel = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D), this.carcassWoodMat);
+    botPanel.position.set(0, plinthH + T / 2, D / 2);
+    group.add(botPanel);
+
+    const topPanel = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D), this.carcassWoodMat);
+    topPanel.position.set(0, plinthH + bodyH - T / 2, D / 2);
+    group.add(topPanel);
+
+    const bayCount = Math.max(2, Math.round(W / 0.85));
+    const bayW = (W - 2 * T - (bayCount - 1) * T) / bayCount;
+
+    for (let b = 1; b < bayCount; b++) {
+      const divX = startX + T + b * (bayW + T) - T / 2;
+      const divider = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D - 0.02), this.carcassWoodMat);
+      divider.position.set(divX, bodyY, (D - 0.02) / 2 + 0.01);
+      group.add(divider);
+    }
+
+    for (let b = 0; b < bayCount; b++) {
+      const bayCX = startX + T + b * (bayW + T) + bayW / 2;
+      const shelfY = plinthH + bodyH - 0.45;
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(bayW - 0.004, T, D - 0.03), this.carcassWoodMat);
+      shelf.position.set(bayCX, shelfY, D / 2);
+      group.add(shelf);
+
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, bayW - 0.01, 16), this.stainlessMat);
+      rod.rotation.z = Math.PI / 2;
+      rod.position.set(bayCX, shelfY - 0.06, D / 2);
+      group.add(rod);
+
+      if (b === 0 || b === bayCount - 1) {
+        const drawerBoxH = 0.48;
+        const dDiv = new THREE.Mesh(new THREE.BoxGeometry(bayW - 0.004, T, D - 0.03), this.carcassWoodMat);
+        dDiv.position.set(bayCX, plinthH + drawerBoxH, D / 2);
+        group.add(dDiv);
+
+        const dH = (drawerBoxH - 0.01) / 2;
+        for (let di = 0; di < 2; di++) {
+          const dy = plinthH + 0.005 + di * (dH + 0.005) + dH / 2;
+          const dFront = new THREE.Mesh(new THREE.BoxGeometry(bayW - 0.01, dH - 0.005, 0.018), this.carcassWoodMat);
+          dFront.position.set(bayCX, dy, D - 0.02);
+          group.add(dFront);
+
+          const dPull = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.012), this.stainlessDarkMat);
+          dPull.position.set(bayCX, dy + dH * 0.25, D - 0.008);
+          group.add(dPull);
+        }
+      }
+    }
+
+    const doorCount = bayCount * 2;
+    const singleDoorW = (W - 0.01) / doorCount;
+    const doorH = bodyH - 0.006;
+
+    for (let d = 0; d < doorCount; d++) {
+      const isLeft = (d % 2 === 0);
+      const doorCX = startX + 0.005 + d * singleDoorW + singleDoorW / 2;
+
+      const pivot = new THREE.Group();
+      const hingeX = isLeft ? (doorCX - singleDoorW / 2) : (doorCX + singleDoorW / 2);
+      pivot.position.set(hingeX, bodyY, D + 0.009);
+
+      const doorPanel = this.createDoorPanel(singleDoorW - 0.004, doorH, 0.018);
+      const offsetX = isLeft ? (singleDoorW / 2) : (-singleDoorW / 2);
+      doorPanel.position.set(offsetX, 0, 0);
+      pivot.add(doorPanel);
+
+      this.addDoorHandleOrChannel(doorPanel, singleDoorW - 0.004, doorH, false, isLeft);
+
+      group.add(pivot);
+      this.doors.push({
+        group: pivot,
+        isLeft,
+        openAngle: isLeft ? (-Math.PI * 0.48) : (Math.PI * 0.48),
+        targetAngle: this.spec.isDoorOpen ? (isLeft ? -Math.PI * 0.48 : Math.PI * 0.48) : 0
+      });
+    }
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, CH + 0.12, D], [W / 2, CH + 0.12, D]);
+    this.createArchitecturalTick(-W / 2, CH + 0.12, D, 'xy');
+    this.createArchitecturalTick(W / 2, CH + 0.12, D, 'xy');
+
+    this.createLine([W / 2 + 0.18, 0, D], [W / 2 + 0.18, CH, D]);
+    this.createArchitecturalTick(W / 2 + 0.18, 0, D, 'xy');
+    this.createArchitecturalTick(W / 2 + 0.18, CH, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `붙박이장 W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+    if (this.dimBadges.totalH) {
+      this.dimBadges.totalH.innerText = `천장고 CH:${Math.round(CH * 1000)}mm`;
+      this.dimBadges.totalH.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-2. 현관 신발장 (Shoe Cabinet) — 하부 띄움 시공 & T5 간접조명 & 중간 오픈 니치
+  // =========================================================
+  buildShoeCabinet() {
+    const W = (this.spec.totalWidth || 1200) / 1000;
+    const CH = (this.spec.ceilingHeight || 2300) / 1000;
+    const D = 0.38;
+    const floatH = 0.20;
+    const T = 0.018;
+    const startX = -W / 2;
+    const bodyH = CH - floatH - 0.04;
+    const bodyY = floatH + bodyH / 2;
+
+    const group = new THREE.Group();
+
+    const floatBracket = new THREE.Mesh(new THREE.BoxGeometry(W * 0.6, floatH, D * 0.4), this.darkGapMat);
+    floatBracket.position.set(0, floatH / 2, D * 0.2);
+    group.add(floatBracket);
+
+    const lightGlowMat = new THREE.MeshBasicMaterial({ color: 0xffe2b8, transparent: true, opacity: 0.85 });
+    const glowPlane = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.08, D - 0.06), lightGlowMat);
+    glowPlane.rotation.x = -Math.PI / 2;
+    glowPlane.position.set(0, floatH - 0.005, D / 2);
+    group.add(glowPlane);
+
+    const back = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, 0.009), this.carcassWoodMat);
+    back.position.set(0, bodyY, 0.005);
+    group.add(back);
+
+    const leftSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    leftSide.position.set(startX + T / 2, bodyY, D / 2);
+    group.add(leftSide);
+
+    const rightSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    rightSide.position.set(startX + W - T / 2, bodyY, D / 2);
+    group.add(rightSide);
+
+    const botPanel = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D), this.carcassWoodMat);
+    botPanel.position.set(0, floatH + T / 2, D / 2);
+    group.add(botPanel);
+
+    const topPanel = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D), this.carcassWoodMat);
+    topPanel.position.set(0, floatH + bodyH - T / 2, D / 2);
+    group.add(topPanel);
+
+    const nicheH = 0.35;
+    const nicheBotY = floatH + 0.85;
+    const nicheCenterY = nicheBotY + nicheH / 2;
+
+    const nicheBot = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D - 0.01), this.carcassWoodMat);
+    nicheBot.position.set(0, nicheBotY, D / 2);
+    group.add(nicheBot);
+
+    const nicheTop = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D - 0.01), this.carcassWoodMat);
+    nicheTop.position.set(0, nicheBotY + nicheH, D / 2);
+    group.add(nicheTop);
+
+    const nicheBack = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, nicheH - 2 * T, 0.015), this.carcassWoodMat);
+    nicheBack.position.set(0, nicheCenterY, 0.015);
+    group.add(nicheBack);
+
+    const tray = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.012, 0.12), this.darkGapMat);
+    tray.position.set(-W * 0.22, nicheBotY + 0.012, D * 0.6);
+    group.add(tray);
+
+    const diffuser = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.028, 0.065, 16), this.blackGlassMat);
+    diffuser.position.set(W * 0.22, nicheBotY + 0.035, D * 0.6);
+    group.add(diffuser);
+
+    const doorCount = Math.max(2, Math.round(W / 0.45));
+    const singleDoorW = (W - 0.006) / doorCount;
+
+    const lowerDoorH = (nicheBotY - floatH) - 0.006;
+    for (let d = 0; d < doorCount; d++) {
+      const isLeft = (d % 2 === 0);
+      const dcx = startX + 0.003 + d * singleDoorW + singleDoorW / 2;
+      const dMesh = this.createDoorPanel(singleDoorW - 0.003, lowerDoorH, 0.018);
+      dMesh.position.set(dcx, floatH + lowerDoorH / 2 + 0.003, D + 0.009);
+      this.addDoorHandleOrChannel(dMesh, singleDoorW - 0.003, lowerDoorH, false, isLeft);
+      group.add(dMesh);
+    }
+
+    const upperDoorH = (floatH + bodyH - (nicheBotY + nicheH)) - 0.006;
+    const upperDoorY = nicheBotY + nicheH + upperDoorH / 2 + 0.003;
+    for (let d = 0; d < doorCount; d++) {
+      const isLeft = (d % 2 === 0);
+      const isMirror = (d === doorCount - 1);
+      const dcx = startX + 0.003 + d * singleDoorW + singleDoorW / 2;
+
+      let dMesh;
+      if (isMirror) {
+        dMesh = new THREE.Mesh(new THREE.BoxGeometry(singleDoorW - 0.003, upperDoorH, 0.018), this.mirrorMat);
+        dMesh.position.set(dcx, upperDoorY, D + 0.009);
+        dMesh.castShadow = true;
+      } else {
+        dMesh = this.createDoorPanel(singleDoorW - 0.003, upperDoorH, 0.018);
+        dMesh.position.set(dcx, upperDoorY, D + 0.009);
+        this.addDoorHandleOrChannel(dMesh, singleDoorW - 0.003, upperDoorH, true, isLeft);
+      }
+      group.add(dMesh);
+    }
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, CH + 0.1, D], [W / 2, CH + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, CH + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, CH + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `신발장 W:${Math.round(W * 1000)}mm (하부 띄움)`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-3. 아일랜드 식탁 (Kitchen Island) — 인조대리석 상판 오버행 & 가전 인출 수납
+  // =========================================================
+  buildIslandTable() {
+    const W = (this.spec.totalWidth || 1800) / 1000;
+    const D = (this.spec.islandDepth || 850) / 1000;
+    const H = (this.spec.lowerHeight || 860) / 1000;
+    const topT = 0.04;
+    const plinthH = 0.10;
+    const startX = -W / 2;
+    const bodyD = D - 0.25;
+    const bodyH = H - topT - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const centerZ = 1.1;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, plinthH, bodyD - 0.06), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, centerZ - (D - bodyD) / 2);
+    group.add(plinth);
+
+    const bodyBox = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, bodyD), this.carcassWoodMat);
+    bodyBox.position.set(0, bodyY, centerZ - (D - bodyD) / 2);
+    bodyBox.castShadow = true;
+    bodyBox.receiveShadow = true;
+    group.add(bodyBox);
+
+    const bayCount = Math.max(2, Math.round(W / 0.6));
+    const bayW = (W - 0.01) / bayCount;
+    for (let b = 0; b < bayCount; b++) {
+      const bcx = startX + 0.005 + b * bayW + bayW / 2;
+      const isApplianceBay = (b === 0);
+
+      if (isApplianceBay) {
+        const nicheInner = new THREE.Mesh(new THREE.BoxGeometry(bayW - 0.02, bodyH * 0.55, bodyD * 0.85), this.darkGapMat);
+        nicheInner.position.set(bcx, plinthH + bodyH * 0.7, centerZ - (D - bodyD) / 2 - 0.02);
+        group.add(nicheInner);
+
+        const cooker = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.16, 20), this.stainlessDarkMat);
+        cooker.position.set(bcx, plinthH + bodyH * 0.45 + 0.09, centerZ - (D - bodyD) / 2);
+        group.add(cooker);
+
+        const drawH = bodyH * 0.4;
+        const dFront = this.createDoorPanel(bayW - 0.006, drawH, 0.018);
+        dFront.position.set(bcx, plinthH + drawH / 2, centerZ - (D - bodyD) / 2 - bodyD / 2 - 0.009);
+        this.addDoorHandleOrChannel(dFront, bayW - 0.006, drawH, false, true, true);
+        group.add(dFront);
+      } else {
+        const count = 3;
+        const gap = 0.004;
+        const dH = (bodyH - gap * (count + 1)) / count;
+        for (let di = 0; di < count; di++) {
+          const dy = plinthH + gap + di * (dH + gap) + dH / 2;
+          const front = this.createDoorPanel(bayW - 0.006, dH, 0.018);
+          front.position.set(bcx, dy, centerZ - (D - bodyD) / 2 - bodyD / 2 - 0.009);
+          this.addDoorHandleOrChannel(front, bayW - 0.006, dH, false, true, true);
+          group.add(front);
+        }
+      }
+    }
+
+    const marbleTop = new THREE.Mesh(new THREE.BoxGeometry(W + 0.03, topT, D + 0.03), this.countertopMat);
+    marbleTop.position.set(0, H - topT / 2, centerZ);
+    marbleTop.castShadow = true;
+    marbleTop.receiveShadow = true;
+    group.add(marbleTop);
+
+    [-W * 0.25, W * 0.25].forEach(sx => {
+      const stoolGroup = new THREE.Group();
+      const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.04, 24), this.darkGapMat);
+      seat.position.set(sx, 0.62, centerZ + D / 2 + 0.22);
+      stoolGroup.add(seat);
+
+      [[-0.1, -0.1], [0.1, -0.1], [-0.1, 0.1], [0.1, 0.1]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.60, 12), this.stainlessDarkMat);
+        leg.position.set(sx + lx, 0.30, centerZ + D / 2 + 0.22 + lz);
+        stoolGroup.add(leg);
+      });
+      group.add(stoolGroup);
+    });
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, H + 0.12, centerZ], [W / 2, H + 0.12, centerZ]);
+    this.createArchitecturalTick(-W / 2, H + 0.12, centerZ, 'xy');
+    this.createArchitecturalTick(W / 2, H + 0.12, centerZ, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `아일랜드 식탁 W:${Math.round(W * 1000)}mm (D:${Math.round(D * 1000)})`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-4. 장식장(유리문) (Glass Display Cabinet) — 알루미늄 슬림 프레임 & 8T 강화유리 & LED 라인
+  // =========================================================
+  buildGlassDisplayCabinet() {
+    const W = (this.spec.totalWidth || 900) / 1000;
+    const CH = (this.spec.ceilingHeight || 2100) / 1000;
+    const D = 0.40;
+    const plinthH = 0.08;
+    const bodyH = CH - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const T = 0.018;
+    const startX = -W / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, plinthH, D - 0.04), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, (D - 0.04) / 2);
+    group.add(plinth);
+
+    const back = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, bodyH - 2 * T, 0.009), this.carcassWoodMat);
+    back.position.set(0, bodyY, 0.005);
+    group.add(back);
+
+    const leftSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    leftSide.position.set(startX + T / 2, bodyY, D / 2);
+    group.add(leftSide);
+
+    const rightSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, D), this.carcassWoodMat);
+    rightSide.position.set(startX + W - T / 2, bodyY, D / 2);
+    group.add(rightSide);
+
+    const botPanel = new THREE.Mesh(new THREE.BoxGeometry(W, T, D), this.carcassWoodMat);
+    botPanel.position.set(0, plinthH + T / 2, D / 2);
+    group.add(botPanel);
+
+    const topPanel = new THREE.Mesh(new THREE.BoxGeometry(W, T, D), this.carcassWoodMat);
+    topPanel.position.set(0, plinthH + bodyH - T / 2, D / 2);
+    group.add(topPanel);
+
+    const shelfCount = 4;
+    for (let s = 1; s <= shelfCount; s++) {
+      const sy = plinthH + (bodyH / (shelfCount + 1)) * s;
+      const gShelf = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T - 0.004, 0.008, D - 0.04), this.glassShelfMat);
+      gShelf.position.set(0, sy, D / 2);
+      group.add(gShelf);
+    }
+
+    [-W / 2 + T + 0.015, W / 2 - T - 0.015].forEach(lx => {
+      const ledBar = new THREE.Mesh(
+        new THREE.BoxGeometry(0.012, bodyH - 0.04, 0.012),
+        new THREE.MeshBasicMaterial({ color: 0xffdfb0 })
+      );
+      ledBar.position.set(lx, bodyY, D - 0.02);
+      group.add(ledBar);
+    });
+
+    const doorW = (W - 0.006) / 2;
+    const doorH = bodyH - 0.006;
+    [-1, 1].forEach((dir, i) => {
+      const isLeft = (i === 0);
+      const dcx = dir * (doorW / 2 + 0.0015);
+
+      const pivot = new THREE.Group();
+      const hingeX = isLeft ? (dcx - doorW / 2) : (dcx + doorW / 2);
+      pivot.position.set(hingeX, bodyY, D + 0.008);
+
+      const leafGroup = new THREE.Group();
+      const offsetX = isLeft ? (doorW / 2) : (-doorW / 2);
+
+      const frameW = 0.025;
+      const fMat = this.aluminumFrameMat;
+      const fTop = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.002, frameW, 0.018), fMat);
+      fTop.position.set(0, doorH / 2 - frameW / 2, 0);
+      leafGroup.add(fTop);
+      const fBot = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.002, frameW, 0.018), fMat);
+      fBot.position.set(0, -doorH / 2 + frameW / 2, 0);
+      leafGroup.add(fBot);
+      const fLeft = new THREE.Mesh(new THREE.BoxGeometry(frameW, doorH - 2 * frameW, 0.018), fMat);
+      fLeft.position.set(-doorW / 2 + frameW / 2, 0, 0);
+      leafGroup.add(fLeft);
+      const fRight = new THREE.Mesh(new THREE.BoxGeometry(frameW, doorH - 2 * frameW, 0.018), fMat);
+      fRight.position.set(doorW / 2 - frameW / 2, 0, 0);
+      leafGroup.add(fRight);
+
+      const glassPane = new THREE.Mesh(new THREE.BoxGeometry(doorW - 2 * frameW, doorH - 2 * frameW, 0.006), this.glassDoorMat);
+      glassPane.position.set(0, 0, 0);
+      leafGroup.add(glassPane);
+
+      const barH = 0.16;
+      const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.008, barH, 0.014), this.goldMetalMat);
+      hBar.position.set(isLeft ? (doorW / 2 - 0.018) : (-doorW / 2 + 0.018), 0, 0.012);
+      leafGroup.add(hBar);
+
+      leafGroup.position.set(offsetX, 0, 0);
+      pivot.add(leafGroup);
+      group.add(pivot);
+
+      this.doors.push({
+        group: pivot,
+        isLeft,
+        openAngle: isLeft ? (-Math.PI * 0.48) : (Math.PI * 0.48),
+        targetAngle: this.spec.isDoorOpen ? (isLeft ? -Math.PI * 0.48 : Math.PI * 0.48) : 0
+      });
+    });
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, CH + 0.1, D], [W / 2, CH + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, CH + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, CH + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `장식장(유리문) W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-5. 티비다이 (TV Console / Lowboard)
+  // =========================================================
+  buildTvConsole() {
+    const W = (this.spec.totalWidth || 2000) / 1000;
+    const H = 0.45;
+    const D = 0.42;
+    const plinthH = 0.06;
+    const bodyH = H - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const startX = -W / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.08, plinthH, D - 0.08), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, D / 2);
+    group.add(plinth);
+
+    const bodyBox = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, D), this.carcassWoodMat);
+    bodyBox.position.set(0, bodyY, D / 2);
+    group.add(bodyBox);
+
+    // 중앙 오픈 AV 니치
+    const nicheW = W * 0.38;
+    const niche = new THREE.Mesh(new THREE.BoxGeometry(nicheW, bodyH * 0.55, D * 0.9), this.darkGapMat);
+    niche.position.set(0, bodyY, D / 2 + 0.02);
+    group.add(niche);
+
+    // 좌우 서랍장
+    const sideW = (W - nicheW) / 2;
+    [-W / 2 + sideW / 2, W / 2 - sideW / 2].forEach(sx => {
+      const dFront = this.createDoorPanel(sideW - 0.008, bodyH - 0.01, 0.018);
+      dFront.position.set(sx, bodyY, D + 0.009);
+      this.addDoorHandleOrChannel(dFront, sideW - 0.008, bodyH - 0.01, false, true, true);
+      group.add(dFront);
+    });
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, H + 0.1, D], [W / 2, H + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, H + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, H + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `티비다이 W:${Math.round(W * 1000)}mm (H:${Math.round(H * 1000)})`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-6. 서랍장 (Chest of Drawers) — 3단/4단/5단 와이드 서랍장
+  // =========================================================
+  buildDrawersUnit() {
+    const W = (this.spec.totalWidth || 900) / 1000;
+    const H = (this.spec.lowerHeight || 950) / 1000;
+    const D = 0.50;
+    const plinthH = 0.08;
+    const bodyH = H - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const startX = -W / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, plinthH, D - 0.04), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, (D - 0.04) / 2);
+    group.add(plinth);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, D), this.carcassWoodMat);
+    body.position.set(0, bodyY, D / 2);
+    group.add(body);
+
+    const count = 4;
+    const gap = 0.004;
+    const dH = (bodyH - gap * (count + 1)) / count;
+    for (let di = 0; di < count; di++) {
+      const dy = plinthH + gap + di * (dH + gap) + dH / 2;
+      const front = this.createDoorPanel(W - 0.008, dH, 0.018);
+      front.position.set(0, dy, D + 0.009);
+      this.addDoorHandleOrChannel(front, W - 0.008, dH, false, true, true);
+      group.add(front);
+    }
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, H + 0.1, D], [W / 2, H + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, H + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, H + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `4단 서랍장 W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-7. 수납장 / 팬트리장 (Storage Cabinet)
+  // =========================================================
+  buildStorageCabinet() {
+    const W = (this.spec.totalWidth || 900) / 1000;
+    const CH = (this.spec.ceilingHeight || 2100) / 1000;
+    const D = 0.45;
+    const plinthH = 0.08;
+    const bodyH = CH - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const T = 0.018;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, plinthH, D - 0.04), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, (D - 0.04) / 2);
+    group.add(plinth);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, D), this.carcassWoodMat);
+    body.position.set(0, bodyY, D / 2);
+    group.add(body);
+
+    for (let s = 1; s <= 5; s++) {
+      const sy = plinthH + (bodyH / 6) * s;
+      const shelf = new THREE.Mesh(new THREE.BoxGeometry(W - 2 * T, T, D - 0.03), this.carcassWoodMat);
+      shelf.position.set(0, sy, D / 2);
+      group.add(shelf);
+    }
+
+    const doorW = (W - 0.006) / 2;
+    const doorH = bodyH - 0.006;
+    [-1, 1].forEach((dir, i) => {
+      const isLeft = (i === 0);
+      const dcx = dir * (doorW / 2 + 0.0015);
+
+      const pivot = new THREE.Group();
+      const hingeX = isLeft ? (dcx - doorW / 2) : (dcx + doorW / 2);
+      pivot.position.set(hingeX, bodyY, D + 0.009);
+
+      const doorPanel = this.createDoorPanel(doorW - 0.003, doorH, 0.018);
+      const offsetX = isLeft ? (doorW / 2) : (-doorW / 2);
+      doorPanel.position.set(offsetX, 0, 0);
+      pivot.add(doorPanel);
+
+      this.addDoorHandleOrChannel(doorPanel, doorW - 0.003, doorH, false, isLeft);
+
+      group.add(pivot);
+      this.doors.push({
+        group: pivot,
+        isLeft,
+        openAngle: isLeft ? (-Math.PI * 0.48) : (Math.PI * 0.48),
+        targetAngle: this.spec.isDoorOpen ? (isLeft ? -Math.PI * 0.48 : Math.PI * 0.48) : 0
+      });
+    });
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, CH + 0.1, D], [W / 2, CH + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, CH + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, CH + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `수납장 W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-8. 조리대 (Prep Counter)
+  // =========================================================
+  buildPrepCounter() {
+    const W = (this.spec.totalWidth || 1000) / 1000;
+    const H = (this.spec.lowerHeight || 860) / 1000;
+    const D = 0.60;
+    const topT = 0.04;
+    const plinthH = 0.12;
+    const bodyH = H - topT - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.02, plinthH, D - 0.07), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, (D - 0.07) / 2);
+    group.add(plinth);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, D), this.carcassWoodMat);
+    body.position.set(0, bodyY, D / 2);
+    group.add(body);
+
+    const topDrawH = 0.18;
+    const topDraw = this.createDoorPanel(W - 0.006, topDrawH, 0.018);
+    topDraw.position.set(0, plinthH + bodyH - topDrawH / 2, D + 0.009);
+    this.addDoorHandleOrChannel(topDraw, W - 0.006, topDrawH, false, true, true);
+    group.add(topDraw);
+
+    const botDoorH = bodyH - topDrawH - 0.008;
+    const botDoorW = (W - 0.006) / 2;
+    [-1, 1].forEach((dir, i) => {
+      const isLeft = (i === 0);
+      const dcx = dir * (botDoorW / 2 + 0.0015);
+      const dMesh = this.createDoorPanel(botDoorW - 0.003, botDoorH, 0.018);
+      dMesh.position.set(dcx, plinthH + botDoorH / 2, D + 0.009);
+      this.addDoorHandleOrChannel(dMesh, botDoorW - 0.003, botDoorH, false, isLeft);
+      group.add(dMesh);
+    });
+
+    const top = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, topT, D + 0.025), this.countertopMat);
+    top.position.set(0, H - topT / 2, (D + 0.025) / 2);
+    group.add(top);
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, H + 0.1, D], [W / 2, H + 0.1, D]);
+    this.createArchitecturalTick(-W / 2, H + 0.1, D, 'xy');
+    this.createArchitecturalTick(W / 2, H + 0.1, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `조리대 W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-9. 단독 키큰장 (Tall Appliance Cabinet)
+  // =========================================================
+  buildStandaloneTallCabinet() {
+    const W = (this.spec.tallCabinetWidth || 600) / 1000;
+    const CH = (this.spec.ceilingHeight || 2350) / 1000;
+    const D = 0.60;
+    const plinthH = 0.12;
+    this.buildTallCabinet(0, W, CH, D, plinthH, this.spec.tallCabinetType || 'appliance');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `키큰장 W:${Math.round(W * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-10. 후드장 (Dedicated Hood Cabinet) — 스테인리스 후드 필터 & 상부 덕트 배기 연통
+  // =========================================================
+  buildDedicatedHoodCabinet() {
+    const W = (this.spec.totalWidth || 800) / 1000;
+    const H = (this.spec.upperHeight || 700) / 1000;
+    const D = 0.35;
+    const topY = 1.51 + H;
+    const startY = 1.51;
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.carcassWoodMat);
+    body.position.set(0, startY + H / 2, D / 2);
+    group.add(body);
+
+    const doorW = (W - 0.006) / 2;
+    [-1, 1].forEach((dir, i) => {
+      const isLeft = (i === 0);
+      const dcx = dir * (doorW / 2 + 0.0015);
+      const dMesh = this.createDoorPanel(doorW - 0.003, H - 0.006, 0.018);
+      dMesh.position.set(dcx, startY + H / 2, D + 0.009);
+      this.addDoorHandleOrChannel(dMesh, doorW - 0.003, H - 0.006, true, isLeft);
+      group.add(dMesh);
+    });
+
+    // 하부 매립형 스테인리스 후드 바디 & 필터 그릴
+    const hoodBody = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, 0.06, D - 0.04), this.stainlessMat);
+    hoodBody.position.set(0, startY - 0.03, D / 2);
+    group.add(hoodBody);
+
+    const filter = new THREE.Mesh(new THREE.BoxGeometry(W - 0.12, 0.008, D - 0.12), this.stainlessDarkMat);
+    filter.position.set(0, startY - 0.055, D / 2);
+    group.add(filter);
+
+    // 상부 배기 연통 덕트 (Flexible Duct Pipe)
+    const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.25, 20), this.stainlessMat);
+    duct.position.set(0, topY + 0.125, D / 2);
+    group.add(duct);
+
+    this.kitchenGroup.add(group);
+
+    this.createLine([-W / 2, topY + 0.3, D], [W / 2, topY + 0.3, D]);
+    this.createArchitecturalTick(-W / 2, topY + 0.3, D, 'xy');
+    this.createArchitecturalTick(W / 2, topY + 0.3, D, 'xy');
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `후드장 W:${Math.round(W * 1000)}mm (배기 덕트)`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-11. 하부 코너장 (Base Corner Cabinet) — 90° 코너 & 2단 회전 매직 선반
+  // =========================================================
+  buildDedicatedBaseCorner() {
+    const W = 0.90;
+    const D = 0.90;
+    const H = (this.spec.lowerHeight || 860) / 1000;
+    const topT = 0.04;
+    const plinthH = 0.12;
+    const bodyH = H - topT - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+
+    const group = new THREE.Group();
+
+    const plinth = new THREE.Mesh(new THREE.BoxGeometry(W - 0.04, plinthH, D - 0.04), this.darkGapMat);
+    plinth.position.set(0, plinthH / 2, D / 2);
+    group.add(plinth);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, bodyH, D), this.carcassWoodMat);
+    body.position.set(0, bodyY, D / 2);
+    group.add(body);
+
+    // 2단 회전 원형 선반 모형 (매직 코너)
+    [0.35, 0.65].forEach(rh => {
+      const carousel = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.015, 24), this.stainlessMat);
+      carousel.position.set(0, plinthH + bodyH * rh, D / 2);
+      group.add(carousel);
+    });
+
+    // 전면 코너 접이식 도어
+    const dMesh = this.createDoorPanel(W - 0.008, bodyH - 0.006, 0.018);
+    dMesh.position.set(0, bodyY, D + 0.009);
+    this.addDoorHandleOrChannel(dMesh, W - 0.008, bodyH - 0.006, false, true);
+    group.add(dMesh);
+
+    const top = new THREE.Mesh(new THREE.BoxGeometry(W + 0.02, topT, D + 0.02), this.countertopMat);
+    top.position.set(0, H - topT / 2, D / 2);
+    group.add(top);
+
+    this.kitchenGroup.add(group);
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `하부 코너장 900x900mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-12. 상부 코너장 (Upper Corner Cabinet) — 600x600 코너 연결장
+  // =========================================================
+  buildDedicatedUpperCorner() {
+    const W = 0.60;
+    const D = 0.60;
+    const H = (this.spec.upperHeight || 700) / 1000;
+    const startY = 1.51;
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), this.carcassWoodMat);
+    body.position.set(0, startY + H / 2, D / 2);
+    group.add(body);
+
+    const dMesh = this.createDoorPanel(W - 0.008, H - 0.006, 0.018);
+    dMesh.position.set(0, startY + H / 2, D + 0.009);
+    this.addDoorHandleOrChannel(dMesh, W - 0.008, H - 0.006, true, true);
+    group.add(dMesh);
+
+    this.kitchenGroup.add(group);
+
+    if (this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `상부 코너장 600x600mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
   }
 
   buildLowerCabinets(startX, totalW, lowerH, lowerD, plinthH, topT, sinkW, prepW, cookW) {
@@ -1475,29 +2517,51 @@ class Furniture3DEngine {
     const isRightL = this.spec.layoutType === 'l_right';
     const hasWing = (isLeftL || isRightL) && sideLen > totalD + 0.1;
 
-    // 1. 상판 2D 외곽 폴리곤 (y = -z)
+    // 1. 상판 2D 외곽 폴리곤 (y = -z) — 일자, ㄱ자, ㄴ자, ㄷ자 및 키큰장 간섭 완벽 회피
+    const isU = this.spec.layoutType === 'u_shape';
+    const hasTall = Boolean(this.spec.tallCabinet && this.spec.tallCabinet !== 'none');
+    const isLeftTall = this.spec.tallCabinet === 'left';
+    const isRightTall = this.spec.tallCabinet === 'right';
+    const tallW = hasTall ? Math.min(1.2, (Number(this.spec.tallCabinetWidth) || 600) / 1000) : 0;
+
+    const mainStartX = (this.spec.layoutType === 'straight' && isLeftTall) ? (startX + tallW) : startX;
+    const mainEndX = (this.spec.layoutType === 'straight' && isRightTall) ? (startX + totalW - tallW) : (startX + totalW);
+
+    const leftWingEnd = (isLeftL || isU) ? (isLeftTall ? Math.max(totalD + 0.1, sideLen - tallW) : sideLen) : 0;
+    const rightWingEnd = (isRightL || isU) ? (isRightTall ? Math.max(totalD + 0.1, sideLen - tallW) : sideLen) : 0;
+
     const shape = new THREE.Shape();
-    if (isRightL && hasWing) {
-      shape.moveTo(startX, 0);
-      shape.lineTo(endX, 0);
-      shape.lineTo(endX, -sideLen);
-      shape.lineTo(endX - totalD, -sideLen);
-      shape.lineTo(endX - totalD, -totalD);
-      shape.lineTo(startX, -totalD);
+    if (isU && sideLen > totalD + 0.1) {
+      shape.moveTo(mainStartX, -leftWingEnd);
+      shape.lineTo(mainStartX, 0);
+      shape.lineTo(mainEndX, 0);
+      shape.lineTo(mainEndX, -rightWingEnd);
+      shape.lineTo(mainEndX - totalD, -rightWingEnd);
+      shape.lineTo(mainEndX - totalD, -totalD);
+      shape.lineTo(mainStartX + totalD, -totalD);
+      shape.lineTo(mainStartX + totalD, -leftWingEnd);
+      shape.closePath();
+    } else if (isRightL && hasWing) {
+      shape.moveTo(mainStartX, 0);
+      shape.lineTo(mainEndX, 0);
+      shape.lineTo(mainEndX, -rightWingEnd);
+      shape.lineTo(mainEndX - totalD, -rightWingEnd);
+      shape.lineTo(mainEndX - totalD, -totalD);
+      shape.lineTo(mainStartX, -totalD);
       shape.closePath();
     } else if (isLeftL && hasWing) {
-      shape.moveTo(startX, 0);
-      shape.lineTo(endX, 0);
-      shape.lineTo(endX, -totalD);
-      shape.lineTo(startX + totalD, -totalD);
-      shape.lineTo(startX + totalD, -sideLen);
-      shape.lineTo(startX, -sideLen);
+      shape.moveTo(mainStartX, -leftWingEnd);
+      shape.lineTo(mainStartX, 0);
+      shape.lineTo(mainEndX, 0);
+      shape.lineTo(mainEndX, -totalD);
+      shape.lineTo(mainStartX + totalD, -totalD);
+      shape.lineTo(mainStartX + totalD, -leftWingEnd);
       shape.closePath();
     } else {
-      shape.moveTo(startX, 0);
-      shape.lineTo(endX, 0);
-      shape.lineTo(endX, -totalD);
-      shape.lineTo(startX, -totalD);
+      shape.moveTo(mainStartX, 0);
+      shape.lineTo(mainEndX, 0);
+      shape.lineTo(mainEndX, -totalD);
+      shape.lineTo(mainStartX, -totalD);
       shape.closePath();
     }
 
@@ -2163,7 +3227,7 @@ class Furniture3DEngine {
     const materialKeys = new Set(['wallDesign', 'tileDesign', 'floorDesign', 'countertopType']);
     const roomKeys = new Set(['layoutType', 'sideLength', 'totalWidth', 'ceilingHeight', 'wallDesign', 'floorDesign']);
     const kitchenKeys = new Set([
-      'layoutType', 'sideLength', 'wingHasUpper',
+      'category', 'wardrobeDepth', 'islandDepth', 'layoutType', 'sideLength', 'wingHasUpper',
       'totalWidth', 'ceilingHeight', 'lowerHeight', 'lowerDepth', 'sinkBayWidth', 'prepBayWidth', 'cooktopBayWidth',
       'tallCabinet', 'tallCabinetWidth', 'tallCabinetType',
       'upperHeight', 'upperDepth', 'midwayHeight', 'hasUpperCabinets',

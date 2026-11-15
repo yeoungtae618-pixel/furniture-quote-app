@@ -33,7 +33,7 @@
 
   <main style="max-width: 820px; margin: 0 auto; padding: 14px 14px 40px; display:flex; flex-direction:column; gap:18px;">
 
-    <!-- 1. 3D 씽크대 + 2D 평면/입면 치수 도면 확인 -->
+    <!-- 1. 3D 맞춤 가구 + 2D 평면/입면 치수 도면 확인 -->
     <div id="viewer-3d-card" class="card no-print">
       <div class="card-header" style="flex-wrap:wrap; gap:8px;">
         <div class="card-title">
@@ -45,6 +45,9 @@
           <button type="button" class="view-mode-btn" data-viewer-mode="2d">2D 평면 · 치수도면</button>
         </div>
       </div>
+
+      <!-- 다중 품목 전환 탭 바 (2개 이상 발주 시 노출) -->
+      <div id="viewer-items-bar" style="display:none; padding:10px 14px; background:var(--bg-subtle); border-bottom:1px solid var(--border); overflow-x:auto; white-space:nowrap; gap:8px;"></div>
 
       <div id="viewer-canvas" style="height: 380px;">
         <div class="viewer-toolbar">

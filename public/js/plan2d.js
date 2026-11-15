@@ -210,8 +210,10 @@ class KitchenPlan2DEngine {
     const plinthH = Number(s.plinthHeight) || 120;
     const topT = Number(s.topThickness) || 40;
     const isL = s.layoutType === 'l_left' || s.layoutType === 'l_right';
-    const sideL = isL ? Math.max(lD + 400, Number(s.sideLength) || 1800) : lD;
-    const wingNet = isL ? Math.max(0, sideL - lD) : 0;
+    const isU = s.layoutType === 'u_shape';
+    const hasSide = isL || isU;
+    const sideL = hasSide ? Math.max(lD + 400, Number(s.sideLength) || 1800) : lD;
+    const wingNet = hasSide ? Math.max(0, sideL - lD) : 0;
 
     // 1mm = 0.22 SVG unit
     const sc = 0.22;
@@ -315,21 +317,23 @@ class KitchenPlan2DEngine {
       const upperDPx = uD * sc;
 
       // 섹션 타이틀
-      const layoutName = s.layoutType === 'l_left' ? 'ㄱ자형 (좌코너)' : (s.layoutType === 'l_right' ? 'ㄱ자형 (우코너)' : '일자형 (I-Type)');
+      const layoutName = s.layoutType === 'l_left' ? 'ㄱ자형 (좌코너)' : (s.layoutType === 'l_right' ? 'ㄴ자형 (우코너)' : (s.layoutType === 'u_shape' ? 'ㄷ자형 (양측코너)' : '일자형 (I-Type)'));
+      const catTitle = s.category && s.category !== 'sink' ? (s.categoryName || '맞춤 가구') : '주방 씽크대';
       parts.push(`
-        <text x="18" y="24" font-size="13" font-weight="800" fill="#2A211B">01. 평면도 (FLOOR PLAN · TOP VIEW)</text>
+        <text x="18" y="24" font-size="13" font-weight="800" fill="#2A211B">01. 평면도 (FLOOR PLAN · TOP VIEW) — ${catTitle}</text>
         <text x="${svgW - 18}" y="24" text-anchor="end" font-size="11" font-weight="700" fill="#8C6239">${layoutName} · 단위 mm</text>
       `);
 
-      // 건축 벽체 (뒷벽 + ㄱ자 선택 시 좌/우 측벽)
-      const wallLeftExt = s.layoutType === 'l_left' ? wallT : 16;
-      const wallRightExt = s.layoutType === 'l_right' ? wallT : 16;
+      // 건축 벽체 (뒷벽 + ㄱ/ㄴ/ㄷ자 선택 시 측벽)
+      const wallLeftExt = (s.layoutType === 'l_left' || isU) ? wallT : 16;
+      const wallRightExt = (s.layoutType === 'l_right' || isU) ? wallT : 16;
       parts.push(`
         <rect x="${px0 - wallLeftExt}" y="${wy - wallT}" width="${drawW + wallLeftExt + wallRightExt}" height="${wallT}" fill="url(#p2d-wall-hatch)" stroke="#4A3423" stroke-width="1.6"/>
       `);
-      if (s.layoutType === 'l_left') {
+      if (s.layoutType === 'l_left' || isU) {
         parts.push(`<rect x="${px0 - wallT}" y="${wy}" width="${wallT}" height="${sideL * sc + 16}" fill="url(#p2d-wall-hatch)" stroke="#4A3423" stroke-width="1.6"/>`);
-      } else if (s.layoutType === 'l_right') {
+      }
+      if (s.layoutType === 'l_right' || isU) {
         parts.push(`<rect x="${pxEnd}" y="${wy}" width="${wallT}" height="${sideL * sc + 16}" fill="url(#p2d-wall-hatch)" stroke="#4A3423" stroke-width="1.6"/>`);
       }
 

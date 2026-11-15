@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title id="html-page-title">피앙세가구 — 맞춤 씽크대 3D 견적 & 포털</title>
+  <title id="html-page-title">피앙세가구 — 프리미엄 맞춤 가구 3D 견적 & 포털</title>
   
   <link rel="stylesheet" href="/css/style.css">
   
@@ -27,7 +27,7 @@
         <div class="brand-mark" id="portal-brand-mark">P</div>
         <div>
           <div class="brand-name" id="portal-brand-name">피앙세가구</div>
-          <div class="brand-sub" id="portal-brand-sub">맞춤 씽크대 견적 & 설계 포털</div>
+          <div class="brand-sub" id="portal-brand-sub">프리미엄 맞춤 가구 견적 & 설계 포털</div>
         </div>
       </div>
 
@@ -95,6 +95,28 @@
          뷰 1: 3D 도면 설계 및 현장 실측
          =================================================== -->
     <section id="view-studio">
+
+      <!-- 다중 품목 일괄 발주 & 품목 탭 바 (주방 씽크대, 붙박이장, 신발장, 아일랜드 등) -->
+      <div class="order-items-container" id="order-items-bar">
+        <div class="order-items-header">
+          <div class="order-items-title">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>발주 가구 품목 목록 (다중 품목 일괄 견적)</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="order-grand-badge" id="order-grand-summary">
+              총 <span id="order-grand-count">1</span>개 품목 · 합계: <span id="order-grand-total">0원</span>
+            </div>
+            <button type="button" id="btn-add-item-modal" class="btn-primary btn-sm" style="width:auto; padding:6px 14px; font-weight:700;">
+              ➕ 품목 추가하기
+            </button>
+          </div>
+        </div>
+        <div class="order-items-pills" id="order-items-pills">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
       <div class="studio-grid">
         
         <!-- 좌측: 3D 모델뷰 + 2D 평면/입면 CAD 도면 뷰어 -->
@@ -153,16 +175,19 @@
           <!-- 탭 1: 현장 실측 & 견적 -->
           <div id="tab-panel-spec" class="card-body">
 
-            <!-- 0. 주방 구조 레이아웃 (일자형 / ㄱ자 코너형) -->
+            <!-- 0. 가구 종류 및 구조 레이아웃 -->
             <div class="form-section">
               <div class="section-label">
-                <span>0. 주방 구조 레이아웃</span>
-                <span style="font-size:11px; color:var(--brand); font-weight:600;">평면 · 3D 즉시 반영</span>
+                <span id="label-active-cat-title">0. 맞춤 가구 종류 및 레이아웃</span>
+                <button type="button" id="btn-change-category" class="category-badge-chip" style="cursor:pointer; border:1px solid var(--border-strong);">
+                  <span id="badge-current-cat">🍳 주방 씽크대</span> ▾
+                </button>
               </div>
-              <div class="layout-pill-group">
+              <div class="layout-pill-group" id="studio-layout-group">
                 <button type="button" class="layout-pill active" data-layout="straight">일자형 (I-Type)</button>
                 <button type="button" class="layout-pill" data-layout="l_left">ㄱ자 (좌측 코너)</button>
-                <button type="button" class="layout-pill" data-layout="l_right">ㄱ자 (우측 코너)</button>
+                <button type="button" class="layout-pill" data-layout="l_right">ㄴ자 (우측 코너)</button>
+                <button type="button" class="layout-pill" data-layout="u_shape">ㄷ자 (양측 코너)</button>
               </div>
               <div id="wing-config-box" class="wing-config-box" style="display:none;">
                 <div class="grid-2" style="align-items:end; margin-bottom:8px;">
@@ -585,7 +610,8 @@
               <div class="layout-pill-group" style="margin-bottom:10px;">
                 <button type="button" class="layout-pill active" data-field-layout="straight">일자형 (I-Type)</button>
                 <button type="button" class="layout-pill" data-field-layout="l_left">ㄱ자형 (좌측 코너)</button>
-                <button type="button" class="layout-pill" data-field-layout="l_right">ㄱ자형 (우측 코너)</button>
+                <button type="button" class="layout-pill" data-field-layout="l_right">ㄴ자형 (우측 코너)</button>
+                <button type="button" class="layout-pill" data-field-layout="u_shape">ㄷ자형 (양측 코너)</button>
               </div>
             </div>
             <div class="grid-3" style="margin-bottom:10px;">
@@ -1303,6 +1329,22 @@
     </button>
   </nav>
 
+</div>
+
+<!-- 맞춤 가구 카테고리 선택 모달 -->
+<div id="modal-add-category" class="modal-backdrop">
+  <div class="modal-window" style="max-width:720px;">
+    <div class="modal-header">
+      <h3 class="modal-title">맞춤 가구 품목 선택 & 추가</h3>
+      <button id="btn-close-cat-modal" class="modal-close">&times;</button>
+    </div>
+    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+      발주하실 가구 품목을 선택하시면 해당 모듈의 3D 실시간 도면 및 치수/자재 설정이 추가됩니다. (복수 품목 일괄 발주 가능)
+    </p>
+    <div class="category-selection-grid" id="category-picker-grid">
+      <!-- Populated dynamically by app.js -->
+    </div>
+  </div>
 </div>
 
 <!-- 기성 도어 선택 모달 -->

@@ -216,6 +216,9 @@ app.post('/api/quotes', (req, res) => {
         phone: req.body.customerPhone || '',
         address: req.body.customerAddress || ''
       },
+      items: req.body.items || [],
+      orderGrandTotal: req.body.orderGrandTotal || (req.body.pricing?.totalPrice || 0),
+      orderGrandDeposit: req.body.orderGrandDeposit || (req.body.pricing?.depositPrice || 0),
       spec: req.body.spec || {},
       pricing: req.body.pricing || {},
       capturedImage: req.body.capturedImage || null,

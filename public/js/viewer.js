@@ -37,42 +37,53 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (printBtnSigned) printBtnSigned.addEventListener('click', printFn);
 
   // 3D 뷰어 + 2D 치수 평면도 초기화 (구버전 견적 필드 호환 fallback 적용)
-  const spec = quoteData.spec || {};
-  const totalW = spec.totalWidth || spec.width || 2700;
-  const sinkW = spec.sinkBayWidth || Math.round(totalW * 0.37);
-  const cookW = spec.cooktopBayWidth || Math.round(totalW * 0.33);
-  const prepW = spec.prepBayWidth || (totalW - sinkW - cookW);
+  function normalizeItemSpec(spec = {}) {
+    const totalW = spec.totalWidth || spec.width || 2700;
+    const sinkW = spec.sinkBayWidth || Math.round(totalW * 0.37);
+    const cookW = spec.cooktopBayWidth || Math.round(totalW * 0.33);
+    const prepW = spec.prepBayWidth || (totalW - sinkW - cookW);
 
-  const normalizedSpec = {
-    layoutType: spec.layoutType || 'straight',
-    sideLength: spec.sideLength || 1800,
-    wingHasUpper: Boolean(spec.wingHasUpper),
-    totalWidth: totalW,
-    ceilingHeight: spec.ceilingHeight || 2350,
-    lowerHeight: spec.lowerHeight || 860,
-    lowerDepth: spec.lowerDepth || 600,
-    sinkBayWidth: sinkW,
-    prepBayWidth: prepW,
-    cooktopBayWidth: cookW,
-    upperHeight: spec.upperHeight || 700,
-    upperDepth: spec.upperDepth || 350,
-    midwayHeight: spec.midwayHeight || 650,
-    hasUpperCabinets: spec.hasUpperCabinets !== false,
-    doorColor: spec.doorColor || '#fcfcfc',
-    doorStyle: spec.doorStyle || 'flat',
-    countertopType: spec.countertopType || 'white_marble',
-    handleType: spec.handleType || 'j_channel',
-    handleColor: spec.handleColor || 'matte_black',
-    wallDesign: spec.wallDesign || 'warm_greige',
-    tileDesign: spec.tileDesign || 'white_subway',
-    floorDesign: spec.floorDesign || 'natural_oak',
-    underlightTemp: spec.underlightTemp || 'warm',
-    hoodType: spec.hoodType || 'hidden',
-    cooktopType: spec.cooktopType || 'black_ind',
-    faucetType: spec.faucetType || 'gooseneck',
-    showDimensions: true,
-    isViewerMode: true
-  };
+    return {
+      category: spec.category || 'sink',
+      layoutType: spec.layoutType || 'straight',
+      sideLength: spec.sideLength || 1800,
+      wingHasUpper: Boolean(spec.wingHasUpper),
+      totalWidth: totalW,
+      ceilingHeight: spec.ceilingHeight || 2350,
+      lowerHeight: spec.lowerHeight || 860,
+      lowerDepth: spec.lowerDepth || 600,
+      sinkBayWidth: sinkW,
+      prepBayWidth: prepW,
+      cooktopBayWidth: cookW,
+      upperHeight: spec.upperHeight || 700,
+      upperDepth: spec.upperDepth || 350,
+      midwayHeight: spec.midwayHeight || 650,
+      hasUpperCabinets: spec.hasUpperCabinets !== false,
+      doorColor: spec.doorColor || '#fcfcfc',
+      doorStyle: spec.doorStyle || 'flat',
+      countertopType: spec.countertopType || 'white_marble',
+      handleType: spec.handleType || 'j_channel',
+      handleColor: spec.handleColor || 'matte_black',
+      wallDesign: spec.wallDesign || 'warm_greige',
+      tileDesign: spec.tileDesign || 'white_subway',
+      floorDesign: spec.floorDesign || 'natural_oak',
+      underlightTemp: spec.underlightTemp || 'warm',
+      hoodType: spec.hoodType || 'hidden',
+      cooktopType: spec.cooktopType || 'black_ind',
+      faucetType: spec.faucetType || 'gooseneck',
+      showDimensions: true,
+      isViewerMode: true,
+      wardrobeDepth: spec.wardrobeDepth || 650,
+      islandDepth: spec.islandDepth || 850
+    };
+  }
+
+  const itemsList = (Array.isArray(quoteData.items) && quoteData.items.length > 0)
+    ? quoteData.items
+    : [{ name: '주방 씽크대', category: quoteData.spec?.category || 'sink', spec: quoteData.spec, pricing: quoteData.pricing }];
+
+  let currentActiveItemIdx = 0;
+  let normalizedSpec = normalizeItemSpec(itemsList[0].spec);
 
   const canvasContainer = document.getElementById('viewer-canvas');
   const planContainer = document.getElementById('viewer-plan2d');
@@ -80,6 +91,39 @@ document.addEventListener('DOMContentLoaded', async () => {
   const plan2d = (planContainer && typeof KitchenPlan2DEngine !== 'undefined')
     ? new KitchenPlan2DEngine(planContainer, normalizedSpec, { isViewerMode: true })
     : null;
+
+  // 다중 품목 전환 탭 바 렌더링 (2개 이상 발주 시 활성화)
+  const itemsBar = document.getElementById('viewer-items-bar');
+  if (itemsBar && itemsList.length > 1) {
+    itemsBar.style.display = 'flex';
+    itemsBar.innerHTML = '';
+
+    const CAT_ICONS = {
+      sink: '🍳', wardrobe: '🚪', shoe_cabinet: '👞', storage: '📦',
+      drawers: '🗄️', island: '🍽️', display_glass: '✨', prep_counter: '🔪',
+      tall_cabinet: '⚡', tv_console: '📺', hood_cabinet: '💨',
+      base_corner: '📐', upper_corner: '📐'
+    };
+
+    itemsList.forEach((it, idx) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `view-mode-btn ${idx === 0 ? 'active' : ''}`;
+      btn.style.cssText = 'padding:6px 14px; font-size:12px; font-weight:700; white-space:nowrap; border-radius:20px;';
+      const icon = CAT_ICONS[it.category] || '🛋️';
+      btn.innerHTML = `${icon} ${idx + 1}. ${it.name}`;
+
+      btn.addEventListener('click', () => {
+        currentActiveItemIdx = idx;
+        itemsBar.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        normalizedSpec = normalizeItemSpec(it.spec);
+        if (engine) engine.updateSpec(normalizedSpec);
+        if (plan2d) plan2d.updateSpec(normalizedSpec);
+      });
+
+      itemsBar.appendChild(btn);
+    });
+  }
 
   // 3D 모델뷰 <-> 2D 치수 평면도 전환
   document.querySelectorAll('[data-viewer-mode]').forEach(btn => {
@@ -305,38 +349,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     setText('seal-text-top', sealTop);
     setText('seal-text-bot', sealBot);
 
-    // 2. 공급 품목 명세표 (간략 사양 자동 반영)
-    const layoutNote = (s.layoutType === 'l_left' || s.layoutType === 'l_right')
-      ? `ㄱ자형 (${s.layoutType === 'l_left' ? '좌코너' : '우코너'}) ${tW.toLocaleString()} × ${(s.sideLength || 1800).toLocaleString()}mm`
-      : `일자형 전체 폭 ${tW.toLocaleString()}mm`;
+    // 2. 공급 품목 명세표 (단일 품목 또는 다중 맞춤 품목 일괄 명세 자동 반영)
+    const hasMultipleItems = Array.isArray(q.items) && q.items.length > 1;
+    let rows = [];
 
-    const rows = [
-      {
-        item: '맞춤 가구 몸통 (원목)',
-        detail: `${woodName} · ${layoutNote} (개수대 ${sW.toLocaleString()} / 조리대 ${pW.toLocaleString()} / 가열대 ${cW.toLocaleString()}mm · ${upperDesc})`,
-        basis: '1식 (직영제작)'
-      },
-      {
-        item: '도어 외주 사양',
-        detail: `${doorName}${s.selectedDoorFinish ? ` (${s.selectedDoorFinish})` : ''}`,
-        basis: '기성 도어'
-      },
-      {
-        item: '상판 제작 및 가공',
-        detail: `${topName} (개수대 · 쿡탑 타공 및 접합 가공 포함)`,
-        basis: '1식'
-      },
-      {
-        item: '주방 기기 및 수전 구성',
-        detail: `${hoodName} · ${cookName} · ${faucetName}`,
-        basis: '지정 사양'
-      },
-      {
-        item: '하드웨어 및 현장 시공',
-        detail: includedList.length > 0 ? `${includedList.join(', ')} 및 전문 시공` : '기본 하드웨어 및 전문 현장 시공',
-        basis: '포함 (1식)'
-      }
-    ];
+    if (hasMultipleItems) {
+      rows = q.items.map((it, idx) => {
+        const itemSpec = it.spec || {};
+        const cat = it.category || 'sink';
+        const doorStr = itemSpec.selectedDoorName || s.selectedDoorName || '기성 도어';
+        const topStr = (cat === 'sink' || cat === 'prep_counter' || cat === 'island' || cat === 'base_corner')
+          ? ` · 상판: ${itemSpec.countertopName || topName}`
+          : '';
+        const layoutText = itemSpec.layoutLabel || `W${Number(itemSpec.totalWidth || 2700).toLocaleString()}mm`;
+        const itemPrice = it.pricing?.totalPrice ? `${Number(it.pricing.totalPrice).toLocaleString()}원` : '별도산출';
+
+        return {
+          item: `[제${idx + 1}품목] ${it.name}`,
+          detail: `친환경 원목 맞춤 가구 · ${layoutText} · 도어: ${doorStr}${topStr}`,
+          basis: `1식 (${itemPrice})`
+        };
+      });
+
+      // 공통 하드웨어 및 책임 시공 안내
+      rows.push({
+        item: '공통 하드웨어 및 현장 시공',
+        detail: includedList.length > 0 ? `${includedList.join(', ')} 및 전 품목 전문 시공팀 일괄 직영 시공` : '전 품목 고급 댐핑 하드웨어 및 전문 직영 시공',
+        basis: '일괄 포함'
+      });
+    } else {
+      const layoutNote = (s.layoutType === 'u_shape')
+        ? `ㄷ자형 (양측코너) ${tW.toLocaleString()} × ${(s.sideLength || 1800).toLocaleString()}mm`
+        : ((s.layoutType === 'l_left' || s.layoutType === 'l_right')
+          ? `ㄱ자형 (${s.layoutType === 'l_left' ? '좌코너' : '우코너'}) ${tW.toLocaleString()} × ${(s.sideLength || 1800).toLocaleString()}mm`
+          : `일자형 전체 폭 ${tW.toLocaleString()}mm`);
+
+      rows = [
+        {
+          item: '맞춤 가구 몸통 (원목)',
+          detail: `${woodName} · ${layoutNote} (개수대 ${sW.toLocaleString()} / 조리대 ${pW.toLocaleString()} / 가열대 ${cW.toLocaleString()}mm · ${upperDesc})`,
+          basis: '1식 (직영제작)'
+        },
+        {
+          item: '도어 외주 사양',
+          detail: `${doorName}${s.selectedDoorFinish ? ` (${s.selectedDoorFinish})` : ''}`,
+          basis: '기성 도어'
+        },
+        {
+          item: '상판 제작 및 가공',
+          detail: `${topName} (개수대 · 쿡탑 타공 및 접합 가공 포함)`,
+          basis: '1식'
+        },
+        {
+          item: '주방 기기 및 수전 구성',
+          detail: `${hoodName} · ${cookName} · ${faucetName}`,
+          basis: '지정 사양'
+        },
+        {
+          item: '하드웨어 및 현장 시공',
+          detail: includedList.length > 0 ? `${includedList.join(', ')} 및 전문 시공` : '기본 하드웨어 및 전문 현장 시공',
+          basis: '포함 (1식)'
+        }
+      ];
+    }
 
     const tbody = document.getElementById('doc-items-tbody');
     if (tbody) {
@@ -350,11 +425,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 3. 계약 공급가액 (000,000원 단위 포맷 및 계약금/잔금 합산 일치)
-    const totalPrice = Number(q.pricing?.totalPrice || 0);
-    const depositPrice = Number(q.pricing?.depositPrice || 0);
-    const balancePrice = q.pricing?.balancePrice !== undefined
-      ? Number(q.pricing.balancePrice)
-      : Math.max(0, totalPrice - depositPrice);
+    const totalPrice = Number(q.orderGrandTotal || q.pricing?.totalPrice || 0);
+    const depositPrice = Number(q.orderGrandDeposit || q.pricing?.depositPrice || 0);
+    const balancePrice = Math.max(0, totalPrice - depositPrice);
 
     setText('doc-deposit-pct', settings.depositPercent || 10);
     setText('view-total-price', `${totalPrice.toLocaleString()}원`);

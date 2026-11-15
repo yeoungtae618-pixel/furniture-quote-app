@@ -10,8 +10,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   let engine = null;
   let plan2dEngine = null;
 
+  const FURNITURE_CATEGORIES = [
+    { id: 'sink', name: '주방 씽크대', icon: '🍳', desc: '일자/ㄱ/ㄴ/ㄷ자 개수대·조리대·가열대 모듈', defaultW: 2700, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: true },
+    { id: 'wardrobe', name: '붙박이장', icon: '🚪', desc: '천장 마감 슬라이딩/여닫이, 내부 서랍 및 옷걸이봉', defaultW: 3000, defaultH: 2350, defaultD: 650, hasCountertop: false, hasUpper: false },
+    { id: 'shoe_cabinet', name: '신발장', icon: '👞', desc: '하부 200mm 띄움 시공 & T5 조명 & 중간 오픈 니치', defaultW: 1200, defaultH: 2300, defaultD: 380, hasCountertop: false, hasUpper: false },
+    { id: 'storage', name: '수납장(팬트리)', icon: '📦', desc: '다목적 5단 이동 선반 다용도실/팬트리 수납', defaultW: 900, defaultH: 2100, defaultD: 450, hasCountertop: false, hasUpper: false },
+    { id: 'drawers', name: '서랍장', icon: '🗄️', desc: '3단/4단/5단 와이드 볼레일 레일 서랍장', defaultW: 900, defaultH: 950, defaultD: 500, hasCountertop: false, hasUpper: false },
+    { id: 'island', name: '아일랜드 식탁', icon: '🍽️', desc: '인조대리석 상판 오버행(무릎공간) & 가전 인출 수납', defaultW: 1800, defaultH: 860, defaultD: 850, hasCountertop: true, hasUpper: false },
+    { id: 'display_glass', name: '장식장(유리문)', icon: '✨', desc: '슬림 알루미늄 프레임, 8T 강화유리 & 세로 LED 조명', defaultW: 900, defaultH: 2100, defaultD: 400, hasCountertop: false, hasUpper: false },
+    { id: 'prep_counter', name: '조리대', icon: '🔪', desc: '인조대리석 상판 수납 서랍 독립 조리 작업대', defaultW: 1000, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: false },
+    { id: 'tall_cabinet', name: '키큰장(가전)', icon: '⚡', desc: '밥솥 인출 레일 & 광파오븐 수납 단독 키큰장', defaultW: 600, defaultH: 2350, defaultD: 600, hasCountertop: false, hasUpper: false },
+    { id: 'tv_console', name: '티비다이', icon: '📺', desc: '거실 모던 로우보드, 오픈 AV 니치 & 배선홀', defaultW: 2000, defaultH: 450, defaultD: 420, hasCountertop: false, hasUpper: false },
+    { id: 'hood_cabinet', name: '후드장', icon: '💨', desc: '빌트인 하이드 후드 & 상부 은색 배기 연통 덕트', defaultW: 800, defaultH: 700, defaultD: 350, hasCountertop: false, hasUpper: false },
+    { id: 'base_corner', name: '하부 코너장', icon: '📐', desc: '90° 코너 오각/블라인드장 & 2단 회전 매직 선반', defaultW: 900, defaultH: 860, defaultD: 900, hasCountertop: true, hasUpper: false },
+    { id: 'upper_corner', name: '상부 코너장', icon: '📐', desc: '600x600 벽체 코너 연결 전용 상부장', defaultW: 600, defaultH: 700, defaultD: 600, hasCountertop: false, hasUpper: false }
+  ];
+
   const state = {
+    items: [],
+    activeItemIndex: 0,
     spec: {
+      category: 'sink',
       layoutType: 'straight',
       sideLength: 1800,
       wingHasUpper: false,
@@ -52,8 +71,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       fixedItemsCost: 0,
       installCost: 0,
       totalPrice: 0,
-      depositPrice: 0
-    }
+      depositPrice: 0,
+      balancePrice: 0
+    },
+    orderGrandTotal: 0,
+    orderGrandDeposit: 0,
+    orderGrandBalance: 0
   };
 
   // 토스트 알림 헬퍼
@@ -102,6 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // 3D 엔진 초기화
       init3DEngine();
+      initCategoryModalEvents();
       calculateQuote();
 
       // 영업사원 실측 워크벤치 바인딩 및 동기화
@@ -110,6 +134,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (err) {
       console.error('Initial load error:', err);
       showToast('서버 데이터 로딩 중 오류가 발생했습니다.');
+    }
+  }
+
+  function initCategoryModalEvents() {
+    const btnAddModal = document.getElementById('btn-add-item-modal');
+    if (btnAddModal) {
+      btnAddModal.addEventListener('click', () => openCategoryModal('add'));
+    }
+
+    const btnChangeCat = document.getElementById('btn-change-category');
+    if (btnChangeCat) {
+      btnChangeCat.addEventListener('click', () => openCategoryModal('change'));
+    }
+
+    const btnCloseCat = document.getElementById('btn-close-cat-modal');
+    const catModal = document.getElementById('modal-add-category');
+    if (btnCloseCat && catModal) {
+      btnCloseCat.addEventListener('click', () => {
+        catModal.style.display = 'none';
+      });
+      catModal.addEventListener('click', (e) => {
+        if (e.target === catModal) catModal.style.display = 'none';
+      });
     }
   }
 
@@ -149,87 +196,467 @@ document.addEventListener('DOMContentLoaded', async () => {
     calculateQuote();
   }
 
-  // 3. 동적 견적 산출 (웹에서 수정한 고정 단가표 기반 + 만원/천원 단위 깔끔한 절사·반올림)
+  // 3. 다중 맞춤 가구 품목별 정밀 견적 산출 (카테고리별 공장 원가 + 기성 도어 + 부자재 + 시공비 + 마진)
   function roundThousand(val) {
     return Math.round((Number(val) || 0) / 1000) * 1000;
   }
 
-  function calculateQuote() {
-    if (!settings || !state.selectedDoor) return;
+  function calculateSingleItemPricing(item) {
+    if (!settings) return;
+    const s = item.spec || state.spec;
+    const door = item.selectedDoor || state.selectedDoor || { sqmPrice: 42000 };
+    const cat = item.category || 'sink';
+    const doorPrice = Number(door.sqmPrice) || 42000;
+    const woodRate = Number(settings.woodBodyPerMeter) || 230000;
+    const topRate = Number(settings.countertopPerMeter) || 180000;
 
-    const isL = state.spec.layoutType === 'l_left' || state.spec.layoutType === 'l_right';
-    const wingNet = isL ? Math.max(0, (state.spec.sideLength || 1800) - (state.spec.lowerDepth || 600)) : 0;
-    const totalM = (state.spec.totalWidth + wingNet) / 1000;
-    const upperM = (state.spec.totalWidth + (state.spec.wingHasUpper ? wingNet : 0)) / 1000;
+    let bodyCost = 0;
+    let doorCost = 0;
+    let topCost = 0;
+    let hardwareCost = 0;
+    let installCost = 0;
 
-    const hasTall = Boolean(state.spec.tallCabinet && state.spec.tallCabinet !== 'none');
-    const tallW = hasTall ? (Number(state.spec.tallCabinetWidth) || 600) / 1000 : 0;
-    const tallBodyExtra = hasTall ? roundThousand(tallW * (settings.woodBodyPerMeter || 230000) * 1.5) : 0;
-    const tallDoorExtra = hasTall ? roundThousand(tallW * 2.2 * (state.selectedDoor.sqmPrice || 42000)) : 0;
+    const W_m = (Number(s.totalWidth) || 2700) / 1000;
+    const H_m = (Number(s.lowerHeight || s.ceilingHeight) || 860) / 1000;
+    const CH_m = (Number(s.ceilingHeight) || 2350) / 1000;
 
-    // A. 공장 직영 원목 몸통 (천원 단위 반올림)
-    const bodyCost = roundThousand(totalM * (settings.woodBodyPerMeter || 230000)) + tallBodyExtra;
+    if (cat === 'wardrobe') {
+      bodyCost = roundThousand(W_m * (CH_m / 2.3) * woodRate * 1.35);
+      doorCost = roundThousand(W_m * (CH_m - 0.12) * doorPrice);
+      hardwareCost = 150000;
+      installCost = roundThousand((settings.installBase || 250000) * 0.7 + W_m * 45000);
+    } else if (cat === 'shoe_cabinet') {
+      bodyCost = roundThousand(W_m * (CH_m / 2.3) * woodRate * 1.1);
+      doorCost = roundThousand(W_m * (CH_m - 0.55) * doorPrice);
+      hardwareCost = 140000;
+      installCost = roundThousand(160000 + W_m * 35000);
+    } else if (cat === 'island') {
+      const islandD_m = (Number(s.islandDepth) || 850) / 1000;
+      bodyCost = roundThousand(W_m * (islandD_m / 0.8) * woodRate * 1.2);
+      doorCost = roundThousand(W_m * 0.75 * doorPrice);
+      topCost = roundThousand(W_m * (islandD_m / 0.6) * topRate + 90000);
+      hardwareCost = 180000;
+      installCost = roundThousand(180000 + W_m * 30000);
+    } else if (cat === 'display_glass') {
+      bodyCost = roundThousand(W_m * (CH_m / 2.1) * woodRate * 1.15);
+      doorCost = roundThousand(W_m * CH_m * (doorPrice * 1.8 + 65000));
+      hardwareCost = 180000;
+      installCost = roundThousand(170000 + W_m * 30000);
+    } else if (cat === 'drawers') {
+      bodyCost = roundThousand(W_m * woodRate * 0.95);
+      doorCost = roundThousand(W_m * H_m * doorPrice);
+      hardwareCost = 130000;
+      installCost = roundThousand(90000 + W_m * 25000);
+    } else if (cat === 'tv_console') {
+      bodyCost = roundThousand(W_m * woodRate * 0.85);
+      doorCost = roundThousand(W_m * H_m * doorPrice);
+      hardwareCost = 80000;
+      installCost = roundThousand(100000 + W_m * 20000);
+    } else if (cat === 'storage') {
+      bodyCost = roundThousand(W_m * (CH_m / 2.1) * woodRate * 1.05);
+      doorCost = roundThousand(W_m * (CH_m - 0.1) * doorPrice);
+      hardwareCost = 110000;
+      installCost = roundThousand(140000 + W_m * 30000);
+    } else if (cat === 'prep_counter') {
+      bodyCost = roundThousand(W_m * woodRate * 0.85);
+      doorCost = roundThousand(W_m * 0.74 * doorPrice);
+      topCost = roundThousand(W_m * topRate);
+      hardwareCost = 90000;
+      installCost = roundThousand(110000 + W_m * 25000);
+    } else if (cat === 'tall_cabinet') {
+      bodyCost = roundThousand(W_m * 1.65 * woodRate);
+      doorCost = roundThousand(W_m * 2.2 * doorPrice);
+      hardwareCost = 140000;
+      installCost = roundThousand(130000 + W_m * 30000);
+    } else if (cat === 'hood_cabinet') {
+      bodyCost = roundThousand(W_m * woodRate * 0.55);
+      doorCost = roundThousand(W_m * 0.7 * doorPrice);
+      hardwareCost = 150000;
+      installCost = roundThousand(70000);
+    } else if (cat === 'base_corner') {
+      bodyCost = roundThousand(0.9 * woodRate * 1.35);
+      doorCost = roundThousand(0.9 * 0.74 * doorPrice);
+      topCost = roundThousand(0.9 * topRate + 40000);
+      hardwareCost = 180000;
+      installCost = roundThousand(100000);
+    } else if (cat === 'upper_corner') {
+      bodyCost = roundThousand(0.6 * woodRate * 0.75);
+      doorCost = roundThousand(0.6 * 0.7 * doorPrice);
+      hardwareCost = 60000;
+      installCost = roundThousand(60000);
+    } else {
+      const isL = s.layoutType === 'l_left' || s.layoutType === 'l_right';
+      const isU = s.layoutType === 'u_shape';
+      const wingMult = isU ? 2 : (isL ? 1 : 0);
+      const wingNet = wingMult * Math.max(0, (Number(s.sideLength) || 1800) - (Number(s.lowerDepth) || 600));
+      const totalM = (Number(s.totalWidth) + wingNet) / 1000;
+      const upperM = (Number(s.totalWidth) + (s.wingHasUpper ? wingNet : 0)) / 1000;
 
-    // B. 기성 도어 외주 매입비 (천원 단위 반올림)
-    const lowerDoorArea = totalM * 0.74;
-    const upperDoorArea = state.spec.hasUpperCabinets ? (upperM * (state.spec.upperHeight / 1000)) : 0;
-    const doorVendorCost = roundThousand((lowerDoorArea + upperDoorArea) * (state.selectedDoor.sqmPrice || 42000)) + tallDoorExtra;
+      const hasTall = Boolean(s.tallCabinet && s.tallCabinet !== 'none');
+      const tallW = hasTall ? (Number(s.tallCabinetWidth) || 600) / 1000 : 0;
+      const tallBodyExtra = hasTall ? roundThousand(tallW * woodRate * 1.5) : 0;
+      const tallDoorExtra = hasTall ? roundThousand(tallW * 2.2 * doorPrice) : 0;
 
-    // C. 인조대리석 상판 (천원 단위 반올림)
-    const countertopCost = roundThousand(
-      totalM * (settings.countertopPerMeter || 180000) + (settings.countertopHoleCut || 60000)
-    );
+      bodyCost = roundThousand(totalM * woodRate) + tallBodyExtra;
 
-    // D. 고정 부자재/하드웨어 항목 합산 (enabled === true 인 항목만)
-    const fixedItemsCost = roundThousand(
-      (settings.fixedItems || [])
-        .filter(item => item.enabled)
-        .reduce((sum, item) => sum + (parseInt(item.price) || 0), 0)
-    );
+      const lowerDoorArea = totalM * 0.74;
+      const upperDoorArea = s.hasUpperCabinets ? (upperM * ((Number(s.upperHeight) || 700) / 1000)) : 0;
+      doorCost = roundThousand((lowerDoorArea + upperDoorArea) * doorPrice) + tallDoorExtra;
 
-    // E. 시공 및 물류비 (천원 단위 반올림)
-    const installCost = roundThousand(
-      (settings.installBase || 250000) + totalM * (settings.installPerMeter || 40000)
-    );
+      topCost = roundThousand(
+        totalM * topRate + (Number(settings.countertopHoleCut) || 60000)
+      );
 
-    // F. 마진율 적용 후 최종 견적 총액 및 계약금(10,000원 단위 '000,000' 깔끔하게 절사·반올림)
+      hardwareCost = roundThousand(
+        (settings.fixedItems || [])
+          .filter(fi => fi.enabled)
+          .reduce((sum, fi) => sum + (parseInt(fi.price) || 0), 0)
+      );
+
+      installCost = roundThousand(
+        (settings.installBase || 250000) + totalM * (settings.installPerMeter || 40000)
+      );
+    }
+
     const marginMultiplier = 1 + ((settings.marginPercent || 25) / 100);
-    const rawTotal = bodyCost + doorVendorCost + countertopCost + fixedItemsCost + installCost;
+    const rawTotal = bodyCost + doorCost + topCost + hardwareCost + installCost;
     const totalPrice = Math.max(10000, Math.round((rawTotal * marginMultiplier) / 10000) * 10000);
     const depositPrice = Math.round((totalPrice * ((settings.depositPercent || 10) / 100)) / 10000) * 10000;
     const balancePrice = Math.max(0, totalPrice - depositPrice);
 
-    state.pricing = {
+    item.pricing = {
       woodBodyCost: bodyCost,
-      doorVendorCost,
-      countertopCost,
-      fixedItemsCost,
-      installCost,
+      doorVendorCost: doorCost,
+      countertopCost: topCost,
+      fixedItemsCost: hardwareCost,
+      installCost: installCost,
       totalPrice,
       depositPrice,
       balancePrice
     };
+  }
+
+  // --- 다중 품목 일괄 발주 관리 시스템 ---
+
+  function initOrderItems() {
+    if (!state.items || state.items.length === 0) {
+      const catMeta = FURNITURE_CATEGORIES.find(c => c.id === (state.spec.category || 'sink')) || FURNITURE_CATEGORIES[0];
+      state.items = [{
+        id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+        name: `${catMeta.name} 1`,
+        category: catMeta.id,
+        spec: JSON.parse(JSON.stringify(state.spec)),
+        selectedDoor: state.selectedDoor,
+        pricing: { ...state.pricing }
+      }];
+      state.activeItemIndex = 0;
+    }
+  }
+
+  function renderOrderItemsBar() {
+    const pillsContainer = document.getElementById('order-items-pills');
+    if (!pillsContainer) return;
+    pillsContainer.innerHTML = '';
+
+    state.items.forEach((item, idx) => {
+      const catMeta = FURNITURE_CATEGORIES.find(c => c.id === item.category) || FURNITURE_CATEGORIES[0];
+      const isActive = idx === state.activeItemIndex;
+      const chip = document.createElement('div');
+      chip.className = `order-item-chip ${isActive ? 'active' : ''}`;
+
+      const priceText = item.pricing ? `${(item.pricing.totalPrice || 0).toLocaleString()}원` : '-';
+      const widthVal = item.spec ? (item.spec.totalWidth || 2700) : 2700;
+
+      chip.innerHTML = `
+        <span class="chip-cat-icon">${catMeta.icon}</span>
+        <div class="chip-meta">
+          <div class="chip-name">${idx + 1}. ${item.name}</div>
+          <div class="chip-sub">W${Number(widthVal).toLocaleString()} · ${priceText}</div>
+        </div>
+        ${state.items.length > 1 ? `<button type="button" class="chip-delete-btn" title="품목 삭제" data-idx="${idx}">&times;</button>` : ''}
+      `;
+
+      chip.addEventListener('click', (e) => {
+        if (e.target.closest('.chip-delete-btn')) return;
+        switchActiveItem(idx);
+      });
+
+      const delBtn = chip.querySelector('.chip-delete-btn');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deleteOrderItem(idx);
+        });
+      }
+
+      pillsContainer.appendChild(chip);
+    });
+
+    // 상단 요약 뱃지 갱신
+    const grandCountEl = document.getElementById('order-grand-count');
+    if (grandCountEl) grandCountEl.innerText = state.items.length;
+    const grandTotalEl = document.getElementById('order-grand-total');
+    if (grandTotalEl) grandTotalEl.innerText = (state.orderGrandTotal || 0).toLocaleString() + '원';
+
+    // 현재 활성 카테고리 뱃지 표시
+    const activeItem = state.items[state.activeItemIndex] || state.items[0];
+    if (activeItem) {
+      const curCat = FURNITURE_CATEGORIES.find(c => c.id === activeItem.category) || FURNITURE_CATEGORIES[0];
+      const badgeEl = document.getElementById('badge-current-cat');
+      if (badgeEl) badgeEl.innerText = `${curCat.icon} ${activeItem.name}`;
+      const titleEl = document.getElementById('label-active-cat-title');
+      if (titleEl) titleEl.innerText = `0. 맞춤 품목: ${activeItem.name} (${curCat.name})`;
+    }
+  }
+
+  function switchActiveItem(index) {
+    if (index < 0 || index >= state.items.length) return;
+
+    // 현재 작업 중이던 아이템 상태 저장
+    if (state.items[state.activeItemIndex]) {
+      state.items[state.activeItemIndex].spec = JSON.parse(JSON.stringify(state.spec));
+      state.items[state.activeItemIndex].selectedDoor = state.selectedDoor;
+    }
+
+    state.activeItemIndex = index;
+    const nextItem = state.items[index];
+    state.spec = JSON.parse(JSON.stringify(nextItem.spec));
+    if (nextItem.selectedDoor) state.selectedDoor = nextItem.selectedDoor;
+
+    syncFormInputsFromSpec();
+    syncVisualEngines();
+    calculateQuote();
+  }
+
+  function syncFormInputsFromSpec() {
+    const s = state.spec;
+    const cat = s.category || 'sink';
+    const catMeta = FURNITURE_CATEGORIES.find(c => c.id === cat) || FURNITURE_CATEGORIES[0];
+
+    // 가로 폭
+    if (sliderTotalW) sliderTotalW.value = s.totalWidth;
+    if (inputTotalW) inputTotalW.value = s.totalWidth;
+    const valTotalW = document.getElementById('val-total-w');
+    if (valTotalW) valTotalW.innerText = `${Number(s.totalWidth).toLocaleString()} mm`;
+
+    // 하부 분할
+    if (inputSinkW) inputSinkW.value = s.sinkBayWidth || 1000;
+    if (inputPrepW) inputPrepW.value = s.prepBayWidth || 800;
+    if (inputCookW) inputCookW.value = s.cooktopBayWidth || 900;
+    if (inputLowerH) inputLowerH.value = s.lowerHeight || 860;
+    if (inputLowerD) inputLowerD.value = s.lowerDepth || 600;
+    if (inputUpperH) inputUpperH.value = s.upperHeight || 700;
+
+    // 날개 길이
+    const sideInp = document.getElementById('input-side-len');
+    if (sideInp) sideInp.value = s.sideLength || 1800;
+
+    // 레이아웃 버튼 활성화
+    const activeLayout = s.layoutType || 'straight';
+    document.querySelectorAll('#studio-layout-group .layout-pill').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.layout === activeLayout);
+    });
+    const wingBox = document.getElementById('wing-config-box');
+    if (wingBox) {
+      wingBox.style.display = (activeLayout === 'straight') ? 'none' : 'block';
+    }
+
+    // 도어 카드 갱신
+    updateSelectedDoorCard();
+  }
+
+  function addNewOrderItem(categoryId) {
+    const catMeta = FURNITURE_CATEGORIES.find(c => c.id === categoryId) || FURNITURE_CATEGORIES[0];
+    const sameCount = state.items.filter(i => i.category === categoryId).length;
+    const itemName = `${catMeta.name} ${sameCount + 1}`;
+
+    const newSpec = {
+      ...state.spec,
+      category: categoryId,
+      layoutType: 'straight',
+      totalWidth: catMeta.defaultW || 1800,
+      lowerHeight: catMeta.defaultH || 860,
+      lowerDepth: catMeta.defaultD || 600,
+      sinkBayWidth: Math.round((catMeta.defaultW || 1800) * 0.37),
+      cooktopBayWidth: Math.round((catMeta.defaultW || 1800) * 0.33),
+      prepBayWidth: (catMeta.defaultW || 1800) - Math.round((catMeta.defaultW || 1800) * 0.37) - Math.round((catMeta.defaultW || 1800) * 0.33),
+      hasUpperCabinets: catMeta.hasUpper !== false
+    };
+
+    if (categoryId === 'wardrobe') {
+      newSpec.wardrobeDepth = catMeta.defaultD || 650;
+      newSpec.ceilingHeight = 2350;
+    } else if (categoryId === 'island') {
+      newSpec.islandDepth = catMeta.defaultD || 850;
+    }
+
+    const newItem = {
+      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: itemName,
+      category: categoryId,
+      spec: newSpec,
+      selectedDoor: state.selectedDoor,
+      pricing: {}
+    };
+
+    calculateSingleItemPricing(newItem);
+    state.items.push(newItem);
+    switchActiveItem(state.items.length - 1);
+
+    const modal = document.getElementById('modal-add-category');
+    if (modal) modal.style.display = 'none';
+    showToast(`신규 품목 [${itemName}]이(가) 발주 목록에 추가되었습니다.`);
+  }
+
+  function changeCurrentItemCategory(categoryId) {
+    const curItem = state.items[state.activeItemIndex];
+    if (!curItem) return;
+    const catMeta = FURNITURE_CATEGORIES.find(c => c.id === categoryId) || FURNITURE_CATEGORIES[0];
+    curItem.category = categoryId;
+    curItem.name = `${catMeta.name} ${state.activeItemIndex + 1}`;
+
+    state.spec.category = categoryId;
+    state.spec.totalWidth = catMeta.defaultW || state.spec.totalWidth;
+    state.spec.lowerHeight = catMeta.defaultH || state.spec.lowerHeight;
+    state.spec.lowerDepth = catMeta.defaultD || state.spec.lowerDepth;
+    state.spec.hasUpperCabinets = catMeta.hasUpper !== false;
+    if (categoryId !== 'sink' && categoryId !== 'prep_counter' && categoryId !== 'base_corner') {
+      state.spec.layoutType = 'straight';
+    }
+
+    curItem.spec = JSON.parse(JSON.stringify(state.spec));
+
+    syncFormInputsFromSpec();
+    syncVisualEngines();
+    calculateQuote();
+
+    const modal = document.getElementById('modal-add-category');
+    if (modal) modal.style.display = 'none';
+    showToast(`현재 가구 품목이 [${catMeta.name}](으)로 변경되었습니다.`);
+  }
+
+  function deleteOrderItem(index) {
+    if (state.items.length <= 1) {
+      alert('발주 목록에는 최소 1개 이상의 맞춤 가구 품목이 필요합니다.');
+      return;
+    }
+    const target = state.items[index];
+    if (!confirm(`[${target.name}] 품목을 발주 목록에서 삭제하시겠습니까?`)) return;
+
+    state.items.splice(index, 1);
+    if (state.activeItemIndex >= state.items.length) {
+      state.activeItemIndex = state.items.length - 1;
+    }
+
+    const cur = state.items[state.activeItemIndex];
+    state.spec = JSON.parse(JSON.stringify(cur.spec));
+    if (cur.selectedDoor) state.selectedDoor = cur.selectedDoor;
+
+    syncFormInputsFromSpec();
+    syncVisualEngines();
+    calculateQuote();
+    showToast(`[${target.name}] 품목이 발주 목록에서 삭제되었습니다.`);
+  }
+
+  let currentCategoryModalMode = 'add'; // 'add' or 'change'
+
+  function openCategoryModal(mode = 'add') {
+    currentCategoryModalMode = mode;
+    const modal = document.getElementById('modal-add-category');
+    const grid = document.getElementById('category-picker-grid');
+    if (!modal || !grid) return;
+
+    const modalTitle = modal.querySelector('.modal-title');
+    if (modalTitle) {
+      modalTitle.innerText = mode === 'add' ? '➕ 신규 맞춤 가구 품목 추가' : '🔄 맞춤 가구 종류 변경';
+    }
+
+    grid.innerHTML = '';
+    FURNITURE_CATEGORIES.forEach(cat => {
+      const card = document.createElement('div');
+      card.className = 'category-card';
+      const isSelected = (mode === 'change' && state.spec.category === cat.id);
+      if (isSelected) card.style.borderColor = 'var(--brand)';
+
+      card.innerHTML = `
+        <div class="cat-card-icon">${cat.icon}</div>
+        <div class="cat-card-title">${cat.name}</div>
+        <div class="cat-card-desc">${cat.desc}</div>
+        <div class="cat-card-spec">기본: W${cat.defaultW} × D${cat.defaultD} × H${cat.defaultH}mm</div>
+      `;
+
+      card.addEventListener('click', () => {
+        if (currentCategoryModalMode === 'add') {
+          addNewOrderItem(cat.id);
+        } else {
+          changeCurrentItemCategory(cat.id);
+        }
+      });
+
+      grid.appendChild(card);
+    });
+
+    modal.style.display = 'flex';
+  }
+
+  function calculateQuote() {
+    if (!settings) return;
+
+    if (!state.items || state.items.length === 0) {
+      initOrderItems();
+    }
+
+    const curItem = state.items[state.activeItemIndex] || state.items[0];
+    if (curItem) {
+      curItem.spec = { ...state.spec };
+      curItem.selectedDoor = state.selectedDoor;
+    }
+
+    let grandTotal = 0;
+    let grandDeposit = 0;
+    let grandBalance = 0;
+
+    state.items.forEach(item => {
+      calculateSingleItemPricing(item);
+      grandTotal += item.pricing.totalPrice;
+      grandDeposit += item.pricing.depositPrice;
+      grandBalance += item.pricing.balancePrice;
+    });
+
+    if (curItem && curItem.pricing) {
+      state.pricing = curItem.pricing;
+    }
+    state.orderGrandTotal = grandTotal;
+    state.orderGrandDeposit = grandDeposit;
+    state.orderGrandBalance = grandBalance;
 
     updateQuoteUI();
+    renderOrderItemsBar();
   }
 
   function updateQuoteUI() {
-    document.getElementById('cost-wood-body').innerText = state.pricing.woodBodyCost.toLocaleString() + '원';
-    document.getElementById('cost-door-vendor').innerText = state.pricing.doorVendorCost.toLocaleString() + '원';
-    document.getElementById('cost-countertop').innerText = state.pricing.countertopCost.toLocaleString() + '원';
-    document.getElementById('cost-fixed-items').innerText = state.pricing.fixedItemsCost.toLocaleString() + '원';
-    document.getElementById('cost-install').innerText = state.pricing.installCost.toLocaleString() + '원';
+    if (!state.pricing) return;
+    document.getElementById('cost-wood-body').innerText = (state.pricing.woodBodyCost || 0).toLocaleString() + '원';
+    document.getElementById('cost-door-vendor').innerText = (state.pricing.doorVendorCost || 0).toLocaleString() + '원';
+    document.getElementById('cost-countertop').innerText = (state.pricing.countertopCost || 0).toLocaleString() + '원';
+    document.getElementById('cost-fixed-items').innerText = (state.pricing.fixedItemsCost || 0).toLocaleString() + '원';
+    document.getElementById('cost-install').innerText = (state.pricing.installCost || 0).toLocaleString() + '원';
 
     document.getElementById('quote-margin-label').innerText = `영업/제작 마진 (${settings.marginPercent || 25}%) 포함`;
-    document.getElementById('quote-total-price').innerText = state.pricing.totalPrice.toLocaleString() + '원';
+    document.getElementById('quote-total-price').innerText = (state.pricing.totalPrice || 0).toLocaleString() + '원';
     document.getElementById('quote-deposit-label').innerText = `발주 확정 계약금 (${settings.depositPercent || 10}%)`;
-    document.getElementById('quote-deposit-price').innerText = state.pricing.depositPrice.toLocaleString() + '원';
+    document.getElementById('quote-deposit-price').innerText = (state.pricing.depositPrice || 0).toLocaleString() + '원';
+
+    const grandCountEl = document.getElementById('order-grand-count');
+    if (grandCountEl) grandCountEl.innerText = state.items.length;
+    const grandTotalEl = document.getElementById('order-grand-total');
+    if (grandTotalEl) grandTotalEl.innerText = state.orderGrandTotal.toLocaleString() + '원';
 
     // 영업사원 실측 워크벤치 요약도 함께 실시간 갱신
     const fWood = document.getElementById('field-cost-wood');
-    if (fWood) fWood.innerText = state.pricing.woodBodyCost.toLocaleString() + '원';
+    if (fWood) fWood.innerText = (state.pricing.woodBodyCost || 0).toLocaleString() + '원';
     const fDoor = document.getElementById('field-cost-door');
-    if (fDoor) fDoor.innerText = state.pricing.doorVendorCost.toLocaleString() + '원';
+    if (fDoor) fDoor.innerText = (state.pricing.doorVendorCost || 0).toLocaleString() + '원';
     const fTop = document.getElementById('field-cost-top');
     if (fTop) fTop.innerText = state.pricing.countertopCost.toLocaleString() + '원';
     const fHw = document.getElementById('field-cost-hw');
@@ -971,6 +1398,30 @@ document.addEventListener('DOMContentLoaded', async () => {
           </tr>
         </table>
 
+        <div style="font-size:12.5px; font-weight:800; color:#2A211B; margin-bottom:6px;">■ 발주 맞춤 가구 품목 일괄 명세 (총 ${state.items.length}건)</div>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; font-size:11.5px; text-align:center;">
+          <thead>
+            <tr style="background:#EFEAE1; color:#2A211B;">
+              <th style="border:1px solid #C8BFB3; padding:6px; width:8%;">No.</th>
+              <th style="border:1px solid #C8BFB3; padding:6px; width:22%;">품목명</th>
+              <th style="border:1px solid #C8BFB3; padding:6px; width:34%;">규격(W×D×H mm) 및 레이아웃</th>
+              <th style="border:1px solid #C8BFB3; padding:6px; width:20%;">도어 / 마감</th>
+              <th style="border:1px solid #C8BFB3; padding:6px; width:16%;">공급가액</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.items.map((it, idx) => `
+              <tr>
+                <td style="border:1px solid #C8BFB3; padding:6px; font-weight:700;">${idx + 1}</td>
+                <td style="border:1px solid #C8BFB3; padding:6px; font-weight:700; text-align:left;">${it.name}</td>
+                <td style="border:1px solid #C8BFB3; padding:6px; font-size:11px; text-align:left;">${getLayoutLabel(it.spec)}</td>
+                <td style="border:1px solid #C8BFB3; padding:6px; font-size:11px;">${it.selectedDoor?.name || state.selectedDoor?.name || '기성 도어'}</td>
+                <td style="border:1px solid #C8BFB3; padding:6px; font-weight:700; color:#8C6239; text-align:right;">${(it.pricing?.totalPrice || 0).toLocaleString()}원</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
         <div style="font-size:12.5px; font-weight:800; color:#2A211B; margin-bottom:6px;">■ 현장 시공 체크리스트 및 특이사항</div>
         <div style="background:#FAF7F2; border:1px solid #C8BFB3; padding:8px 12px; font-size:11px; line-height:1.6; margin-bottom:14px;">
           <div>• <strong>온수 분배기:</strong> ${chkManifold ? '확인 완료 (간섭 없음 / 바닥판 따내기 사전 조율)' : '미확인 (재확인 요망)'}</div>
@@ -982,12 +1433,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         <div style="display:flex; justify-content:space-between; align-items:center; background:#F4EFE6; border:1.5px solid #8C6239; padding:10px 16px; border-radius:6px; margin-bottom:14px;">
           <div>
-            <div style="font-size:11px; color:#4A3B31;">총 견적 합계 금액 (부가세/마진/시공비 포함)</div>
-            <div style="font-size:17px; font-weight:800; color:#8C6239;">${state.pricing.totalPrice.toLocaleString()}원</div>
+            <div style="font-size:11px; color:#4A3B31;">총 발주 합계 금액 (부가세/마진/시공비 일체 포함 · 총 ${state.items.length}개 품목)</div>
+            <div style="font-size:17px; font-weight:800; color:#8C6239;">${state.orderGrandTotal.toLocaleString()}원</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:11.5px; color:#6E6157;">발주 계약금 (10%): <strong>${state.pricing.depositPrice.toLocaleString()}원</strong></div>
-            <div style="font-size:10.5px; color:#6E6157;">입금계좌: ${settings.bankName} ${settings.bankAccount} (${settings.bankHolder})</div>
+            <div style="font-size:11.5px; color:#6E6157;">발주 계약금 (${settings.depositPercent || 10}%): <strong>${state.orderGrandDeposit.toLocaleString()}원</strong></div>
+            <div style="font-size:10.5px; color:#6E6157;">입금계좌: ${settings.bankName || '국민은행'} ${settings.bankAccount || '123402-04-567890'} (${settings.bankHolder || '피앙세가구'})</div>
           </div>
         </div>
 
@@ -1062,20 +1513,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resultModal = document.getElementById('link-result-modal');
 
   function getLayoutLabel(specObj = state.spec) {
+    const cat = specObj.category || 'sink';
+    const catMeta = FURNITURE_CATEGORIES.find(c => c.id === cat) || FURNITURE_CATEGORIES[0];
+    if (specObj.layoutType === 'u_shape') {
+      return `ㄷ자(양측코너) ${Number(specObj.totalWidth).toLocaleString()} × ${Number(specObj.sideLength || 1800).toLocaleString()}mm`;
+    }
     if (specObj.layoutType === 'l_left' || specObj.layoutType === 'l_right') {
       const dir = specObj.layoutType === 'l_left' ? '좌코너' : '우코너';
       return `ㄱ자(${dir}) ${Number(specObj.totalWidth).toLocaleString()} × ${Number(specObj.sideLength || 1800).toLocaleString()}mm`;
     }
-    return `일자형 전체 폭 ${Number(specObj.totalWidth).toLocaleString()}mm`;
+    if (cat === 'sink' || cat === 'prep_counter') {
+      return `일자형 전체 폭 ${Number(specObj.totalWidth).toLocaleString()}mm`;
+    }
+    return `${catMeta.name} W${Number(specObj.totalWidth).toLocaleString()} × D${Number(specObj.lowerDepth || catMeta.defaultD).toLocaleString()} × H${Number(specObj.lowerHeight || catMeta.defaultH).toLocaleString()}mm`;
   }
 
   document.getElementById('btn-open-submit').addEventListener('click', () => {
     const thumb = engine ? engine.captureImage(1.5) : '';
     document.getElementById('submit-thumb').src = thumb;
-    document.getElementById('submit-spec-summary').innerText =
-      `${getLayoutLabel()} (개수대 ${state.spec.sinkBayWidth} / 조리대 ${state.spec.prepBayWidth} / 가열대 ${state.spec.cooktopBayWidth})`;
-    document.getElementById('submit-door-summary').innerText = state.selectedDoor?.name || '';
-    document.getElementById('submit-total-summary').innerText = `${state.pricing.totalPrice.toLocaleString()}원 (계약금 ${state.pricing.depositPrice.toLocaleString()}원)`;
+
+    const count = (state.items && state.items.length) || 1;
+    let specSummary = '';
+    if (count > 1) {
+      specSummary = `[총 ${count}개 맞춤 가구 일괄 발주] ` + state.items.map((it, idx) => `${idx + 1}. ${it.name}(${getLayoutLabel(it.spec)})`).join(' / ');
+    } else {
+      const cur = state.items ? (state.items[0] || state) : state;
+      specSummary = `${cur.name || '주방 씽크대'} — ${getLayoutLabel(cur.spec || state.spec)}`;
+    }
+
+    document.getElementById('submit-spec-summary').innerText = specSummary;
+    document.getElementById('submit-door-summary').innerText = state.selectedDoor?.name || '기성 도어';
+    document.getElementById('submit-total-summary').innerText = `${state.orderGrandTotal.toLocaleString()}원 (계약금 ${state.orderGrandDeposit.toLocaleString()}원 · 총 ${count}개 품목)`;
     submitModal.style.display = 'flex';
   });
 
@@ -1099,6 +1567,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       .filter(item => item.enabled)
       .map(item => item.name);
 
+    // 현재 활성 아이템 스펙 저장 동기화
+    if (state.items && state.items[state.activeItemIndex]) {
+      state.items[state.activeItemIndex].spec = { ...state.spec };
+      state.items[state.activeItemIndex].selectedDoor = state.selectedDoor;
+    }
+
+    const payloadItems = (state.items && state.items.length > 0)
+      ? state.items.map(it => ({
+          id: it.id,
+          name: it.name,
+          category: it.category,
+          spec: {
+            ...it.spec,
+            layoutLabel: getLayoutLabel(it.spec),
+            selectedDoorName: it.selectedDoor?.name || state.selectedDoor?.name,
+            selectedDoorFinish: it.selectedDoor?.finish || state.selectedDoor?.finish,
+            countertopName: it.spec?.countertopLabel || settings.countertopName,
+            hoodLabel: getSelectedText(hoodSel),
+            cooktopLabel: getSelectedText(cookSel),
+            faucetLabel: getSelectedText(faucetSel),
+            includedItems
+          },
+          pricing: it.pricing
+        }))
+      : [];
+
     try {
       const res = await fetch('/api/quotes', {
         method: 'POST',
@@ -1107,6 +1601,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           customerName: name,
           customerPhone: phone,
           customerAddress: address,
+          items: payloadItems,
+          orderGrandTotal: state.orderGrandTotal,
+          orderGrandDeposit: state.orderGrandDeposit,
           spec: {
             ...state.spec,
             layoutLabel: getLayoutLabel(),
@@ -1119,7 +1616,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             faucetLabel: getSelectedText(faucetSel),
             includedItems
           },
-          pricing: state.pricing,
+          pricing: {
+            ...state.pricing,
+            totalPrice: state.orderGrandTotal,
+            depositPrice: state.orderGrandDeposit,
+            balancePrice: state.orderGrandBalance
+          },
           capturedImage: thumb
         })
       });
@@ -1165,14 +1667,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 발송될 문자 내용 미리보기
     const smsCompany = settings.companyName || '피앙세가구';
     const smsBank = `${settings.bankName || '국민은행'} ${settings.bankAccount || '123402-04-567890'} (예금주: ${settings.bankHolder || smsCompany})`;
+
+    let itemsText = '';
+    if (quote.items && quote.items.length > 0) {
+      itemsText = quote.items.map((it, idx) => `  ${idx + 1}. ${it.name} (${(it.pricing?.totalPrice || 0).toLocaleString()}원)`).join('\n');
+    } else {
+      itemsText = `  1. ${quote.spec.layoutLabel || getLayoutLabel(quote.spec)}`;
+    }
+
+    const grandTot = (quote.orderGrandTotal || quote.pricing.totalPrice || 0).toLocaleString();
+    const grandDep = (quote.orderGrandDeposit || quote.pricing.depositPrice || 0).toLocaleString();
+
     const smsText =
-      `[${smsCompany} 맞춤 씽크대 공급계약]\n` +
+      `[${smsCompany} 맞춤 가구 일괄 공급계약]\n` +
       `${quote.customer.name}님, 실측 3D · 2D 평면 도면 및 정식 공급계약서가 도착했습니다.\n\n` +
-      `• 규격: ${quote.spec.layoutLabel || getLayoutLabel(quote.spec)}\n` +
-      `• 몸통: ${quote.spec.woodBodyName || '친환경 자작합판 원목'}\n` +
-      `• 도어: ${quote.spec.selectedDoorName}\n` +
-      `• 계약 공급가액: ${quote.pricing.totalPrice.toLocaleString()}원\n` +
-      `• 계약금(${settings.depositPercent || 10}%): ${quote.pricing.depositPrice.toLocaleString()}원\n` +
+      `• 발주 품목 (총 ${quote.items?.length || 1}건):\n${itemsText}\n\n` +
+      `• 총 계약 공급가액: ${grandTot}원\n` +
+      `• 발주 계약금(${settings.depositPercent || 10}%): ${grandDep}원\n` +
       `• 입금 계좌: ${smsBank}\n` +
       (settings.companyPhone ? `• 문의/상담: ${settings.companyPhone}\n\n` : '\n') +
       `스마트폰으로 3D/평면 도면 확인 및 전자서명:\n${mobileViewerUrl}`;
