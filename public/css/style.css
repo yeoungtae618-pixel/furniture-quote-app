@@ -1819,4 +1819,202 @@ input[type="range"].styled-range {
     width: 18px;
     height: 18px;
   }
+
+  .dev-layout-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dev-docked-widget {
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    bottom: 56px !important; /* 모바일 하단 네비게이션 위로 배치 */
+    border-radius: 0 !important;
+  }
+}
+
+/* ==========================================================================
+   AI 실시간 개발 요청 콘솔 & 도킹 위젯 스타일
+   ========================================================================== */
+@keyframes pulseDot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.dev-docked-widget {
+  position: fixed;
+  bottom: 0;
+  right: 28px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  z-index: 1000;
+  box-shadow: 0 -4px 22px rgba(42, 33, 27, 0.16);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  overflow: hidden;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dev-docked-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background: linear-gradient(135deg, #3D2B1D 0%, #221A15 100%);
+  color: #FFFFFF;
+  cursor: pointer;
+  user-select: none;
+}
+
+.dev-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dev-bar-icon {
+  font-size: 15px;
+  color: #FBBF24;
+}
+
+.dev-bar-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.dev-bar-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #A7F3D0;
+  background: rgba(16, 185, 129, 0.2);
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.btn-dock-toggle {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s;
+}
+
+.btn-dock-toggle:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.dev-docked-panel {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  max-height: 440px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dev-drawer-content {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dev-drawer-form-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.dev-drawer-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.dev-req-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.dev-req-card:hover {
+  border-color: var(--brand);
+}
+
+.dev-req-card.status-pending {
+  border-left: 4px solid #F59E0B;
+  background: #FFFDF8;
+}
+
+.dev-req-card.status-processing {
+  border-left: 4px solid #3B82F6;
+  background: #F8FAFC;
+}
+
+.dev-req-card.status-done {
+  border-left: 4px solid #10B981;
+  background: #FAFDFB;
+}
+
+.dev-req-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.dev-req-id {
+  font-family: monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.dev-req-msg {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 8px;
+}
+
+.dev-req-response-box {
+  background: var(--bg-subtle);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--brand-dark);
+  line-height: 1.45;
+  border-left: 3px solid var(--brand);
+  margin-top: 6px;
 }

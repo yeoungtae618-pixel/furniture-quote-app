@@ -730,14 +730,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 상단/하단 전환)
-  const navViews = ['studio', 'field', 'orders', 'company', 'settings', 'doors'];
+  const navViews = ['studio', 'field', 'orders', 'company', 'settings', 'doors', 'dev'];
   const pageTitles = {
     studio: { title: '3D 도면 설계 및 현장 실측', desc: '주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.' },
     field: { title: '영업사원 현장 실측 & 발주 관리 워크벤치', desc: '현장 실측 치수(전체길이, 천장고, 키큰장, 하부/상부 모듈, 배관위치, 체크리스트)를 정밀 입력하고 도면과 견적을 즉시 연동합니다.' },
     orders: { title: '수주 및 고객 견적 관리', desc: '발송된 견적 현황과 계약서 서명, 입금 완료 및 누적 매출을 관리합니다.' },
     company: { title: '피앙세가구 사업자 정보 관리', desc: '상호명, 대표자, 사업자등록번호, 주소, 입금 계좌 및 직인을 관리하며 계약서와 문자에 자동 연동됩니다.' },
     settings: { title: '자재별 고정 단가표 설정', desc: '원목 몸통, 대리석 상판 단가, 기본 시공비, 마진율 및 고정 부속품을 직접 수정합니다.' },
-    doors: { title: '기성품 도어 카탈로그 관리', desc: '외주 도어 업체별 모델과 헤베(m²)당 단가를 등록하고 수정합니다.' }
+    doors: { title: '기성품 도어 카탈로그 관리', desc: '외주 도어 업체별 모델과 헤베(m²)당 단가를 등록하고 수정합니다.' },
+    dev: { title: 'AI 개발자 실시간 수정 & 자율 반영 센터', desc: '요구사항을 등록하시면 별도의 채팅 없이도 AI가 10초마다 자동 감지하여 즉시 코드를 수정하고 배포합니다.' }
   };
 
   function switchView(viewName) {
@@ -760,6 +761,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (viewName === 'orders') loadOrdersTable();
     if (viewName === 'company') populateCompanyForm();
     if (viewName === 'doors') renderDoorAdminTable();
+    if (viewName === 'dev') loadDevRequests();
   }
 
   document.querySelectorAll('[data-nav]').forEach(btn => {
@@ -2229,6 +2231,276 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('신규 기성 도어 모델이 카탈로그에 등록되었습니다.');
     }
   });
+
+  // =========================================================================
+  // 14. AI 실시간 개발 요청 관리 및 10초 자동 감지 루프 UI
+  // =========================================================================
+  let devRequestsCache = [];
+  const knownRequestStatus = new Map();
+
+  async function loadDevRequests() {
+    try {
+      const res = await fetch('/api/dev-requests');
+      const data = await res.json();
+      if (!data.success) return;
+
+      const requests = data.requests || [];
+      const pendingCount = data.pendingCount || 0;
+      const processingCount = requests.filter(r => r.status === 'processing').length;
+      const doneCount = requests.filter(r => r.status === 'done').length;
+
+      // 신규 완료 감지 알림
+      requests.forEach(r => {
+        const prevStatus = knownRequestStatus.get(r.id);
+        if (prevStatus && prevStatus !== 'done' && r.status === 'done') {
+          showToast(`🎉 [${r.id}] 개발 요청이 반영 완료되었습니다!`);
+        }
+        knownRequestStatus.set(r.id, r.status);
+      });
+
+      devRequestsCache = requests;
+
+      // 카운트 배지 갱신
+      const statP = document.getElementById('dev-stat-pending');
+      const statPr = document.getElementById('dev-stat-processing');
+      const statD = document.getElementById('dev-stat-done');
+      if (statP) statP.innerText = pendingCount;
+      if (statPr) statPr.innerText = processingCount;
+      if (statD) statD.innerText = doneCount;
+
+      // 사이드바 및 하단 바 배지
+      const navBadge = document.getElementById('nav-dev-badge');
+      if (navBadge) {
+        navBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        navBadge.innerText = pendingCount;
+      }
+
+      const barBadge = document.getElementById('dev-bar-pending-badge');
+      if (barBadge) {
+        barBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        barBadge.innerText = `대기 ${pendingCount}건`;
+      }
+
+      // 전체 탭 리스트 렌더링
+      renderDevRequestsList(requests);
+
+      // 하단 드로어 최근 요청 렌더링
+      renderDevDrawerRecent(requests);
+    } catch (err) {
+      console.warn('개발 요청 로드 실패:', err);
+    }
+  }
+
+  function getStatusBadgeHtml(status) {
+    if (status === 'pending') {
+      return `<span class="badge" style="background:#FFF3C4; color:#92400E; font-size:11px; padding:3px 8px; border-radius:10px;">🟡 대기중 (AI 감지 대기)</span>`;
+    } else if (status === 'processing') {
+      return `<span class="badge" style="background:#DBEAFE; color:#1E40AF; font-size:11px; padding:3px 8px; border-radius:10px;">🔵 AI 수정 처리중...</span>`;
+    } else if (status === 'done') {
+      return `<span class="badge" style="background:#D1FAE5; color:#065F46; font-size:11px; padding:3px 8px; border-radius:10px;">🟢 반영 완료</span>`;
+    }
+    return `<span class="badge" style="background:#F3ECE3; color:#6E6157; font-size:11px; padding:3px 8px; border-radius:10px;">${status}</span>`;
+  }
+
+  function renderDevRequestsList(requests) {
+    const container = document.getElementById('dev-requests-list');
+    if (!container) return;
+
+    if (!requests || requests.length === 0) {
+      container.innerHTML = `
+        <div style="text-align:center; padding:40px 16px; color:var(--text-tertiary); font-size:13px;">
+          <div style="font-size:32px; margin-bottom:8px;">📝</div>
+          아직 등록된 개발 요청이 없습니다.<br>
+          원하시는 기능이나 수정사항을 좌측 폼에 입력하시면 AI가 자동으로 읽고 반영합니다.
+        </div>`;
+      return;
+    }
+
+    // 최신순 정렬
+    const sorted = [...requests].reverse();
+    container.innerHTML = sorted.map(req => {
+      const createdStr = req.createdAt ? new Date(req.createdAt).toLocaleString('ko-KR') : '-';
+      const completedStr = req.completedAt ? new Date(req.completedAt).toLocaleString('ko-KR') : '';
+
+      return `
+        <div class="dev-req-card status-${req.status || 'pending'}">
+          <div class="dev-req-top">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="dev-req-id">${escapeHtml(req.id)}</span>
+              <span style="font-size:11px; color:var(--text-tertiary);">${escapeHtml(req.author || '피앙세가구')}</span>
+              <span style="font-size:11px; color:var(--text-tertiary);">${createdStr}</span>
+            </div>
+            <div>
+              ${getStatusBadgeHtml(req.status)}
+            </div>
+          </div>
+          <div class="dev-req-msg">${escapeHtml(req.message)}</div>
+          ${req.response ? `
+            <div class="dev-req-response-box">
+              <div style="font-weight:700; font-size:11px; color:var(--brand-dark); margin-bottom:3px; display:flex; align-items:center; gap:4px;">
+                <span>🤖 AI 개발자 반영 내역</span>
+                ${completedStr ? `<span style="font-size:10px; color:var(--text-tertiary); font-weight:normal;">(${completedStr})</span>` : ''}
+              </div>
+              <div>${escapeHtml(req.response)}</div>
+            </div>
+          ` : (req.status === 'processing' ? `
+            <div style="font-size:11px; color:#2563EB; display:flex; align-items:center; gap:6px; margin-top:4px;">
+              <span class="pulse-dot" style="background:#3B82F6;"></span> AI가 코드를 분석 및 수정 중입니다...
+            </div>
+          ` : '')}
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderDevDrawerRecent(requests) {
+    const container = document.getElementById('dev-drawer-recent-list');
+    if (!container) return;
+
+    if (!requests || requests.length === 0) {
+      container.innerHTML = `<div style="font-size:11.5px; color:var(--text-tertiary); text-align:center; padding:8px;">등록된 요청 없음</div>`;
+      return;
+    }
+
+    const recent = [...requests].reverse().slice(0, 3);
+    container.innerHTML = recent.map(req => {
+      let icon = '🟡';
+      if (req.status === 'processing') icon = '🔵';
+      if (req.status === 'done') icon = '🟢';
+
+      const shortMsg = req.message.length > 38 ? req.message.substring(0, 38) + '...' : req.message;
+
+      return `
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 8px; background:#FFFFFF; border:1px solid var(--border-color); border-radius:6px; font-size:11.5px;">
+          <div style="display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <span>${icon}</span>
+            <span style="color:var(--text-primary); font-weight:500;">${escapeHtml(shortMsg)}</span>
+          </div>
+          <span style="font-size:10px; color:var(--text-tertiary); white-space:nowrap;">${req.status === 'done' ? '완료' : (req.status === 'processing' ? '처리중' : '대기')}</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // 전체 탭 폼 제출
+  const formDevReq = document.getElementById('form-dev-request');
+  if (formDevReq) {
+    formDevReq.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const cat = document.getElementById('dev-req-category').value;
+      const author = document.getElementById('dev-req-author').value.trim() || '피앙세가구 대표님';
+      const msgInput = document.getElementById('dev-req-message');
+      const msg = msgInput.value.trim();
+
+      if (!msg) {
+        alert('요청 내용을 입력해주세요.');
+        return;
+      }
+
+      const fullMessage = `[${cat}] ${msg}`;
+
+      try {
+        const res = await fetch('/api/dev-requests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author, message: fullMessage })
+        });
+        const data = await res.json();
+        if (data.success) {
+          msgInput.value = '';
+          showToast('⚡ AI 개발자에게 요청이 전송되었습니다. 10초 내 자율 감지하여 즉시 반영합니다.');
+          loadDevRequests();
+        } else {
+          alert('전송 실패: ' + (data.message || '알 수 없는 오류'));
+        }
+      } catch (err) {
+        alert('서버 통신 실패: ' + err.message);
+      }
+    });
+  }
+
+  // 새로고침 버튼
+  const btnRefreshDev = document.getElementById('btn-refresh-dev-requests');
+  if (btnRefreshDev) {
+    btnRefreshDev.addEventListener('click', () => {
+      loadDevRequests();
+      showToast('개발 요청 목록을 새로고침했습니다.');
+    });
+  }
+
+  // 하단 플로팅 드로어 토글
+  const dockedWidget = document.getElementById('dev-docked-widget');
+  const dockedBar = document.getElementById('dev-docked-bar');
+  const dockedPanel = document.getElementById('dev-docked-panel');
+  const toggleIcon = document.getElementById('dev-toggle-icon');
+  const toggleText = document.getElementById('dev-toggle-text');
+
+  function toggleDevDrawer(forceOpen) {
+    if (!dockedPanel) return;
+    const isClosed = dockedPanel.style.display === 'none';
+    const willOpen = (typeof forceOpen === 'boolean') ? forceOpen : isClosed;
+
+    dockedPanel.style.display = willOpen ? 'block' : 'none';
+    if (toggleIcon) toggleIcon.innerText = willOpen ? '▼' : '▲';
+    if (toggleText) toggleText.innerText = willOpen ? '콘솔 닫기' : '요청창 열기';
+  }
+
+  if (dockedBar) {
+    dockedBar.addEventListener('click', (e) => {
+      toggleDevDrawer();
+    });
+  }
+
+  // 하단 퀵 요청 전송
+  const btnSendQuick = document.getElementById('btn-send-quick-req');
+  const quickInput = document.getElementById('dev-quick-input');
+
+  async function handleQuickDevSubmit() {
+    if (!quickInput) return;
+    const msg = quickInput.value.trim();
+    if (!msg) {
+      alert('요청 내용을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/dev-requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author: '피앙세가구 대표님', message: `[⚡ 빠른요청] ${msg}` })
+      });
+      const data = await res.json();
+      if (data.success) {
+        quickInput.value = '';
+        showToast('⚡ AI 개발자에게 요청이 전송되었습니다. 10초 내 감지하여 반영합니다.');
+        loadDevRequests();
+      } else {
+        alert('전송 실패: ' + (data.message || '알 수 없는 오류'));
+      }
+    } catch (err) {
+      alert('서버 통신 실패: ' + err.message);
+    }
+  }
+
+  if (btnSendQuick) {
+    btnSendQuick.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleQuickDevSubmit();
+    });
+  }
+
+  if (quickInput) {
+    quickInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleQuickDevSubmit();
+      }
+    });
+  }
+
+  // 초기 개발 요청 로드 및 6초 주기 폴링
+  loadDevRequests();
+  setInterval(loadDevRequests, 6000);
 
   // 초기 구동
   loadInitialData();

@@ -16,10 +16,15 @@ const DATA_DIR = path.join(__dirname, 'data');
 const QUOTES_FILE = path.join(DATA_DIR, 'quotes.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const DOORS_FILE = path.join(DATA_DIR, 'doors.json');
+const DEV_REQUESTS_FILE = path.join(DATA_DIR, 'dev_requests.json');
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+
+// 초기 파일 보장
+readJson(QUOTES_FILE, []);
+readJson(DEV_REQUESTS_FILE, []);
 
 // 기본 고정 단가표 및 회사 설정 초기값
 const DEFAULT_SETTINGS = {
@@ -273,6 +278,60 @@ app.post('/api/quotes/:id/payment', (req, res) => {
   writeJson(QUOTES_FILE, quotes);
 
   res.json({ success: true, quote: quotes[idx] });
+});
+
+// 9. AI 개발 요청 큐 (Dev Requests) — 사용자가 웹에서 보낸 요구사항 저장 및 조회
+app.get('/api/dev-requests', (req, res) => {
+  const requests = readJson(DEV_REQUESTS_FILE, []);
+  res.json({
+    success: true,
+    requests: requests.slice().reverse(),
+    pendingCount: requests.filter(r => r.status === 'pending').length
+  });
+});
+
+app.post('/api/dev-requests', (req, res) => {
+  const { message, author } = req.body;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ success: false, message: '개발 요청 내용을 입력해주세요.' });
+  }
+
+  const requests = readJson(DEV_REQUESTS_FILE, []);
+  const newReq = {
+    id: 'REQ-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+    message: message.trim(),
+    author: author || '관리자',
+    createdAt: new Date().toISOString(),
+    status: 'pending', // 'pending' | 'processing' | 'done' | 'failed'
+    response: null,
+    completedAt: null
+  };
+
+  requests.push(newReq);
+  writeJson(DEV_REQUESTS_FILE, requests);
+
+  res.json({ success: true, request: newReq });
+});
+
+app.patch('/api/dev-requests/:id', (req, res) => {
+  const requests = readJson(DEV_REQUESTS_FILE, []);
+  const idx = requests.findIndex(r => r.id === req.params.id);
+  if (idx === -1) {
+    return res.status(404).json({ success: false, message: '요청을 찾을 수 없습니다.' });
+  }
+
+  requests[idx] = {
+    ...requests[idx],
+    ...req.body,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (req.body.status === 'done' && !requests[idx].completedAt) {
+    requests[idx].completedAt = new Date().toISOString();
+  }
+
+  writeJson(DEV_REQUESTS_FILE, requests);
+  res.json({ success: true, request: requests[idx] });
 });
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -56,6 +56,11 @@
           <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
           기성 도어 단가 관리
         </button>
+        <button class="nav-item" data-nav="dev" style="position:relative;">
+          <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          ⚡ AI 실시간 개발 요청
+          <span id="nav-dev-badge" class="badge-count" style="display:none; margin-left:auto; background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px;">0</span>
+        </button>
       </nav>
     </div>
 
@@ -1320,6 +1325,90 @@
       </div>
     </section>
 
+    <!-- 7. AI 실시간 개발 요청 관리 탭 -->
+    <section id="view-dev" style="display:none;">
+      <div class="card" style="margin-bottom:20px; background:linear-gradient(135deg, #FAF7F2 0%, #F3ECE3 100%); border-left:4px solid var(--brand);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:22px;">⚡</span>
+              <h2 style="font-size:18px; font-weight:800; color:var(--brand-dark); margin:0;">AI 개발자 실시간 수정 & 자율 반영 센터</h2>
+              <span class="badge badge-success" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 9px; background:#D1FAE5; color:#065F46; border-radius:12px;">
+                <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10B981;"></span>
+                10초 자동 감지 루프 작동중
+              </span>
+            </div>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin:6px 0 0 0;">
+              원하시는 기능, 가구 디자인, 단가 계산식, 3D 표현, 계약서 조항 등을 여기에 작성하시면 AI가 10초마다 자동으로 감지하여 코드에 반영 및 배포합니다.
+            </p>
+          </div>
+          <button type="button" class="btn-outline btn-sm" id="btn-refresh-dev-requests" style="width:auto; display:flex; align-items:center; gap:6px;">
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            새로고침
+          </button>
+        </div>
+      </div>
+
+      <div class="dev-layout-grid" style="display:grid; grid-template-columns:380px 1fr; gap:20px;">
+        <!-- 좌측: 신규 요청 작성 -->
+        <div class="card" style="height:fit-content;">
+          <div class="card-header">
+            <div class="card-title" style="display:flex; align-items:center; gap:6px;">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              새로운 개발/수정 요청 작성
+            </div>
+          </div>
+          <form id="form-dev-request" style="display:flex; flex-direction:column; gap:14px;">
+            <div>
+              <label class="form-label">요청 분류</label>
+              <select id="dev-req-category" class="form-control">
+                <option value="🎨 3D/디자인">🎨 3D 도면 / 자재 표현 / 렌더링</option>
+                <option value="💰 견적/단가">💰 견적서 / 계산식 / 옵션 단가</option>
+                <option value="📑 계약서/문자">📑 계약서 조항 / 고객 문자 서식</option>
+                <option value="📱 모바일/UI">📱 모바일 UI / 화면 배치 / 사용성</option>
+                <option value="⚡ 신규기능">⚡ 새로운 가구 모듈 및 기능 추가</option>
+                <option value="🔧 기타요청" selected>🔧 일반 수정 / 기타 요청</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">작성자</label>
+              <input type="text" id="dev-req-author" class="form-control" value="피앙세가구 대표님" placeholder="작성자명">
+            </div>
+            <div>
+              <label class="form-label">요청 내용 <span style="color:var(--danger)">*</span></label>
+              <textarea id="dev-req-message" class="form-control" rows="6" placeholder="예:
+- 씽크대 상판 대리석에 베이지 오로라 컬러 추가해줘
+- 계약서 제4조 하자담보책임 보증기간 2년으로 수정해줘
+- 아일랜드 식탁 모서리 라운드 3D 디테일 살려줘
+- 모바일에서 수주내역 테이블 스크롤 편하게 해줘" required></textarea>
+            </div>
+            <button type="submit" class="btn-primary" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+              <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              ⚡ AI에게 실시간 수정 요청 전송
+            </button>
+            <div style="font-size:11px; color:var(--text-tertiary); line-height:1.4;">
+              * 등록 즉시 대기열에 추가되며, AI 에이전트가 10초 주기로 감지하여 코드를 수정하고 실시간으로 배포합니다.
+            </div>
+          </form>
+        </div>
+
+        <!-- 우측: 요청 현황 및 히스토리 -->
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-title">요청 처리 상태 및 반영 내역</div>
+            <div style="display:flex; gap:8px; font-size:12px;">
+              <span class="badge" style="background:#FFF3C4; color:#92400E; padding:4px 8px; border-radius:10px;">🟡 대기: <strong id="dev-stat-pending">0</strong></span>
+              <span class="badge" style="background:#DBEAFE; color:#1E40AF; padding:4px 8px; border-radius:10px;">🔵 처리중: <strong id="dev-stat-processing">0</strong></span>
+              <span class="badge" style="background:#D1FAE5; color:#065F46; padding:4px 8px; border-radius:10px;">🟢 완료: <strong id="dev-stat-done">0</strong></span>
+            </div>
+          </div>
+          <div id="dev-requests-list" style="display:flex; flex-direction:column; gap:12px; max-height:650px; overflow-y:auto; padding-right:4px;">
+            <!-- Rendered by app.js -->
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- [모바일 전용] 하단 네비게이션 -->
@@ -1343,6 +1432,10 @@
     <button class="mobile-nav-btn" data-nav="doors">
       <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
       <span>도어관리</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="dev">
+      <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <span>AI개발</span>
     </button>
   </nav>
 
@@ -1469,6 +1562,51 @@
         <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         체크시트 인쇄 / PDF 저장
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- 하단 고정 AI 실시간 개발 요청 플로팅 바 & 드로어 콘솔 -->
+<div id="dev-docked-widget" class="dev-docked-widget">
+  <div id="dev-docked-bar" class="dev-docked-bar">
+    <div class="dev-bar-left">
+      <span class="dev-bar-icon">⚡</span>
+      <span class="dev-bar-title">AI 실시간 개발 콘솔</span>
+      <span class="dev-bar-status"><span class="pulse-dot"></span> 10초 자동 반영 루프</span>
+      <span id="dev-bar-pending-badge" class="badge" style="display:none; background:#FFF3C4; color:#92400E; font-size:10.5px; padding:2px 7px; border-radius:10px;">대기 0건</span>
+    </div>
+    <div class="dev-bar-right">
+      <button type="button" id="btn-toggle-dev-drawer" class="btn-dock-toggle" title="콘솔 열기/닫기">
+        <span id="dev-toggle-icon">▲</span>
+        <span id="dev-toggle-text">요청창 열기</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="dev-docked-panel" class="dev-docked-panel" style="display:none;">
+    <div class="dev-drawer-content">
+      <div class="dev-drawer-form-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong style="font-size:13px; color:var(--brand-dark);">⚡ 3D 도면 / 견적 실시간 수정 요청</strong>
+          <span style="font-size:11px; color:var(--text-tertiary);">AI 대화창 없이도 10초 내 자동 감지 & 배포</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="dev-quick-input" class="form-control" placeholder="수정할 내용을 입력하세요 (예: 씽크대 후드장 배기구 치수 100mm로 변경해줘, 계약서 하자보수 2년으로 해줘)" style="flex:1;">
+          <button type="button" id="btn-send-quick-req" class="btn-primary" style="width:auto; padding:8px 16px; white-space:nowrap; display:flex; align-items:center; gap:6px;">
+            <span>전송</span>
+            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="dev-drawer-recent-box">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span style="font-size:11.5px; font-weight:700; color:var(--text-secondary);">최근 요청 처리 현황</span>
+          <a href="javascript:void(0)" onclick="document.querySelector('[data-nav=\'dev\']').click()" style="font-size:11px; color:var(--brand); text-decoration:none;">전체 개발 센터 보기 &raquo;</a>
+        </div>
+        <div id="dev-drawer-recent-list" class="dev-drawer-recent-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
     </div>
   </div>
 </div>

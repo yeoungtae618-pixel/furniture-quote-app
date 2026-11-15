@@ -1,0 +1,12 @@
+[
+  {
+    "id": "REQ-MWIFQQ3F-7NIG",
+    "message": "테스트: AI 실시간 감지 연동 확인",
+    "author": "피앙세가구 대표님",
+    "createdAt": "2026-11-15T22:57:57.147Z",
+    "status": "done",
+    "response": "AI 실시간 감지 루프 및 하단 콘솔 위젯 구축 완료",
+    "completedAt": "2026-11-15T22:58:08.702Z",
+    "updatedAt": "2026-11-15T22:58:08.702Z"
+  }
+]
