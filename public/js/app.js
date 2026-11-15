@@ -2408,7 +2408,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await res.json();
         if (data.success) {
           msgInput.value = '';
-          showToast('⚡ AI 개발자에게 요청이 전송되었습니다. 10초 내 자율 감지하여 즉시 반영합니다.');
+          showToast('🛡️ 대기열에 등록되었습니다! (토큰 소모 0%) 대화창에 "개발 탭 반영해줘"라고 하시면 일괄 처리합니다.');
           loadDevRequests();
         } else {
           alert('전송 실패: ' + (data.message || '알 수 없는 오류'));
@@ -2425,6 +2425,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     btnRefreshDev.addEventListener('click', () => {
       loadDevRequests();
       showToast('개발 요청 목록을 새로고침했습니다.');
+    });
+  }
+
+  // 대기 요청 클립보드 복사 함수
+  function copyPendingRequestsToClipboard() {
+    const pendings = devRequestsCache.filter(r => r.status === 'pending');
+    if (pendings.length === 0) {
+      showToast('현재 대기 중인 개발 요청이 없습니다.');
+      return;
+    }
+
+    const textToCopy = `[피앙세가구 개발 요청 반영 지시]\n웹 개발 탭에 등록된 아래 ${pendings.length}건의 요청을 코드에 일괄 반영하고 배포해줘:\n\n` +
+      pendings.map((r, i) => `${i + 1}. [${r.id}] ${r.message}`).join('\n\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast(`📋 대기 중인 ${pendings.length}건이 복사되었습니다! 대화창에 붙여넣기(Ctrl+V)하세요.`);
+      }).catch(() => {
+        prompt('아래 요청 내용을 복사하여 대화창에 붙여넣으세요:', textToCopy);
+      });
+    } else {
+      prompt('아래 요청 내용을 복사하여 대화창에 붙여넣으세요:', textToCopy);
+    }
+  }
+
+  const btnCopyDev = document.getElementById('btn-copy-dev-requests');
+  if (btnCopyDev) btnCopyDev.addEventListener('click', copyPendingRequestsToClipboard);
+
+  const btnQuickCopyDev = document.getElementById('btn-quick-copy-dev');
+  if (btnQuickCopyDev) btnQuickCopyDev.addEventListener('click', copyPendingRequestsToClipboard);
+
+  // 완료 내역 정리
+  const btnClearDoneDev = document.getElementById('btn-clear-done-dev');
+  if (btnClearDoneDev) {
+    btnClearDoneDev.addEventListener('click', async () => {
+      if (!confirm('반영 완료된 요청 내역을 목록에서 정리하시겠습니까? (대기 중인 요청은 유지됩니다)')) return;
+      try {
+        const res = await fetch('/api/dev-requests', { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          showToast('완료된 요청 내역을 정리했습니다.');
+          loadDevRequests();
+        }
+      } catch (err) {
+        alert('정리 실패: ' + err.message);
+      }
     });
   }
 
@@ -2472,7 +2518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await res.json();
       if (data.success) {
         quickInput.value = '';
-        showToast('⚡ AI 개발자에게 요청이 전송되었습니다. 10초 내 감지하여 반영합니다.');
+        showToast('🛡️ 대기열에 등록되었습니다! (토큰 소모 0%) 대화창에 "개발 탭 반영해줘"라고 하시면 일괄 처리합니다.');
         loadDevRequests();
       } else {
         alert('전송 실패: ' + (data.message || '알 수 없는 오류'));

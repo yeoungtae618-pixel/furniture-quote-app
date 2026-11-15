@@ -334,6 +334,21 @@ app.patch('/api/dev-requests/:id', (req, res) => {
   res.json({ success: true, request: requests[idx] });
 });
 
+app.delete('/api/dev-requests/:id', (req, res) => {
+  const requests = readJson(DEV_REQUESTS_FILE, []);
+  const filtered = requests.filter(r => r.id !== req.params.id);
+  writeJson(DEV_REQUESTS_FILE, filtered);
+  res.json({ success: true, count: filtered.length });
+});
+
+app.delete('/api/dev-requests', (req, res) => {
+  // 완료된 항목 일괄 정리
+  const requests = readJson(DEV_REQUESTS_FILE, []);
+  const filtered = requests.filter(r => r.status !== 'done');
+  writeJson(DEV_REQUESTS_FILE, filtered);
+  res.json({ success: true, count: filtered.length });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   const localIp = getLocalIpAddress();
   console.log(`\n======================================================`);

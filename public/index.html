@@ -1332,20 +1332,30 @@
           <div>
             <div style="display:flex; align-items:center; gap:8px;">
               <span style="font-size:22px;">⚡</span>
-              <h2 style="font-size:18px; font-weight:800; color:var(--brand-dark); margin:0;">AI 개발자 실시간 수정 & 자율 반영 센터</h2>
+              <h2 style="font-size:18px; font-weight:800; color:var(--brand-dark); margin:0;">AI 개발자 실시간 수정 센터</h2>
               <span class="badge badge-success" style="display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 9px; background:#D1FAE5; color:#065F46; border-radius:12px;">
                 <span class="pulse-dot" style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#10B981;"></span>
-                10초 자동 감지 루프 작동중
+                🛡️ 한도 절약 모드 (대기 시 토큰 소모 0%)
               </span>
             </div>
             <p style="font-size:12.5px; color:var(--text-secondary); margin:6px 0 0 0;">
-              원하시는 기능, 가구 디자인, 단가 계산식, 3D 표현, 계약서 조항 등을 여기에 작성하시면 AI가 10초마다 자동으로 감지하여 코드에 반영 및 배포합니다.
+              원하시는 기능, 가구 디자인, 단가, 계약서 조항 등을 여기에 편하게 적어두세요. 대화창에 <strong>"개발 탭 반영해줘"</strong>라고 한마디만 보내시면 대기 중인 모든 요청을 단 1회의 호출로 일괄 처리하여 한도를 가장 안전하게 아낍니다.
             </p>
           </div>
-          <button type="button" class="btn-outline btn-sm" id="btn-refresh-dev-requests" style="width:auto; display:flex; align-items:center; gap:6px;">
-            <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-            새로고침
-          </button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn-outline btn-sm" id="btn-copy-dev-requests" style="width:auto; display:flex; align-items:center; gap:5px; font-weight:600; color:var(--brand);">
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              대기 요청 복사
+            </button>
+            <button type="button" class="btn-outline btn-sm" id="btn-clear-done-dev" style="width:auto; display:flex; align-items:center; gap:5px;">
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              완료 내역 정리
+            </button>
+            <button type="button" class="btn-outline btn-sm" id="btn-refresh-dev-requests" style="width:auto; display:flex; align-items:center; gap:5px;">
+              <svg class="icon" viewBox="0 0 24 24" style="width:13px; height:13px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+              새로고침
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1572,7 +1582,7 @@
     <div class="dev-bar-left">
       <span class="dev-bar-icon">⚡</span>
       <span class="dev-bar-title">AI 실시간 개발 콘솔</span>
-      <span class="dev-bar-status"><span class="pulse-dot"></span> 10초 자동 반영 루프</span>
+      <span class="dev-bar-status"><span class="pulse-dot"></span> 🛡️ 한도 절약 큐 (토큰 소모 0)</span>
       <span id="dev-bar-pending-badge" class="badge" style="display:none; background:#FFF3C4; color:#92400E; font-size:10.5px; padding:2px 7px; border-radius:10px;">대기 0건</span>
     </div>
     <div class="dev-bar-right">
@@ -1588,20 +1598,26 @@
       <div class="dev-drawer-form-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <strong style="font-size:13px; color:var(--brand-dark);">⚡ 3D 도면 / 견적 실시간 수정 요청</strong>
-          <span style="font-size:11px; color:var(--text-tertiary);">AI 대화창 없이도 10초 내 자동 감지 & 배포</span>
+          <span style="font-size:11px; color:#059669; font-weight:600;">🛡️ 토큰 소모 없는 안전 큐</span>
         </div>
         <div style="display:flex; gap:8px;">
-          <input type="text" id="dev-quick-input" class="form-control" placeholder="수정할 내용을 입력하세요 (예: 씽크대 후드장 배기구 치수 100mm로 변경해줘, 계약서 하자보수 2년으로 해줘)" style="flex:1;">
+          <input type="text" id="dev-quick-input" class="form-control" placeholder="수정할 내용을 입력하세요 (예: 씽크대 후드장 배기구 치수 100mm로 변경해줘)" style="flex:1;">
           <button type="button" id="btn-send-quick-req" class="btn-primary" style="width:auto; padding:8px 16px; white-space:nowrap; display:flex; align-items:center; gap:6px;">
-            <span>전송</span>
+            <span>등록</span>
             <svg class="icon" viewBox="0 0 24 24" style="width:14px; height:14px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); margin-top:6px;">
+          * 등록해 두시면 대화창에 <strong>"개발 탭 반영해줘"</strong> 한마디로 모아서 한 번에 처리합니다.
         </div>
       </div>
       <div class="dev-drawer-recent-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
           <span style="font-size:11.5px; font-weight:700; color:var(--text-secondary);">최근 요청 처리 현황</span>
-          <a href="javascript:void(0)" onclick="document.querySelector('[data-nav=\'dev\']').click()" style="font-size:11px; color:var(--brand); text-decoration:none;">전체 개발 센터 보기 &raquo;</a>
+          <div style="display:flex; gap:8px;">
+            <a href="javascript:void(0)" id="btn-quick-copy-dev" style="font-size:11px; color:var(--brand); text-decoration:none; font-weight:600;">📋 대기요청 복사</a>
+            <a href="javascript:void(0)" onclick="document.querySelector('[data-nav=\'dev\']').click()" style="font-size:11px; color:var(--brand); text-decoration:none;">전체 센터 보기 &raquo;</a>
+          </div>
         </div>
         <div id="dev-drawer-recent-list" class="dev-drawer-recent-list">
           <!-- Rendered dynamically -->
