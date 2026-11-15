@@ -107,6 +107,9 @@
             <div class="order-grand-badge" id="order-grand-summary">
               총 <span id="order-grand-count">1</span>개 품목 · 합계: <span id="order-grand-total">0원</span>
             </div>
+            <button type="button" id="btn-quick-fullhouse" class="btn-outline btn-sm" style="width:auto; padding:6px 12px; font-weight:700; color:var(--brand-dark); border-color:var(--brand);">
+              🏠 집안 전체 3D
+            </button>
             <button type="button" id="btn-add-item-modal" class="btn-primary btn-sm" style="width:auto; padding:6px 14px; font-weight:700;">
               ➕ 품목 추가하기
             </button>
@@ -127,8 +130,9 @@
               실시간 3D · 2D 통합 도면
             </div>
             <div class="view-mode-switch">
-              <button type="button" class="view-mode-btn active" data-viewmode="3d">3D 모델뷰</button>
-              <button type="button" class="view-mode-btn" data-viewmode="2d">2D 평면 · 입면도</button>
+              <button type="button" class="view-mode-btn active" data-viewmode="3d">개별 3D</button>
+              <button type="button" class="view-mode-btn" data-viewmode="full_house" id="btn-viewmode-fullhouse">🏠 집안 전체 3D</button>
+              <button type="button" class="view-mode-btn" data-viewmode="2d">2D 도면</button>
             </div>
           </div>
 
@@ -138,6 +142,10 @@
               <button type="button" class="tool-chip" data-cam="cad_iso">도면 아이소</button>
               <button type="button" class="tool-chip" data-cam="front">정면</button>
               <button type="button" class="tool-chip" data-cam="top">항공</button>
+              <button type="button" class="tool-chip" data-cam="house_overview" id="btn-cam-house" style="display:none; color:var(--brand-dark); font-weight:700;">전체 조망</button>
+              <button type="button" class="tool-chip" data-cam="house_kitchen" id="btn-cam-kitchen" style="display:none;">주방 뷰</button>
+              <button type="button" class="tool-chip" data-cam="house_bedroom" id="btn-cam-bedroom" style="display:none;">침실 뷰</button>
+              <button type="button" class="tool-chip" data-cam="house_living" id="btn-cam-living" style="display:none;">거실 뷰</button>
               <span class="toolbar-divider"></span>
               <button type="button" id="btn-cad-toggle" class="tool-chip active">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
@@ -206,6 +214,15 @@
                   <input type="checkbox" id="check-wing-upper">
                   <span>코너 날개 구간 상부장(벽장) 연장 포함</span>
                 </label>
+              </div>
+
+              <!-- 붙박이장 전용 도어 방식 선택 (슬라이딩 미닫이 레일 vs 여닫이 스윙) -->
+              <div id="wardrobe-config-box" style="display:none; margin-top:10px; background:var(--bg-subtle); padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <div class="field-label" style="margin-bottom:6px; font-weight:700; color:var(--text-primary);">붙박이장 도어 개폐 방식</div>
+                <div class="layout-pill-group" style="grid-template-columns: 1fr 1fr; margin-bottom:0;">
+                  <button type="button" class="layout-pill active" data-wardrobe-door="sliding">🪟 슬라이딩 (미닫이 레일)</button>
+                  <button type="button" class="layout-pill" data-wardrobe-door="swing">🚪 여닫이 (스윙 도어)</button>
+                </div>
               </div>
             </div>
 

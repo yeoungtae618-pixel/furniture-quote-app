@@ -100,8 +100,9 @@ class Furniture3DEngine {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.06;
+    this.renderer.toneMappingExposure = 1.16;
     this.renderer.outputEncoding = THREE.sRGBEncoding;
+    this.renderer.physicallyCorrectLights = true;
 
     this.container.appendChild(this.renderer.domElement);
 
@@ -190,6 +191,28 @@ class Furniture3DEngine {
       this.scene.add(pLight);
       this.underLights.push(pLight);
     }
+
+    // 천장 매립 실사 다운라이트 4개 (원뿔형 건축 스튜디오 조명으로 입체감 극대화)
+    this.ceilingSpots = [];
+    const spotCoords = [
+      [-1.2, 3.4, 1.2],
+      [0.0, 3.4, 1.4],
+      [1.2, 3.4, 1.2],
+      [-0.4, 3.4, 2.4]
+    ];
+    spotCoords.forEach(c => {
+      const spot = new THREE.SpotLight(0xfff3e0, 0.85);
+      spot.position.set(c[0], c[1], c[2]);
+      spot.target.position.set(c[0], 0, c[2] - 0.5);
+      spot.angle = Math.PI / 4.2;
+      spot.penumbra = 0.82;
+      spot.decay = 1.6;
+      spot.distance = 5.5;
+      spot.castShadow = false;
+      this.scene.add(spot);
+      this.scene.add(spot.target);
+      this.ceilingSpots.push(spot);
+    });
   }
 
   // 카메라가 절대 벽 뒤로 회전하지 않도록 방위각·고도 및 초기 구도 고정
@@ -260,6 +283,26 @@ class Furniture3DEngine {
       if (this.overlay) this.overlay.style.display = 'block';
       this.dimensionLines.forEach(l => l.visible = true);
       this.cadEdgeLines.forEach(l => l.visible = true);
+    } else if (preset === 'house_overview') {
+      // 집안 전체 풀 쇼룸 조망
+      const targetPos = new THREE.Vector3(0.5, 0.9, 2.5);
+      const camDest = new THREE.Vector3(5.5, 6.2, 9.8);
+      this.cameraAnim = { targetPos, camDest, progress: 0 };
+    } else if (preset === 'house_kitchen') {
+      // 주방 & 아일랜드 구역 클로즈업
+      const targetPos = new THREE.Vector3(-2.6, 1.1, 1.0);
+      const camDest = new THREE.Vector3(0.2, 2.4, 4.6);
+      this.cameraAnim = { targetPos, camDest, progress: 0 };
+    } else if (preset === 'house_bedroom') {
+      // 안방 & 붙박이장 구역 클로즈업
+      const targetPos = new THREE.Vector3(4.2, 1.2, 0.8);
+      const camDest = new THREE.Vector3(2.4, 2.3, 4.2);
+      this.cameraAnim = { targetPos, camDest, progress: 0 };
+    } else if (preset === 'house_living') {
+      // 거실 TV다이 & 현관 구역 클로즈업
+      const targetPos = new THREE.Vector3(0.8, 0.8, 5.0);
+      const camDest = new THREE.Vector3(-1.8, 2.6, 8.2);
+      this.cameraAnim = { targetPos, camDest, progress: 0 };
     } else {
       this.applyCameraConstraints(false);
     }
@@ -1049,6 +1092,7 @@ class Furniture3DEngine {
     if (this.kitchenGroup) {
       this.scene.remove(this.kitchenGroup);
       this.doors = [];
+      this.slidingDoors = [];
       this.dimensionLines.forEach(l => this.scene.remove(l));
       this.dimensionLines = [];
       this.cadEdgeLines.forEach(l => {
@@ -1505,32 +1549,123 @@ class Furniture3DEngine {
       }
     }
 
-    const doorCount = bayCount * 2;
-    const singleDoorW = (W - 0.01) / doorCount;
-    const doorH = bodyH - 0.006;
+    // 도어 시스템: 슬라이딩(미닫이) 또는 여닫이(스윙) 선택 지원
+    const isSliding = (this.spec.wardrobeDoorType !== 'swing');
 
-    for (let d = 0; d < doorCount; d++) {
-      const isLeft = (d % 2 === 0);
-      const doorCX = startX + 0.005 + d * singleDoorW + singleDoorW / 2;
+    if (isSliding) {
+      // 1. 상부 알루미늄 더블 슬라이딩 트랙
+      const trackDepth = 0.08;
+      const topTrackH = 0.038;
+      const topTrack = new THREE.Mesh(new THREE.BoxGeometry(W, topTrackH, trackDepth), this.aluminumFrameMat);
+      topTrack.position.set(0, plinthH + bodyH - topTrackH / 2, D + trackDepth / 2 - 0.008);
+      group.add(topTrack);
 
-      const pivot = new THREE.Group();
-      const hingeX = isLeft ? (doorCX - singleDoorW / 2) : (doorCX + singleDoorW / 2);
-      pivot.position.set(hingeX, bodyY, D + 0.009);
+      // 2. 하부 슬라이딩 가이드 레일
+      const botTrackH = 0.015;
+      const botTrack = new THREE.Mesh(new THREE.BoxGeometry(W, botTrackH, trackDepth), this.aluminumFrameMat);
+      botTrack.position.set(0, plinthH + botTrackH / 2, D + trackDepth / 2 - 0.008);
+      group.add(botTrack);
 
-      const doorPanel = this.createDoorPanel(singleDoorW - 0.004, doorH, 0.018);
-      const offsetX = isLeft ? (singleDoorW / 2) : (-singleDoorW / 2);
-      doorPanel.position.set(offsetX, 0, 0);
-      pivot.add(doorPanel);
+      // 3. 도어 개수 (W <= 2.2m: 2도어, W > 2.2m: 3도어)
+      const numDoors = (W <= 2.2) ? 2 : 3;
+      const overlap = 0.06; // 도어 간 60mm 오버랩
+      const doorW = (W + (numDoors - 1) * overlap) / numDoors;
+      const sDoorH = bodyH - topTrackH - botTrackH - 0.008;
+      const sDoorY = plinthH + botTrackH + sDoorH / 2 + 0.004;
 
-      this.addDoorHandleOrChannel(doorPanel, singleDoorW - 0.004, doorH, false, isLeft);
+      if (!this.slidingDoors) this.slidingDoors = [];
 
-      group.add(pivot);
-      this.doors.push({
-        group: pivot,
-        isLeft,
-        openAngle: isLeft ? (-Math.PI * 0.48) : (Math.PI * 0.48),
-        targetAngle: this.spec.isDoorOpen ? (isLeft ? -Math.PI * 0.48 : Math.PI * 0.48) : 0
-      });
+      for (let i = 0; i < numDoors; i++) {
+        // 앞/뒤 레일 교차 배치 (i가 짝수면 앞 레일, 홀수면 뒤 레일)
+        const isFrontRail = (i % 2 === 0);
+        const railZ = isFrontRail ? (D + 0.052) : (D + 0.024);
+
+        // 닫힌 상태의 기본 X 위치 (가로 폭에 맞춰 균등 분할)
+        const closedX = startX + doorW / 2 + i * (doorW - overlap);
+
+        // 열린 상태의 목표 X 위치 (좌/우로 슥 슬라이드)
+        let openX;
+        if (numDoors === 2) {
+          openX = (i === 0) ? (closedX + doorW * 0.78) : (closedX - doorW * 0.78);
+        } else {
+          if (i === 0) openX = closedX + doorW * 0.85;
+          else if (i === 2) openX = closedX - doorW * 0.85;
+          else openX = closedX;
+        }
+
+        const doorGroup = new THREE.Group();
+        const initialX = this.spec.isDoorOpen ? openX : closedX;
+        doorGroup.position.set(initialX, sDoorY, railZ);
+
+        // A. 슬라이딩 도어 전면 본체
+        const panel = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.006, sDoorH, 0.018), this.doorMat);
+        panel.castShadow = true;
+        panel.receiveShadow = true;
+        doorGroup.add(panel);
+
+        // B. 사방 알루미늄 슬림 엣지 프레임
+        const frameT = 0.016;
+        const frameL = new THREE.Mesh(new THREE.BoxGeometry(frameT, sDoorH, 0.022), this.aluminumFrameMat);
+        frameL.position.set(-doorW / 2 + frameT / 2, 0, 0.001);
+        doorGroup.add(frameL);
+
+        const frameR = new THREE.Mesh(new THREE.BoxGeometry(frameT, sDoorH, 0.022), this.aluminumFrameMat);
+        frameR.position.set(doorW / 2 - frameT / 2, 0, 0.001);
+        doorGroup.add(frameR);
+
+        // C. 세로 롱바 매립형 알루미늄 손잡이
+        const handleX = isFrontRail ? (doorW / 2 - 0.024) : (-doorW / 2 + 0.024);
+        const handleBar = new THREE.Mesh(new THREE.BoxGeometry(0.012, sDoorH * 0.92, 0.012), this.stainlessDarkMat);
+        handleBar.position.set(handleX, 0, 0.012);
+        doorGroup.add(handleBar);
+
+        // D. 도어 중앙 프리미엄 분할 인레이 라인 (고급 맞춤 슬라이딩 장 장식선)
+        const lineY1 = sDoorH * 0.16;
+        const lineY2 = -sDoorH * 0.16;
+        [lineY1, lineY2].forEach(ly => {
+          const inlay = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.04, 0.003, 0.02), this.aluminumFrameMat);
+          inlay.position.set(0, ly, 0.001);
+          doorGroup.add(inlay);
+        });
+
+        group.add(doorGroup);
+
+        this.slidingDoors.push({
+          mesh: doorGroup,
+          closedX: closedX,
+          openX: openX,
+          currentX: initialX
+        });
+      }
+    } else {
+      // 여닫이 (스윙 도어)
+      const doorCount = bayCount * 2;
+      const singleDoorW = (W - 0.01) / doorCount;
+      const doorH = bodyH - 0.006;
+
+      for (let d = 0; d < doorCount; d++) {
+        const isLeft = (d % 2 === 0);
+        const doorCX = startX + 0.005 + d * singleDoorW + singleDoorW / 2;
+
+        const pivot = new THREE.Group();
+        const hingeX = isLeft ? (doorCX - singleDoorW / 2) : (doorCX + singleDoorW / 2);
+        pivot.position.set(hingeX, bodyY, D + 0.009);
+
+        const doorPanel = this.createDoorPanel(singleDoorW - 0.004, doorH, 0.018);
+        const offsetX = isLeft ? (singleDoorW / 2) : (-singleDoorW / 2);
+        doorPanel.position.set(offsetX, 0, 0);
+        pivot.add(doorPanel);
+
+        this.addDoorHandleOrChannel(doorPanel, singleDoorW - 0.004, doorH, false, isLeft);
+
+        group.add(pivot);
+        this.doors.push({
+          group: pivot,
+          isLeft,
+          openAngle: isLeft ? (-Math.PI * 0.48) : (Math.PI * 0.48),
+          targetAngle: this.spec.isDoorOpen ? (isLeft ? -Math.PI * 0.48 : Math.PI * 0.48) : 0
+        });
+      }
     }
 
     this.kitchenGroup.add(group);
@@ -3214,6 +3349,15 @@ class Furniture3DEngine {
       }
     }
 
+    if (this.slidingDoors && this.slidingDoors.length > 0) {
+      for (const sd of this.slidingDoors) {
+        const destX = this.spec.isDoorOpen ? sd.openX : sd.closedX;
+        if (Math.abs(sd.mesh.position.x - destX) > 0.001) {
+          sd.mesh.position.x += (destX - sd.mesh.position.x) * 0.12;
+        }
+      }
+    }
+
     this.renderer.render(this.scene, this.camera);
     this.updateDimensionBadges();
   }
@@ -3314,6 +3458,180 @@ class Furniture3DEngine {
     if (this.overlay) this.overlay.style.display = 'block';
 
     return dataUrl;
+  }
+
+  // =========================================================
+  // C. 집안 전체 맞춤 가구 통합 3D 쇼룸 (Full House Showroom)
+  // 모든 발주 품목을 가상 주택/아파트 실내 공간에 유기적으로 동시 배치
+  // =========================================================
+  setFullHouseMode(items = [], isFullHouse = true) {
+    this.isFullHouseMode = isFullHouse;
+    this.fullHouseItems = items;
+
+    if (isFullHouse && items && items.length > 0) {
+      this.buildFullHouseShowroom(items);
+    } else {
+      this.buildRoomShell();
+      this.buildFurniture();
+      this.applyCameraConstraints(false);
+    }
+  }
+
+  buildFullHouseShowroom(items) {
+    if (this.kitchenGroup) {
+      this.scene.remove(this.kitchenGroup);
+      this.doors = [];
+      this.slidingDoors = [];
+      this.dimensionLines.forEach(l => this.scene.remove(l));
+      this.dimensionLines = [];
+      this.cadEdgeLines.forEach(l => {
+        if (l.parent) l.parent.remove(l);
+        if (l.geometry) l.geometry.dispose();
+      });
+      this.cadEdgeLines = [];
+    }
+    if (this.roomGroup) this.scene.remove(this.roomGroup);
+
+    // 1. 전체 실내 룸 셸 구축 (14m x 10m 공간)
+    this.roomGroup = new THREE.Group();
+    this.scene.add(this.roomGroup);
+
+    const floorW = 14;
+    const floorD = 10;
+    const ceilH = 2.45;
+
+    // A. 바닥 (광폭 오크 원목 마루)
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(floorW, floorD), this.floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, floorD / 2 - 0.8);
+    floor.receiveShadow = true;
+    this.roomGroup.add(floor);
+
+    // B. 후면 메인 벽체 (14m)
+    const backWall = new THREE.Mesh(new THREE.PlaneGeometry(floorW, ceilH + 0.6), this.wallMat);
+    backWall.position.set(0, (ceilH + 0.6) / 2, -0.002);
+    backWall.receiveShadow = true;
+    this.roomGroup.add(backWall);
+
+    // C. 좌측 벽 (주방 구역 벽 5.0m)
+    const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(5.0, ceilH + 0.6), this.wallMat);
+    leftWall.rotation.y = Math.PI / 2;
+    leftWall.position.set(-floorW / 2, (ceilH + 0.6) / 2, 2.5);
+    leftWall.receiveShadow = true;
+    this.roomGroup.add(leftWall);
+
+    // D. 인테리어 무드 파티션 (주방과 침실 사이)
+    const partWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, ceilH, 3.0), this.carcassWoodMat);
+    partWall.position.set(1.4, ceilH / 2, 1.5);
+    this.roomGroup.add(partWall);
+
+    // 2. 가구 그룹 생성 및 품목별 구역 자동 배치
+    this.kitchenGroup = new THREE.Group();
+    this.scene.add(this.kitchenGroup);
+
+    let kitchenX = -2.6;
+    let islandZ = 2.2;
+    let bedroomX = 4.2;
+    let livingZ = 4.8;
+    let entryX = -4.2;
+
+    items.forEach((item, idx) => {
+      const cat = item.category || 'sink';
+      const spec = item.spec || this.spec;
+      const subGroup = new THREE.Group();
+
+      const origSpec = { ...this.spec };
+      Object.assign(this.spec, spec);
+      this.refreshDynamicMaterials();
+
+      const tempGroup = new THREE.Group();
+      const prevKitchenGroup = this.kitchenGroup;
+      this.kitchenGroup = tempGroup;
+
+      if (cat === 'wardrobe') {
+        this.buildWardrobe();
+        subGroup.add(tempGroup);
+        subGroup.position.set(bedroomX, 0, 0);
+        bedroomX += ((spec.totalWidth || 3000) / 1000) * 0.45 + 1.2;
+      } else if (cat === 'shoe_cabinet') {
+        this.buildShoeCabinet();
+        subGroup.add(tempGroup);
+        subGroup.position.set(entryX, 0, 5.2);
+        entryX += 1.6;
+      } else if (cat === 'island') {
+        this.buildIslandTable();
+        subGroup.add(tempGroup);
+        subGroup.position.set(-2.0, 0, islandZ);
+        islandZ += 1.8;
+      } else if (cat === 'tv_console') {
+        this.buildTvConsole();
+        subGroup.add(tempGroup);
+        subGroup.position.set(2.8, 0, livingZ);
+        livingZ += 1.6;
+      } else if (cat === 'display_glass') {
+        this.buildGlassDisplayCabinet();
+        subGroup.add(tempGroup);
+        subGroup.position.set(1.4 + 0.65, 0, 0.3);
+      } else if (cat === 'drawers') {
+        this.buildDrawersUnit();
+        subGroup.add(tempGroup);
+        subGroup.position.set(4.6, 0, 3.2);
+      } else if (cat === 'storage') {
+        this.buildStorageCabinet();
+        subGroup.add(tempGroup);
+        subGroup.position.set(-5.4, 0, 1.6);
+      } else {
+        // 주방 씽크대 & 조리대
+        this.buildKitchenLayout();
+        subGroup.add(tempGroup);
+        subGroup.position.set(kitchenX, 0, 0);
+      }
+
+      this.kitchenGroup = prevKitchenGroup;
+      this.kitchenGroup.add(subGroup);
+
+      // 각 가구 상단에 입체적인 3D 핀 뱃지 부착
+      this.createHouseItemPin(subGroup, idx + 1, item.name);
+
+      this.spec = origSpec;
+      this.refreshDynamicMaterials();
+    });
+
+    // 3. 카메라를 집안 전체 조망 투시도로 전환
+    if (this.controls) {
+      this.controls.minDistance = 2.5;
+      this.controls.maxDistance = 24.0;
+      this.controls.minAzimuthAngle = -1.35;
+      this.controls.maxAzimuthAngle = 1.35;
+      this.setCameraPreset('house_overview');
+    }
+
+    this.addCadEdgesRecursively(this.kitchenGroup);
+  }
+
+  createHouseItemPin(parentGroup, num, name) {
+    const pinGroup = new THREE.Group();
+    pinGroup.position.set(0, 2.48, 0.35);
+
+    // 슬림 스탠드 바
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.32, 12), this.aluminumFrameMat);
+    pole.position.set(0, -0.16, 0);
+    pinGroup.add(pole);
+
+    // 세련된 원형 황금/브론즈 핀 뱃지
+    const badgeGeom = new THREE.CylinderGeometry(0.14, 0.14, 0.024, 24);
+    badgeGeom.rotateX(Math.PI / 2);
+    const badgeMat = new THREE.MeshStandardMaterial({
+      color: 0x8C6239,
+      metalness: 0.6,
+      roughness: 0.25,
+      emissive: 0x3d2714,
+      emissiveIntensity: 0.35
+    });
+    const badge = new THREE.Mesh(badgeGeom, badgeMat);
+    pinGroup.add(badge);
+
+    parentGroup.add(pinGroup);
   }
 
   resize() {

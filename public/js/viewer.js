@@ -108,6 +108,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 다중 품목 전환 탭 바 렌더링 (2개 이상 발주 시 활성화)
   const itemsBar = document.getElementById('viewer-items-bar');
+  const vHouseCamBtnIds = ['btn-vcam-house', 'btn-vcam-kitchen', 'btn-vcam-bedroom', 'btn-vcam-living'];
+
+  function switchViewerMode(mode) {
+    document.querySelectorAll('[data-viewer-mode]').forEach(b => b.classList.toggle('active', b.dataset.viewerMode === mode));
+    const stdCamBtns = document.querySelectorAll('.viewer-toolbar [data-cam="iso"], .viewer-toolbar [data-cam="cad_iso"], .viewer-toolbar [data-cam="front"], .viewer-toolbar [data-cam="top"]');
+
+    if (mode === '2d') {
+      canvasContainer.style.display = 'none';
+      if (planContainer) planContainer.style.display = 'block';
+      if (plan2d) plan2d.updateSpec(normalizedSpec);
+    } else if (mode === 'full_house') {
+      if (planContainer) planContainer.style.display = 'none';
+      canvasContainer.style.display = 'block';
+      if (engine) {
+        engine.resize();
+        engine.setFullHouseMode(itemsList, true);
+      }
+      vHouseCamBtnIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'inline-flex';
+      });
+      stdCamBtns.forEach(b => b.style.display = 'none');
+    } else {
+      if (planContainer) planContainer.style.display = 'none';
+      canvasContainer.style.display = 'block';
+      if (engine) {
+        engine.resize();
+        engine.setFullHouseMode(itemsList, false);
+        engine.updateSpec(normalizedSpec);
+      }
+      vHouseCamBtnIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+      stdCamBtns.forEach(b => b.style.display = 'inline-flex');
+    }
+  }
+
   if (itemsBar && itemsList.length > 1) {
     itemsBar.style.display = 'flex';
     itemsBar.innerHTML = '';
@@ -119,6 +157,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       base_corner: '📐', upper_corner: '📐'
     };
 
+    // 0. 집안 전체 3D 쇼룸 바로가기 탭
+    const houseBtn = document.createElement('button');
+    houseBtn.type = 'button';
+    houseBtn.className = 'view-mode-btn';
+    houseBtn.style.cssText = 'padding:6px 14px; font-size:12px; font-weight:800; white-space:nowrap; border-radius:20px; color:var(--brand-dark); background:#FAF0E6; border:1px solid var(--brand);';
+    houseBtn.innerHTML = `🏠 집안 전체 3D 쇼룸`;
+    houseBtn.addEventListener('click', () => {
+      itemsBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      houseBtn.classList.add('active');
+      switchViewerMode('full_house');
+    });
+    itemsBar.appendChild(houseBtn);
+
     itemsList.forEach((it, idx) => {
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -129,8 +180,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       btn.addEventListener('click', () => {
         currentActiveItemIdx = idx;
-        itemsBar.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+        itemsBar.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         normalizedSpec = normalizeItemSpec(it.spec);
+        switchViewerMode('3d');
         if (engine) engine.updateSpec(normalizedSpec);
         if (plan2d) plan2d.updateSpec(normalizedSpec);
       });
@@ -139,20 +192,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 3D 모델뷰 <-> 2D 치수 평면도 전환
+  // 3D 모델뷰 <-> 집안 전체 3D <-> 2D 치수 평면도 전환
   document.querySelectorAll('[data-viewer-mode]').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.viewerMode;
-      document.querySelectorAll('[data-viewer-mode]').forEach(b => b.classList.toggle('active', b.dataset.viewerMode === mode));
-      if (mode === '2d') {
-        canvasContainer.style.display = 'none';
-        if (planContainer) planContainer.style.display = 'block';
-        if (plan2d) plan2d.updateSpec(normalizedSpec);
-      } else {
-        if (planContainer) planContainer.style.display = 'none';
-        canvasContainer.style.display = 'block';
-        engine.resize();
-      }
+      switchViewerMode(mode);
     });
   });
 

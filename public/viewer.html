@@ -41,8 +41,9 @@
           3D 실물 도면 · 2D 치수 평면도
         </div>
         <div class="view-mode-switch">
-          <button type="button" class="view-mode-btn active" data-viewer-mode="3d">3D 모델뷰</button>
-          <button type="button" class="view-mode-btn" data-viewer-mode="2d">2D 평면 · 치수도면</button>
+          <button type="button" class="view-mode-btn active" data-viewer-mode="3d">개별 3D</button>
+          <button type="button" class="view-mode-btn" data-viewer-mode="full_house" id="btn-viewer-fullhouse">🏠 집안 전체 3D</button>
+          <button type="button" class="view-mode-btn" data-viewer-mode="2d">2D 평면도</button>
         </div>
       </div>
 
@@ -55,6 +56,10 @@
           <button type="button" class="tool-chip" data-cam="cad_iso">도면 아이소</button>
           <button type="button" class="tool-chip" data-cam="front">정면</button>
           <button type="button" class="tool-chip" data-cam="top">항공</button>
+          <button type="button" class="tool-chip" data-cam="house_overview" id="btn-vcam-house" style="display:none; color:var(--brand-dark); font-weight:700;">전체 조망</button>
+          <button type="button" class="tool-chip" data-cam="house_kitchen" id="btn-vcam-kitchen" style="display:none;">주방 뷰</button>
+          <button type="button" class="tool-chip" data-cam="house_bedroom" id="btn-vcam-bedroom" style="display:none;">침실 뷰</button>
+          <button type="button" class="tool-chip" data-cam="house_living" id="btn-vcam-living" style="display:none;">거실 뷰</button>
           <span class="toolbar-divider"></span>
           <button id="btn-cad-toggle" class="tool-chip active" type="button">
             <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>

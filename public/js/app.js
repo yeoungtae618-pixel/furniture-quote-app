@@ -487,6 +487,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 도어 카드 갱신
     updateSelectedDoorCard();
+
+    // 붙박이장 전용 도어 방식 동기화
+    const wardrobeBox = document.getElementById('wardrobe-config-box');
+    if (wardrobeBox) {
+      wardrobeBox.style.display = (cat === 'wardrobe') ? 'block' : 'none';
+      const doorType = s.wardrobeDoorType || 'sliding';
+      wardrobeBox.querySelectorAll('[data-wardrobe-door]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.wardrobeDoor === doorType);
+      });
+    }
   }
 
   function addNewOrderItem(categoryId) {
@@ -510,6 +520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (categoryId === 'wardrobe') {
       newSpec.wardrobeDepth = catMeta.defaultD || 650;
       newSpec.ceilingHeight = 2350;
+      newSpec.wardrobeDoorType = 'sliding'; // 기본값: 프리미엄 슬라이딩 미닫이 도어
     } else if (categoryId === 'island') {
       newSpec.islandDepth = catMeta.defaultD || 850;
     }
@@ -902,22 +913,71 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 5-1. 3D 모델뷰 <-> 2D 평면/입면도 전환
+  // 5-1. 3D 모델뷰 <-> 집안 전체 3D <-> 2D 평면/입면도 전환
   const canvasBoxEl = document.getElementById('canvas-container');
   const planBoxEl = document.getElementById('plan2d-container');
+  const houseCamBtnIds = ['btn-cam-house', 'btn-cam-kitchen', 'btn-cam-bedroom', 'btn-cam-living'];
+
   document.querySelectorAll('[data-viewmode]').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.viewmode;
       document.querySelectorAll('[data-viewmode]').forEach(b => b.classList.toggle('active', b.dataset.viewmode === mode));
+
+      const stdCamBtns = document.querySelectorAll('.viewer-toolbar [data-cam="iso"], .viewer-toolbar [data-cam="cad_iso"], .viewer-toolbar [data-cam="front"], .viewer-toolbar [data-cam="top"]');
+
       if (mode === '2d') {
         if (canvasBoxEl) canvasBoxEl.style.display = 'none';
         if (planBoxEl) planBoxEl.style.display = 'block';
         if (plan2dEngine) plan2dEngine.updateSpec(state.spec);
+      } else if (mode === 'full_house') {
+        if (planBoxEl) planBoxEl.style.display = 'none';
+        if (canvasBoxEl) canvasBoxEl.style.display = 'block';
+        if (engine) {
+          engine.resize();
+          engine.setFullHouseMode(state.items, true);
+        }
+        houseCamBtnIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'inline-flex';
+        });
+        stdCamBtns.forEach(b => b.style.display = 'none');
+        showToast('🏠 발주된 모든 가구를 가상 실내 하우스에 통합 배치했습니다!');
       } else {
         if (planBoxEl) planBoxEl.style.display = 'none';
         if (canvasBoxEl) canvasBoxEl.style.display = 'block';
-        if (engine) engine.resize();
+        if (engine) {
+          engine.resize();
+          engine.setFullHouseMode(state.items, false);
+        }
+        houseCamBtnIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = 'none';
+        });
+        stdCamBtns.forEach(b => b.style.display = 'inline-flex');
       }
+    });
+  });
+
+  // 상단 헤더 빠른 집안 전체 3D 바로가기 버튼
+  const btnQuickHouse = document.getElementById('btn-quick-fullhouse');
+  if (btnQuickHouse) {
+    btnQuickHouse.addEventListener('click', () => {
+      const fullHouseBtn = document.getElementById('btn-viewmode-fullhouse');
+      if (fullHouseBtn) fullHouseBtn.click();
+    });
+  }
+
+  // 5-1-B. 붙박이장 도어 방식 선택 (슬라이딩 미닫이 레일 vs 여닫이 스윙)
+  document.querySelectorAll('[data-wardrobe-door]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.wardrobeDoor;
+      document.querySelectorAll('[data-wardrobe-door]').forEach(b => b.classList.toggle('active', b === btn));
+      state.spec.wardrobeDoorType = type;
+      if (state.items && state.items[state.activeItemIndex]) {
+        state.items[state.activeItemIndex].spec.wardrobeDoorType = type;
+      }
+      syncVisualEngines();
+      showToast(`붙박이장 도어가 [${type === 'sliding' ? '슬라이딩 미닫이 레일' : '여닫이 스윙 도어'}](으)로 설정되었습니다.`);
     });
   });
 
