@@ -1280,3 +1280,96 @@ input[type="range"].styled-range {
   color: var(--brand-dark);
   margin-bottom: 6px;
 }
+
+/* =========================================
+   영업사원 현장 실측 & 발주 워크벤치
+   ========================================= */
+.field-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+  max-width: 1200px;
+}
+
+@media (max-width: 960px) {
+  .field-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-section-card {
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.field-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.field-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.field-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 8px 11px;
+  background: #FAF7F2;
+  border: 1px solid #EAE3D7;
+  border-radius: 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+  margin-bottom: 7px;
+  transition: all var(--transition-fast);
+}
+
+.checklist-item:hover {
+  background: #F4EFE6;
+  border-color: #D6C9B8;
+}
+
+.checklist-item input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--brand);
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+
+.field-quick-badge {
+  font-size: 11px;
+  color: var(--brand);
+  background: var(--brand-light);
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}

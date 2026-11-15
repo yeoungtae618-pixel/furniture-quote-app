@@ -36,6 +36,10 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           3D 도면 설계 및 실측
         </button>
+        <button class="nav-item" data-nav="field">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><circle cx="10" cy="9" r="1.5"/></svg>
+          영업사원 실측 · 발주 탭
+        </button>
         <button class="nav-item" data-nav="orders">
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           수주 및 고객 관리
@@ -109,6 +113,7 @@
           <div id="canvas-container">
             <div class="viewer-toolbar">
               <button type="button" class="tool-chip active" data-cam="iso">투시도</button>
+              <button type="button" class="tool-chip" data-cam="cad_iso">도면 아이소</button>
               <button type="button" class="tool-chip" data-cam="front">정면</button>
               <button type="button" class="tool-chip" data-cam="top">항공</button>
               <span class="toolbar-divider"></span>
@@ -194,6 +199,36 @@
               <input type="range" id="slider-total-w" class="styled-range" min="1800" max="4200" step="50" value="2700">
               <div style="margin-top:8px;">
                 <input type="number" id="input-total-w" class="input-control" value="2700" placeholder="직접 입력 (mm)">
+              </div>
+            </div>
+
+            <!-- 1-1. 키큰장 / 가전수납장 구성 (도면 핵심 레퍼런스) -->
+            <div class="form-section">
+              <div class="section-label">
+                <span>1-1. 키큰장 · 가전수납장 구성</span>
+                <span style="font-size:11px; color:var(--brand); font-weight:600;">3D 도면 연동</span>
+              </div>
+              <div class="grid-3">
+                <div>
+                  <label class="field-label">키큰장 위치</label>
+                  <select id="select-tall-pos" class="input-control">
+                    <option value="none" selected>설치 안함 (일반)</option>
+                    <option value="left">좌측 키큰장 (추천)</option>
+                    <option value="right">우측 키큰장</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">키큰장 폭 (mm)</label>
+                  <input type="number" id="input-tall-w" class="input-control" value="600" step="50">
+                </div>
+                <div>
+                  <label class="field-label">가전 수납 형태</label>
+                  <select id="select-tall-type" class="input-control">
+                    <option value="appliance">밥솥/오븐장 (인출식)</option>
+                    <option value="pantry">롱팬트리 수납도어</option>
+                    <option value="fridge">냉장고장 상부수납</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -486,6 +521,356 @@
             <button type="button" class="btn-outline" style="width:100%;" onclick="document.querySelector('[data-studiotab=spec]').click()">
               &lsaquo; 실측 치수 · 견적서로 돌아가기
             </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 1-2: 영업사원 현장 실측 & 발주 관리 워크벤치
+         =================================================== -->
+    <section id="view-field" style="display:none;">
+      <div class="field-grid">
+        
+        <!-- 좌측: 현장 실측 입력 양식 (세부 항목별 카드) -->
+        <div class="field-form-col">
+          
+          <!-- 카드 1: 고객 및 현장 기본 정보 -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">1</span>
+                <span>현장 및 고객 식별 정보</span>
+              </div>
+              <span class="field-quick-badge">필수 기본 정보</span>
+            </div>
+            <div class="grid-2" style="margin-bottom:10px;">
+              <div>
+                <label class="field-label">현장명 / 아파트 단지명</label>
+                <input type="text" id="field-site-name" class="input-control" value="남양주 다산 자연앤자이 804동 1201호" placeholder="예: 서울 송파 헬리오시티 102동 405호">
+              </div>
+              <div>
+                <label class="field-label">고객 성함</label>
+                <input type="text" id="field-client-name" class="input-control" value="김철수 고객님" placeholder="고객 성명">
+              </div>
+            </div>
+            <div class="grid-3">
+              <div>
+                <label class="field-label">고객 연락처</label>
+                <input type="text" id="field-client-phone" class="input-control" value="010-1234-5678" placeholder="010-0000-0000">
+              </div>
+              <div>
+                <label class="field-label">실측 담당 영업사원</label>
+                <input type="text" id="field-rep-name" class="input-control" value="이영업 부장" placeholder="영업사원 성명">
+              </div>
+              <div>
+                <label class="field-label">실측 일자</label>
+                <input type="date" id="field-measure-date" class="input-control">
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 2: 건축 공간 및 주방 구조 실측 -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">2</span>
+                <span>건축 벽면 실측 및 구조 레이아웃</span>
+              </div>
+              <span class="field-quick-badge">치수 mm 단위</span>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label class="field-label">주방 구조 레이아웃</label>
+              <div class="layout-pill-group" style="margin-bottom:10px;">
+                <button type="button" class="layout-pill active" data-field-layout="straight">일자형 (I-Type)</button>
+                <button type="button" class="layout-pill" data-field-layout="l_left">ㄱ자형 (좌측 코너)</button>
+                <button type="button" class="layout-pill" data-field-layout="l_right">ㄱ자형 (우측 코너)</button>
+              </div>
+            </div>
+            <div class="grid-3" style="margin-bottom:10px;">
+              <div>
+                <label class="field-label">메인 주벽 전체 길이 (W1, mm)</label>
+                <input type="number" id="field-total-w" class="input-control" value="2700" step="50">
+              </div>
+              <div id="field-wing-len-wrap" style="display:none;">
+                <label class="field-label">코너 날개벽 세로길이 (W2, mm)</label>
+                <input type="number" id="field-side-len" class="input-control" value="1800" step="50">
+              </div>
+              <div>
+                <label class="field-label">천장 실측 높이 (CH, mm)</label>
+                <input type="number" id="field-ceiling-h" class="input-control" value="2350" step="50">
+              </div>
+            </div>
+            <div class="grid-3">
+              <div>
+                <label class="field-label">하부장 깊이 (mm)</label>
+                <input type="number" id="field-lower-d" class="input-control" value="600" step="10">
+              </div>
+              <div>
+                <label class="field-label">걸레받이 높이 (mm)</label>
+                <input type="number" id="field-plinth-h" class="input-control" value="120" step="10">
+              </div>
+              <div>
+                <label class="field-label">인조대리석 상판 두께 (mm)</label>
+                <input type="number" id="field-top-t" class="input-control" value="40" step="10">
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 3: 키큰장 / 가전수납장 구성 (블루프린트 도면 핵심) -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">3</span>
+                <span>키큰장 · 가전수납장 구성 (밥솥/오븐장 / 냉장고장)</span>
+              </div>
+              <span class="field-quick-badge">3D 및 도면 즉시 반영</span>
+            </div>
+            <div class="grid-3">
+              <div>
+                <label class="field-label">키큰장 배치 위치</label>
+                <select id="field-tall-pos" class="input-control">
+                  <option value="none">설치 안함 (일반)</option>
+                  <option value="left" selected>좌측 키큰장 (추천)</option>
+                  <option value="right">우측 키큰장</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">키큰장 가로폭 (mm)</label>
+                <input type="number" id="field-tall-w" class="input-control" value="600" step="50">
+              </div>
+              <div>
+                <label class="field-label">가전 수납 형태</label>
+                <select id="field-tall-type" class="input-control">
+                  <option value="appliance">밥솥/오븐 가전장 (인출 슬라이딩)</option>
+                  <option value="pantry">일반 롱팬트리 수납도어</option>
+                  <option value="fridge">냉장고장 상부수납 브릿지</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 4: 하부장 모듈별 세부 실측 분할 (한두군데가 아님!) -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">4</span>
+                <span>하부장 모듈별 정밀 분할 및 설비 배관 위치</span>
+              </div>
+              <span class="field-quick-badge">실측 필수 항목</span>
+            </div>
+            <div class="grid-3" style="margin-bottom:12px;">
+              <div>
+                <label class="field-label">개수대장 (싱크볼장) 가로폭 (mm)</label>
+                <input type="number" id="field-sink-w" class="input-control" value="1000" step="50">
+              </div>
+              <div>
+                <label class="field-label">조리대장 (3단서랍) 가로폭 (mm)</label>
+                <input type="number" id="field-prep-w" class="input-control" value="800" step="50">
+              </div>
+              <div>
+                <label class="field-label">가열대장 (쿡탑장) 가로폭 (mm)</label>
+                <input type="number" id="field-cook-w" class="input-control" value="900" step="50">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div>
+                <label class="field-label">배수관 중심 위치 (벽면 기준 mm)</label>
+                <input type="number" id="field-drain-pos" class="input-control" value="500" placeholder="좌측 벽면에서 배수구까지 거리">
+              </div>
+              <div>
+                <label class="field-label">가스 배관 / 전용 콘센트 위치 (mm)</label>
+                <input type="number" id="field-gas-pos" class="input-control" value="2250" placeholder="벽면에서 쿡탑 콘센트까지 거리">
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 5: 상부장 및 벽면 실측 -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">5</span>
+                <span>상부장 (벽장) 및 미드웨이 타일벽 실측</span>
+              </div>
+            </div>
+            <div style="margin-bottom:10px;">
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer;">
+                <input type="checkbox" id="field-check-upper" checked style="accent-color:var(--brand); width:16px; height:16px;">
+                <span>상부장(벽장) 및 상부 써라운딩 마감 포함</span>
+              </label>
+            </div>
+            <div id="field-upper-config-box" class="grid-3">
+              <div>
+                <label class="field-label">상부장 높이 (mm)</label>
+                <input type="number" id="field-upper-h" class="input-control" value="700" step="50">
+              </div>
+              <div>
+                <label class="field-label">상부장 깊이 (mm)</label>
+                <input type="number" id="field-upper-d" class="input-control" value="350" step="10">
+              </div>
+              <div>
+                <label class="field-label">미드웨이 타일벽 높이 (mm)</label>
+                <input type="number" id="field-midway-h" class="input-control" value="650" step="10">
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 6: 빌트인 기기 및 하드웨어 스펙 -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">6</span>
+                <span>빌트인 기기 · 수전 및 하드웨어</span>
+              </div>
+            </div>
+            <div class="grid-3" style="margin-bottom:10px;">
+              <div>
+                <label class="field-label">후드 타입</label>
+                <select id="field-select-hood" class="input-control">
+                  <option value="hidden">빌트인 히든후드 (깔끔한 매립형)</option>
+                  <option value="chimney">T자형 침니후드 (스테인리스)</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">쿡탑 기기</label>
+                <select id="field-select-cooktop" class="input-control">
+                  <option value="black_ind">블랙 3구 인덕션</option>
+                  <option value="white_ind">화이트 3구 인덕션</option>
+                  <option value="gas_3">3구 가스레인지</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">수전 디자인</label>
+                <select id="field-select-faucet" class="input-control">
+                  <option value="gooseneck">거위목 수전 (무광 니켈)</option>
+                  <option value="square_l">모던 직각 L형 수전</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid-2">
+              <div>
+                <label class="field-label">경첩 (하드웨어)</label>
+                <select id="field-select-hinge" class="input-control">
+                  <option value="munan_damp">문앤문 110도 댐핑 경첩 (기본)</option>
+                  <option value="blum_damp">블룸(Blum) 프리미엄 댐핑 경첩</option>
+                </select>
+              </div>
+              <div>
+                <label class="field-label">서랍 레일 시스템</label>
+                <select id="field-select-rail" class="input-control">
+                  <option value="ball_rail">3단 볼베어링 레일 (기본)</option>
+                  <option value="under_damp">댐핑 소프트클로징 언더레일</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 7: 현장 시공 체크리스트 (영업사원 필수) -->
+          <div class="field-section-card">
+            <div class="field-card-header">
+              <div class="field-card-title">
+                <span class="field-step-badge">7</span>
+                <span>현장 시공 체크리스트 (영업 필수 확인)</span>
+              </div>
+              <span class="field-quick-badge">하자 방지</span>
+            </div>
+            <div>
+              <label class="checklist-item">
+                <input type="checkbox" id="chk-field-manifold" checked>
+                <span><strong>보일러 온수 분배기 위치 확인:</strong> 싱크대 하부장 내부 수납 간섭 유무 및 바닥판 따내기 사전 조율 완료</span>
+              </label>
+              <label class="checklist-item">
+                <input type="checkbox" id="chk-field-gas">
+                <span><strong>가스 배관 / 인덕션 전기 배선:</strong> 인덕션 단독 2.5sq 전용선 유무 및 도시가스 마감 확인</span>
+              </label>
+              <label class="checklist-item">
+                <input type="checkbox" id="chk-field-elevator" checked>
+                <span><strong>엘리베이터 양중 가능 여부:</strong> 엘리베이터 사용 가능 (불가 시 사다리차 별도 협의)</span>
+              </label>
+              <label class="checklist-item">
+                <input type="checkbox" id="chk-field-demo">
+                <span><strong>기존 싱크대 철거 및 폐기:</strong> 공장 시공팀 철거 및 폐기물 반출 요청 (+200,000원)</span>
+              </label>
+              <label class="checklist-item">
+                <input type="checkbox" id="chk-field-tile">
+                <span><strong>주방 벽면 타일 덧방 시공:</strong> 타일 덧방 시공 사전 완료 (단차 확인됨)</span>
+              </label>
+            </div>
+            <div style="margin-top:12px;">
+              <label class="field-label">현장 특이사항 / 실측 비고 메모</label>
+              <textarea id="field-notes" class="input-control" rows="3" placeholder="예: 우측 벽체 15mm 배부름 단차 있음, 상부 써라운딩 80mm 마감 요망, 분배기 가로폭 650mm"></textarea>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 우측: 실시간 산출 견적 & 3D 도면 연동 (Sticky) -->
+        <div class="field-summary-col" style="position:sticky; top:20px;">
+          <div class="card" style="padding:20px; border:1.5px solid var(--border-color); box-shadow:var(--shadow-md);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <div style="font-size:14px; font-weight:800; color:var(--text-primary);">현장 실측 즉시 견적</div>
+              <span class="badge" style="background:#2E7D32; color:#fff; font-size:10.5px; padding:3px 8px;">실시간 연동</span>
+            </div>
+
+            <div class="quote-box" style="margin-bottom:14px;">
+              <div class="quote-row">
+                <span>공장 직영 원목 몸통</span>
+                <span id="field-cost-wood" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>기성 도어 외주 매입</span>
+                <span id="field-cost-door" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>인조대리석 상판 (T40)</span>
+                <span id="field-cost-top" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>하드웨어 / 경첩 / 레일</span>
+                <span id="field-cost-hw" class="amt">0원</span>
+              </div>
+              <div class="quote-row">
+                <span>현장 시공 및 물류비</span>
+                <span id="field-cost-install" class="amt">0원</span>
+              </div>
+              <div class="quote-row" style="font-size:11px; color:var(--text-tertiary);">
+                <span>영업/제작 마진 (25%)</span>
+                <span>포함됨</span>
+              </div>
+
+              <div class="quote-divider"></div>
+
+              <div class="quote-total-row">
+                <span class="quote-total-label">최종 견적 금액</span>
+                <span id="field-total-price" class="quote-total-price">0원</span>
+              </div>
+              <div class="quote-deposit-row">
+                <span>발주 계약금 (10%)</span>
+                <span id="field-deposit-price">0원</span>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <button type="button" id="btn-field-goto-3d" class="btn-primary" style="padding:11px;">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                3D CAD 도면으로 바로보기
+              </button>
+              <button type="button" id="btn-field-print-sheet" class="btn-outline" style="padding:10px;">
+                <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                현장 실측 체크시트 출력 / PDF
+              </button>
+              <button type="button" id="btn-field-open-quote" class="btn-outline" style="padding:10px; border-color:var(--brand); color:var(--brand);">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                고객 공급계약서 발송하기
+              </button>
+            </div>
+
+            <div style="margin-top:14px; padding:10px; background:#FAF7F2; border-radius:6px; font-size:11px; color:var(--text-secondary); line-height:1.5;">
+              <div style="font-weight:700; color:var(--brand-dark); margin-bottom:2px;">실시간 양방향 동기화 안내</div>
+              이 탭에서 수정한 모든 치수와 옵션은 <strong>3D 도면 뷰어, 2D 캐드 평면도, 고객 공급계약서</strong>에 실시간 100% 동기화됩니다.
+            </div>
+
           </div>
         </div>
 
@@ -898,7 +1283,11 @@
   <nav class="mobile-bottom-nav">
     <button class="mobile-nav-btn active" data-nav="studio">
       <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-      <span>3D 설계</span>
+      <span>3D설계</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="field">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>실측발주</span>
     </button>
     <button class="mobile-nav-btn" data-nav="orders">
       <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1000,6 +1389,28 @@
     <button id="btn-open-customer-view" class="btn-outline" style="width:100%; margin-top:8px;">
       현재 기기에서 소비자 화면 바로 열어보기
     </button>
+  </div>
+</div>
+
+<!-- 영업사원 현장 실측 체크시트 출력/PDF 모달 -->
+<div id="modal-field-sheet" class="modal-backdrop">
+  <div class="modal-window" style="max-width:760px; max-height:90vh; overflow-y:auto; padding:28px 24px;">
+    <div class="modal-header" style="margin-bottom:16px;">
+      <h3 class="modal-title" style="font-size:16px;">현장 실측 체크시트 & 시공 지시서</h3>
+      <button id="btn-close-field-sheet" class="modal-close">&times;</button>
+    </div>
+
+    <div id="field-print-content" class="contract-paper" style="padding:24px; font-size:12px; line-height:1.6;">
+      <!-- Populated dynamically by app.js -->
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+      <button type="button" class="btn-outline" onclick="document.getElementById('modal-field-sheet').style.display='none'">닫기</button>
+      <button type="button" id="btn-do-print-sheet" class="btn-primary" style="width:auto; padding:8px 18px;">
+        <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        체크시트 인쇄 / PDF 저장
+      </button>
+    </div>
   </div>
 </div>
 

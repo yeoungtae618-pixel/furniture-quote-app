@@ -22,6 +22,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       sinkBayWidth: 1000,
       prepBayWidth: 800,
       cooktopBayWidth: 900,
+      tallCabinet: 'none',
+      tallCabinetWidth: 600,
+      tallCabinetType: 'appliance',
       upperHeight: 700,
       upperDepth: 350,
       midwayHeight: 650,
@@ -100,6 +103,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       // 3D 엔진 초기화
       init3DEngine();
       calculateQuote();
+
+      // 영업사원 실측 워크벤치 바인딩 및 동기화
+      bindFieldFormEvents();
+      syncFieldFormFromState();
     } catch (err) {
       console.error('Initial load error:', err);
       showToast('서버 데이터 로딩 중 오류가 발생했습니다.');
@@ -155,13 +162,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalM = (state.spec.totalWidth + wingNet) / 1000;
     const upperM = (state.spec.totalWidth + (state.spec.wingHasUpper ? wingNet : 0)) / 1000;
 
+    const hasTall = Boolean(state.spec.tallCabinet && state.spec.tallCabinet !== 'none');
+    const tallW = hasTall ? (Number(state.spec.tallCabinetWidth) || 600) / 1000 : 0;
+    const tallBodyExtra = hasTall ? roundThousand(tallW * (settings.woodBodyPerMeter || 230000) * 1.5) : 0;
+    const tallDoorExtra = hasTall ? roundThousand(tallW * 2.2 * (state.selectedDoor.sqmPrice || 42000)) : 0;
+
     // A. 공장 직영 원목 몸통 (천원 단위 반올림)
-    const bodyCost = roundThousand(totalM * (settings.woodBodyPerMeter || 230000));
+    const bodyCost = roundThousand(totalM * (settings.woodBodyPerMeter || 230000)) + tallBodyExtra;
 
     // B. 기성 도어 외주 매입비 (천원 단위 반올림)
     const lowerDoorArea = totalM * 0.74;
     const upperDoorArea = state.spec.hasUpperCabinets ? (upperM * (state.spec.upperHeight / 1000)) : 0;
-    const doorVendorCost = roundThousand((lowerDoorArea + upperDoorArea) * (state.selectedDoor.sqmPrice || 42000));
+    const doorVendorCost = roundThousand((lowerDoorArea + upperDoorArea) * (state.selectedDoor.sqmPrice || 42000)) + tallDoorExtra;
 
     // C. 인조대리석 상판 (천원 단위 반올림)
     const countertopCost = roundThousand(
@@ -213,6 +225,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('quote-deposit-label').innerText = `발주 확정 계약금 (${settings.depositPercent || 10}%)`;
     document.getElementById('quote-deposit-price').innerText = state.pricing.depositPrice.toLocaleString() + '원';
 
+    // 영업사원 실측 워크벤치 요약도 함께 실시간 갱신
+    const fWood = document.getElementById('field-cost-wood');
+    if (fWood) fWood.innerText = state.pricing.woodBodyCost.toLocaleString() + '원';
+    const fDoor = document.getElementById('field-cost-door');
+    if (fDoor) fDoor.innerText = state.pricing.doorVendorCost.toLocaleString() + '원';
+    const fTop = document.getElementById('field-cost-top');
+    if (fTop) fTop.innerText = state.pricing.countertopCost.toLocaleString() + '원';
+    const fHw = document.getElementById('field-cost-hw');
+    if (fHw) fHw.innerText = state.pricing.fixedItemsCost.toLocaleString() + '원';
+    const fInst = document.getElementById('field-cost-install');
+    if (fInst) fInst.innerText = state.pricing.installCost.toLocaleString() + '원';
+    const fTot = document.getElementById('field-total-price');
+    if (fTot) fTot.innerText = state.pricing.totalPrice.toLocaleString() + '원';
+    const fDep = document.getElementById('field-deposit-price');
+    if (fDep) fDep.innerText = state.pricing.depositPrice.toLocaleString() + '원';
+
     // 고정 항목 체크리스트도 실측 패널에 요약 표시
     renderActiveFixedSummary();
   }
@@ -240,9 +268,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 상단/하단 전환)
-  const navViews = ['studio', 'orders', 'company', 'settings', 'doors'];
+  const navViews = ['studio', 'field', 'orders', 'company', 'settings', 'doors'];
   const pageTitles = {
     studio: { title: '3D 도면 설계 및 현장 실측', desc: '주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.' },
+    field: { title: '영업사원 현장 실측 & 발주 관리 워크벤치', desc: '현장 실측 치수(전체길이, 천장고, 키큰장, 하부/상부 모듈, 배관위치, 체크리스트)를 정밀 입력하고 도면과 견적을 즉시 연동합니다.' },
     orders: { title: '수주 및 고객 견적 관리', desc: '발송된 견적 현황과 계약서 서명, 입금 완료 및 누적 매출을 관리합니다.' },
     company: { title: '피앙세가구 사업자 정보 관리', desc: '상호명, 대표자, 사업자등록번호, 주소, 입금 계좌 및 직인을 관리하며 계약서와 문자에 자동 연동됩니다.' },
     settings: { title: '자재별 고정 단가표 설정', desc: '원목 몸통, 대리석 상판 단가, 기본 시공비, 마진율 및 고정 부속품을 직접 수정합니다.' },
@@ -265,6 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('pc-page-desc').innerText = info.desc;
     }
 
+    if (viewName === 'field') syncFieldFormFromState();
     if (viewName === 'orders') loadOrdersTable();
     if (viewName === 'company') populateCompanyForm();
     if (viewName === 'doors') renderDoorAdminTable();
@@ -382,6 +412,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (checkWingUpper) {
     checkWingUpper.addEventListener('change', e => {
       state.spec.wingHasUpper = e.target.checked;
+      syncVisualEngines();
+      calculateQuote();
+    });
+  }
+
+  // 5-0-B. 키큰장 / 가전수납장 스튜디오 컨트롤 바인딩
+  const selTallPos = document.getElementById('select-tall-pos');
+  const inpTallW = document.getElementById('input-tall-w');
+  const selTallType = document.getElementById('select-tall-type');
+
+  if (selTallPos) {
+    selTallPos.addEventListener('change', e => {
+      state.spec.tallCabinet = e.target.value;
+      const fTall = document.getElementById('field-tall-pos');
+      if (fTall) fTall.value = state.spec.tallCabinet;
+      syncVisualEngines();
+      calculateQuote();
+    });
+  }
+  if (inpTallW) {
+    inpTallW.addEventListener('change', e => {
+      state.spec.tallCabinetWidth = Math.max(400, Math.min(1200, parseInt(e.target.value, 10) || 600));
+      inpTallW.value = state.spec.tallCabinetWidth;
+      const fTallW = document.getElementById('field-tall-w');
+      if (fTallW) fTallW.value = state.spec.tallCabinetWidth;
+      syncVisualEngines();
+      calculateQuote();
+    });
+  }
+  if (selTallType) {
+    selTallType.addEventListener('change', e => {
+      state.spec.tallCabinetType = e.target.value;
+      const fTallT = document.getElementById('field-tall-type');
+      if (fTallT) fTallT.value = state.spec.tallCabinetType;
       syncVisualEngines();
       calculateQuote();
     });
@@ -522,6 +586,420 @@ document.addEventListener('DOMContentLoaded', async () => {
     a.click();
     showToast('고화질 3D 도면 이미지가 저장되었습니다.');
   });
+
+  // 5-5. 영업사원 현장 실측 워크벤치 양방향 동기화 및 이벤트
+  function syncFieldFormFromState() {
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val !== undefined ? val : '';
+    };
+
+    setVal('field-total-w', state.spec.totalWidth);
+    setVal('field-side-len', state.spec.sideLength);
+    setVal('field-ceiling-h', state.spec.ceilingHeight || 2350);
+    setVal('field-lower-d', state.spec.lowerDepth);
+    setVal('field-plinth-h', state.spec.plinthHeight || 120);
+    setVal('field-top-t', state.spec.topThickness || 40);
+
+    setVal('field-tall-pos', state.spec.tallCabinet || 'none');
+    setVal('field-tall-w', state.spec.tallCabinetWidth || 600);
+    setVal('field-tall-type', state.spec.tallCabinetType || 'appliance');
+
+    setVal('field-sink-w', state.spec.sinkBayWidth);
+    setVal('field-prep-w', state.spec.prepBayWidth);
+    setVal('field-cook-w', state.spec.cooktopBayWidth);
+
+    const chkUpper = document.getElementById('field-check-upper');
+    if (chkUpper) chkUpper.checked = Boolean(state.spec.hasUpperCabinets);
+    setVal('field-upper-h', state.spec.upperHeight);
+    setVal('field-upper-d', state.spec.upperDepth);
+    setVal('field-midway-h', state.spec.midwayHeight);
+
+    setVal('field-select-hood', state.spec.hoodType);
+    setVal('field-select-cooktop', state.spec.cooktopType);
+    setVal('field-select-faucet', state.spec.faucetType);
+
+    const dateEl = document.getElementById('field-measure-date');
+    if (dateEl && !dateEl.value) {
+      dateEl.value = new Date().toISOString().slice(0, 10);
+    }
+
+    document.querySelectorAll('[data-field-layout]').forEach(b => {
+      b.classList.toggle('active', b.dataset.fieldLayout === state.spec.layoutType);
+    });
+    const wingWrap = document.getElementById('field-wing-len-wrap');
+    if (wingWrap) {
+      wingWrap.style.display = (state.spec.layoutType === 'straight') ? 'none' : 'block';
+    }
+
+    updateQuoteUI();
+  }
+
+  function bindFieldFormEvents() {
+    // 레이아웃 알약 버튼
+    document.querySelectorAll('[data-field-layout]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-field-layout]').forEach(b => b.classList.toggle('active', b === btn));
+        state.spec.layoutType = btn.dataset.fieldLayout;
+        const studioBtn = document.querySelector(`[data-layout="${state.spec.layoutType}"]`);
+        if (studioBtn) studioBtn.click();
+        const wingWrap = document.getElementById('field-wing-len-wrap');
+        if (wingWrap) wingWrap.style.display = (state.spec.layoutType === 'straight') ? 'none' : 'block';
+        syncVisualEngines();
+        calculateQuote();
+      });
+    });
+
+    // 주벽 전체 길이
+    const fTotalW = document.getElementById('field-total-w');
+    if (fTotalW) {
+      fTotalW.addEventListener('change', e => {
+        syncWidths(e.target.value);
+      });
+    }
+
+    // 날개벽 길이
+    const fSideLen = document.getElementById('field-side-len');
+    if (fSideLen) {
+      fSideLen.addEventListener('change', e => {
+        state.spec.sideLength = Math.max(1000, parseInt(e.target.value, 10) || 1800);
+        if (inputSideLen) inputSideLen.value = state.spec.sideLength;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+
+    // 천장고
+    const fCeilH = document.getElementById('field-ceiling-h');
+    if (fCeilH) {
+      fCeilH.addEventListener('change', e => {
+        state.spec.ceilingHeight = Math.max(2000, Math.min(3200, parseInt(e.target.value, 10) || 2350));
+        const sCeil = document.getElementById('input-ceiling-h');
+        if (sCeil) sCeil.value = state.spec.ceilingHeight;
+        syncVisualEngines();
+      });
+    }
+
+    // 하부 깊이 / 걸레받이 / 상판 두께
+    const fLowerD = document.getElementById('field-lower-d');
+    if (fLowerD) {
+      fLowerD.addEventListener('change', e => {
+        state.spec.lowerDepth = parseInt(e.target.value, 10) || 600;
+        inputLowerD.value = state.spec.lowerDepth;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+    const fPlinthH = document.getElementById('field-plinth-h');
+    if (fPlinthH) {
+      fPlinthH.addEventListener('change', e => {
+        state.spec.plinthHeight = parseInt(e.target.value, 10) || 120;
+        syncVisualEngines();
+      });
+    }
+    const fTopT = document.getElementById('field-top-t');
+    if (fTopT) {
+      fTopT.addEventListener('change', e => {
+        state.spec.topThickness = parseInt(e.target.value, 10) || 40;
+        syncVisualEngines();
+      });
+    }
+
+    // 키큰장
+    const fTallPos = document.getElementById('field-tall-pos');
+    if (fTallPos) {
+      fTallPos.addEventListener('change', e => {
+        state.spec.tallCabinet = e.target.value;
+        if (selTallPos) selTallPos.value = state.spec.tallCabinet;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+    const fTallW = document.getElementById('field-tall-w');
+    if (fTallW) {
+      fTallW.addEventListener('change', e => {
+        state.spec.tallCabinetWidth = Math.max(400, Math.min(1200, parseInt(e.target.value, 10) || 600));
+        if (inpTallW) inpTallW.value = state.spec.tallCabinetWidth;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+    const fTallT = document.getElementById('field-tall-type');
+    if (fTallT) {
+      fTallT.addEventListener('change', e => {
+        state.spec.tallCabinetType = e.target.value;
+        if (selTallType) selTallType.value = state.spec.tallCabinetType;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+
+    // 하부장 모듈 (개수대 / 조리대 / 가열대)
+    const fSinkW = document.getElementById('field-sink-w');
+    const fPrepW = document.getElementById('field-prep-w');
+    const fCookW = document.getElementById('field-cook-w');
+    [fSinkW, fPrepW, fCookW].forEach(el => {
+      if (!el) return;
+      el.addEventListener('change', () => {
+        state.spec.sinkBayWidth = parseInt(fSinkW.value, 10) || 1000;
+        state.spec.prepBayWidth = parseInt(fPrepW.value, 10) || 800;
+        state.spec.cooktopBayWidth = parseInt(fCookW.value, 10) || 900;
+        state.spec.totalWidth = state.spec.sinkBayWidth + state.spec.prepBayWidth + state.spec.cooktopBayWidth;
+        sliderTotalW.value = state.spec.totalWidth;
+        inputTotalW.value = state.spec.totalWidth;
+        inputSinkW.value = state.spec.sinkBayWidth;
+        inputPrepW.value = state.spec.prepBayWidth;
+        inputCookW.value = state.spec.cooktopBayWidth;
+        document.getElementById('val-total-w').innerText = `${state.spec.totalWidth.toLocaleString()} mm`;
+        if (fTotalW) fTotalW.value = state.spec.totalWidth;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    });
+
+    // 상부장 토글 및 치수
+    const fChkUpper = document.getElementById('field-check-upper');
+    if (fChkUpper) {
+      fChkUpper.addEventListener('change', e => {
+        state.spec.hasUpperCabinets = e.target.checked;
+        const chkBox = document.getElementById('check-upper-cabinets');
+        if (chkBox) chkBox.checked = state.spec.hasUpperCabinets;
+        const uBox = document.getElementById('field-upper-config-box');
+        if (uBox) uBox.style.display = state.spec.hasUpperCabinets ? 'grid' : 'none';
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+    const fUpperH = document.getElementById('field-upper-h');
+    if (fUpperH) {
+      fUpperH.addEventListener('change', e => {
+        state.spec.upperHeight = parseInt(e.target.value, 10) || 700;
+        inputUpperH.value = state.spec.upperHeight;
+        syncVisualEngines();
+        calculateQuote();
+      });
+    }
+    const fUpperD = document.getElementById('field-upper-d');
+    if (fUpperD) {
+      fUpperD.addEventListener('change', e => {
+        state.spec.upperDepth = parseInt(e.target.value, 10) || 350;
+        syncVisualEngines();
+      });
+    }
+    const fMidH = document.getElementById('field-midway-h');
+    if (fMidH) {
+      fMidH.addEventListener('change', e => {
+        state.spec.midwayHeight = parseInt(e.target.value, 10) || 650;
+        syncVisualEngines();
+      });
+    }
+
+    // 기기 선택
+    const fHood = document.getElementById('field-select-hood');
+    if (fHood) {
+      fHood.addEventListener('change', e => {
+        state.spec.hoodType = e.target.value;
+        const sH = document.getElementById('select-hood-type');
+        if (sH) sH.value = state.spec.hoodType;
+        syncVisualEngines();
+      });
+    }
+    const fCook = document.getElementById('field-select-cooktop');
+    if (fCook) {
+      fCook.addEventListener('change', e => {
+        state.spec.cooktopType = e.target.value;
+        const sC = document.getElementById('select-cooktop-type');
+        if (sC) sC.value = state.spec.cooktopType;
+        syncVisualEngines();
+      });
+    }
+    const fFaucet = document.getElementById('field-select-faucet');
+    if (fFaucet) {
+      fFaucet.addEventListener('change', e => {
+        state.spec.faucetType = e.target.value;
+        const sF = document.getElementById('select-faucet-type');
+        if (sF) sF.value = state.spec.faucetType;
+        syncVisualEngines();
+      });
+    }
+
+    // 우측 액션 버튼들
+    const btnGoto3D = document.getElementById('btn-field-goto-3d');
+    if (btnGoto3D) {
+      btnGoto3D.addEventListener('click', () => {
+        switchView('studio');
+        setTimeout(() => {
+          if (engine) engine.setCameraPreset('cad_iso');
+          document.querySelectorAll('[data-cam]').forEach(b => b.classList.toggle('active', b.dataset.cam === 'cad_iso'));
+          showToast('3D 도면 뷰(아이소메트릭)로 이동했습니다.');
+        }, 100);
+      });
+    }
+
+    const btnPrintSheet = document.getElementById('btn-field-print-sheet');
+    if (btnPrintSheet) {
+      btnPrintSheet.addEventListener('click', openFieldPrintSheet);
+    }
+    const btnCloseSheet = document.getElementById('btn-close-field-sheet');
+    if (btnCloseSheet) {
+      btnCloseSheet.addEventListener('click', () => {
+        document.getElementById('modal-field-sheet').style.display = 'none';
+      });
+    }
+    const btnDoPrint = document.getElementById('btn-do-print-sheet');
+    if (btnDoPrint) {
+      btnDoPrint.addEventListener('click', () => {
+        window.print();
+      });
+    }
+
+    const btnOpenQuote = document.getElementById('btn-field-open-quote');
+    if (btnOpenQuote) {
+      btnOpenQuote.addEventListener('click', () => {
+        const cName = document.getElementById('field-client-name').value;
+        const cPhone = document.getElementById('field-client-phone').value;
+        const sName = document.getElementById('field-site-name').value;
+        if (cName) document.getElementById('cust-name').value = cName;
+        if (cPhone) document.getElementById('cust-phone').value = cPhone;
+        if (sName) document.getElementById('cust-address').value = sName;
+        document.getElementById('btn-open-submit').click();
+      });
+    }
+  }
+
+  function openFieldPrintSheet() {
+    const siteName = document.getElementById('field-site-name')?.value || '현장 정보 미입력';
+    const clientName = document.getElementById('field-client-name')?.value || '고객님';
+    const clientPhone = document.getElementById('field-client-phone')?.value || '-';
+    const repName = document.getElementById('field-rep-name')?.value || '영업담당';
+    const measureDate = document.getElementById('field-measure-date')?.value || new Date().toISOString().slice(0, 10);
+    const drainPos = document.getElementById('field-drain-pos')?.value || '500';
+    const gasPos = document.getElementById('field-gas-pos')?.value || '2250';
+    const notes = document.getElementById('field-notes')?.value || '특이사항 없음';
+
+    const chkManifold = document.getElementById('chk-field-manifold')?.checked;
+    const chkGas = document.getElementById('chk-field-gas')?.checked;
+    const chkElevator = document.getElementById('chk-field-elevator')?.checked;
+    const chkDemo = document.getElementById('chk-field-demo')?.checked;
+
+    const isL = state.spec.layoutType === 'l_left' || state.spec.layoutType === 'l_right';
+    const layoutLabel = isL ? (state.spec.layoutType === 'l_left' ? 'ㄱ자형 (좌측 코너)' : 'ㄱ자형 (우측 코너)') : '일자형 (I-Type)';
+
+    const hasTall = state.spec.tallCabinet && state.spec.tallCabinet !== 'none';
+    const tallLabel = hasTall ? `W:${state.spec.tallCabinetWidth} (${state.spec.tallCabinet === 'left' ? '좌' : '우'}측)` : '설치 안함';
+
+    const modal = document.getElementById('modal-field-sheet');
+    const container = document.getElementById('field-print-content');
+    if (!modal || !container) return;
+
+    container.innerHTML = `
+      <div style="border:2px solid #2A211B; padding:22px 24px; background:#fff; color:#1F1915;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #2A211B; padding-bottom:12px; margin-bottom:14px;">
+          <div>
+            <div style="font-size:19px; font-weight:800; color:#2A211B;">${settings.companyName || '피앙세가구'} 현장 실측 체크시트 및 시공 지시서</div>
+            <div style="font-size:11px; color:#6E6157; margin-top:3px;">주방 맞춤 가구 제작 공장 전용 실측 도면 연동 시트</div>
+          </div>
+          <div style="text-align:right; font-size:11.5px; color:#4A3B31;">
+            <div><strong>실측일자:</strong> ${measureDate}</div>
+            <div><strong>실측담당:</strong> ${repName}</div>
+          </div>
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; font-size:11.5px;">
+          <tr>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; width:20%; text-align:left;">현장명(단지/동호수)</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px; width:30%; font-weight:700;">${siteName}</td>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; width:20%; text-align:left;">고객 성함</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px; width:30%;">${clientName}</td>
+          </tr>
+          <tr>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; text-align:left;">고객 연락처</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px;">${clientPhone}</td>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; text-align:left;">구조 형태</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px; font-weight:700; color:#8C6239;">${layoutLabel}</td>
+          </tr>
+        </table>
+
+        <div style="font-size:12.5px; font-weight:800; color:#2A211B; margin-bottom:6px;">■ 부위별 정밀 실측 치수 (단위: mm)</div>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; font-size:11.5px; text-align:center;">
+          <thead>
+            <tr style="background:#EFEAE1; color:#2A211B;">
+              <th style="border:1px solid #C8BFB3; padding:6px;">전체 폭(W1)</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">날개벽(W2)</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">천장고(CH)</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">키큰장 폭</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">개수대장</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">조리대장</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">가열대장</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">하부고</th>
+              <th style="border:1px solid #C8BFB3; padding:6px;">상부고</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border:1px solid #C8BFB3; padding:6px; font-weight:700;">${state.spec.totalWidth}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${isL ? state.spec.sideLength : '-'}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.ceilingHeight}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px; font-weight:700; color:#8C6239;">${tallLabel}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.sinkBayWidth}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.prepBayWidth}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.cooktopBayWidth}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.lowerHeight}</td>
+              <td style="border:1px solid #C8BFB3; padding:6px;">${state.spec.hasUpperCabinets ? state.spec.upperHeight : '무상부'}</td>
+            </tr>
+            <tr style="background:#FAF7F2; font-size:11px;">
+              <td colspan="9" style="border:1px solid #C8BFB3; padding:6px; text-align:left;">
+                <strong>상세 규격:</strong> 하부 깊이 ${state.spec.lowerDepth}mm | 상부 깊이 ${state.spec.upperDepth}mm | 걸레받이 ${state.spec.plinthHeight}mm | 상판 두께 ${state.spec.topThickness}mm | 미드웨이 ${state.spec.midwayHeight}mm | 배수구 위치: 벽면 기준 ${drainPos}mm | 가스관/콘센트: ${gasPos}mm
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="font-size:12.5px; font-weight:800; color:#2A211B; margin-bottom:6px;">■ 자재 및 기기 확정 스펙</div>
+        <table style="width:100%; border-collapse:collapse; margin-bottom:14px; font-size:11.5px;">
+          <tr>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; width:18%; text-align:left;">몸통 구조</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px; width:32%;">공장 직영 친환경 원목 합판</td>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; width:18%; text-align:left;">기성 도어</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px; width:32%; font-weight:700;">${state.selectedDoor ? state.selectedDoor.name : '영림 프리미엄 매트화이트 PET'}</td>
+          </tr>
+          <tr>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; text-align:left;">인조대리석 상판</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px;">${settings.countertopName || 'LG 하이막스 오로라 화이트 (T40)'}</td>
+            <th style="background:#FAF7F2; border:1px solid #C8BFB3; padding:6px 10px; text-align:left;">하드웨어</th>
+            <td style="border:1px solid #C8BFB3; padding:6px 10px;">문앤문 110° 댐핑 경첩 + 3단 볼레일 서랍</td>
+          </tr>
+        </table>
+
+        <div style="font-size:12.5px; font-weight:800; color:#2A211B; margin-bottom:6px;">■ 현장 시공 체크리스트 및 특이사항</div>
+        <div style="background:#FAF7F2; border:1px solid #C8BFB3; padding:8px 12px; font-size:11px; line-height:1.6; margin-bottom:14px;">
+          <div>• <strong>온수 분배기:</strong> ${chkManifold ? '확인 완료 (간섭 없음 / 바닥판 따내기 사전 조율)' : '미확인 (재확인 요망)'}</div>
+          <div>• <strong>가스/전기 배선:</strong> ${chkGas ? '인덕션 전용선 확인 완료' : '확인 요망'}</div>
+          <div>• <strong>엘리베이터 양중:</strong> ${chkElevator ? '엘리베이터 사용 가능' : '사다리차 이용 필수 협의'}</div>
+          <div>• <strong>철거 및 폐기:</strong> ${chkDemo ? '기존 싱크대 철거 및 폐기 반출 포함 (+200,000원)' : '고객 직접 철거 또는 신축'}</div>
+          <div>• <strong>현장 특이사항:</strong> ${notes}</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#F4EFE6; border:1.5px solid #8C6239; padding:10px 16px; border-radius:6px; margin-bottom:14px;">
+          <div>
+            <div style="font-size:11px; color:#4A3B31;">총 견적 합계 금액 (부가세/마진/시공비 포함)</div>
+            <div style="font-size:17px; font-weight:800; color:#8C6239;">${state.pricing.totalPrice.toLocaleString()}원</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11.5px; color:#6E6157;">발주 계약금 (10%): <strong>${state.pricing.depositPrice.toLocaleString()}원</strong></div>
+            <div style="font-size:10.5px; color:#6E6157;">입금계좌: ${settings.bankName} ${settings.bankAccount} (${settings.bankHolder})</div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; font-size:11.5px; padding-top:6px;">
+          <div>실측 담당자: <strong>${repName}</strong> (서명)</div>
+          <div>고객 확인: <strong>${clientName}</strong> (서명 또는 날인)</div>
+        </div>
+      </div>
+    `;
+
+    modal.style.display = 'flex';
+  }
 
   // 6. 기성 도어 선택 모달
   const doorModal = document.getElementById('door-modal');

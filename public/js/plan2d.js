@@ -302,8 +302,13 @@ class KitchenPlan2DEngine {
     // =========================================================
     if (showPlan) {
       const wy = 92; // 내벽 상단선 (캐비닛 뒷선)
+      const hasTall = Boolean(s.tallCabinet && s.tallCabinet !== 'none');
+      const isLeftTall = s.tallCabinet === 'left';
+      const tallW = hasTall ? (Number(s.tallCabinetWidth) || 600) : 0;
+      const tallWpx = tallW * sc;
+      const counterStartPx = (hasTall && isLeftTall) ? (ox + tallWpx) : ox;
       const px0 = ox;
-      const pxSinkEnd = ox + sW * sc;
+      const pxSinkEnd = counterStartPx + sW * sc;
       const pxPrepEnd = pxSinkEnd + pW * sc;
       const pxEnd = ox + drawW;
       const depthPx = lD * sc;
@@ -332,6 +337,26 @@ class KitchenPlan2DEngine {
       parts.push(`
         <rect x="${px0}" y="${wy}" width="${drawW}" height="${depthPx}" fill="#FFFFFF" stroke="#2A211B" stroke-width="1.8"/>
       `);
+
+      // 키큰장 평면 박스
+      if (hasTall && isLeftTall) {
+        parts.push(`
+          <rect x="${px0}" y="${wy}" width="${tallWpx}" height="${depthPx}" fill="#FBF9F6" stroke="#2A211B" stroke-width="1.8"/>
+          <line x1="${px0}" y1="${wy}" x2="${px0 + tallWpx}" y2="${wy + depthPx}" stroke="#B7AA9A" stroke-width="0.9" stroke-dasharray="3,3"/>
+          <line x1="${px0 + tallWpx}" y1="${wy}" x2="${px0}" y2="${wy + depthPx}" stroke="#B7AA9A" stroke-width="0.9" stroke-dasharray="3,3"/>
+          <text x="${px0 + tallWpx / 2}" y="${wy + depthPx / 2 - 2}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4A3423">키큰장</text>
+          <text x="${px0 + tallWpx / 2}" y="${wy + depthPx / 2 + 12}" text-anchor="middle" font-size="9" fill="#8C6239">${s.tallCabinetType === 'appliance' ? '밥솥·오븐' : (s.tallCabinetType === 'fridge' ? '냉장고' : '팬트리')}</text>
+        `);
+      } else if (hasTall && !isLeftTall) {
+        const tx = pxEnd - tallWpx;
+        parts.push(`
+          <rect x="${tx}" y="${wy}" width="${tallWpx}" height="${depthPx}" fill="#FBF9F6" stroke="#2A211B" stroke-width="1.8"/>
+          <line x1="${tx}" y1="${wy}" x2="${tx + tallWpx}" y2="${wy + depthPx}" stroke="#B7AA9A" stroke-width="0.9" stroke-dasharray="3,3"/>
+          <line x1="${tx + tallWpx}" y1="${wy}" x2="${tx}" y2="${wy + depthPx}" stroke="#B7AA9A" stroke-width="0.9" stroke-dasharray="3,3"/>
+          <text x="${tx + tallWpx / 2}" y="${wy + depthPx / 2 - 2}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#4A3423">키큰장</text>
+          <text x="${tx + tallWpx / 2}" y="${wy + depthPx / 2 + 12}" text-anchor="middle" font-size="9" fill="#8C6239">${s.tallCabinetType === 'appliance' ? '밥솥·오븐' : (s.tallCabinetType === 'fridge' ? '냉장고' : '팬트리')}</text>
+        `);
+      }
 
       // 모듈 경계선 & 라벨
       parts.push(`
@@ -468,9 +493,21 @@ class KitchenPlan2DEngine {
         <line x1="${pxEnd}" y1="${wy - wallT}" x2="${pxEnd}" y2="${wy - wallT - 34}" stroke="#BDB1A3" stroke-width="0.8"/>
       `);
       parts.push(hDimLine(px0, pxEnd, wy - wallT - 32, `전체 폭 ${fmt(tW)}`, 'totalWidth', '전체 폭', tW, true));
-      parts.push(hDimLine(px0, pxSinkEnd, wy - wallT - 10, `개수대 ${fmt(sW)}`, 'sinkBayWidth', '개수대 폭', sW));
-      parts.push(hDimLine(pxSinkEnd, pxPrepEnd, wy - wallT - 10, `조리대 ${fmt(pW)}`, 'prepBayWidth', '조리대 폭', pW));
-      parts.push(hDimLine(pxPrepEnd, pxEnd, wy - wallT - 10, `가열대 ${fmt(cW)}`, 'cooktopBayWidth', '가열대 폭', cW));
+      if (hasTall && isLeftTall) {
+        parts.push(hDimLine(px0, counterStartPx, wy - wallT - 10, `키큰장 ${fmt(tallW)}`, 'tallCabinetWidth', '키큰장 폭', tallW));
+        parts.push(hDimLine(counterStartPx, pxSinkEnd, wy - wallT - 10, `개수대 ${fmt(sW)}`, 'sinkBayWidth', '개수대 폭', sW));
+        parts.push(hDimLine(pxSinkEnd, pxPrepEnd, wy - wallT - 10, `조리대 ${fmt(pW)}`, 'prepBayWidth', '조리대 폭', pW));
+        parts.push(hDimLine(pxPrepEnd, pxEnd, wy - wallT - 10, `가열대 ${fmt(cW)}`, 'cooktopBayWidth', '가열대 폭', cW));
+      } else if (hasTall && !isLeftTall) {
+        parts.push(hDimLine(px0, pxSinkEnd, wy - wallT - 10, `개수대 ${fmt(sW)}`, 'sinkBayWidth', '개수대 폭', sW));
+        parts.push(hDimLine(pxSinkEnd, pxPrepEnd, wy - wallT - 10, `조리대 ${fmt(pW)}`, 'prepBayWidth', '조리대 폭', pW));
+        parts.push(hDimLine(pxPrepEnd, pxEnd - tallWpx, wy - wallT - 10, `가열대 ${fmt(cW)}`, 'cooktopBayWidth', '가열대 폭', cW));
+        parts.push(hDimLine(pxEnd - tallWpx, pxEnd, wy - wallT - 10, `키큰장 ${fmt(tallW)}`, 'tallCabinetWidth', '키큰장 폭', tallW));
+      } else {
+        parts.push(hDimLine(px0, pxSinkEnd, wy - wallT - 10, `개수대 ${fmt(sW)}`, 'sinkBayWidth', '개수대 폭', sW));
+        parts.push(hDimLine(pxSinkEnd, pxPrepEnd, wy - wallT - 10, `조리대 ${fmt(pW)}`, 'prepBayWidth', '조리대 폭', pW));
+        parts.push(hDimLine(pxPrepEnd, pxEnd, wy - wallT - 10, `가열대 ${fmt(cW)}`, 'cooktopBayWidth', '가열대 폭', cW));
+      }
 
       // 평면도 우측 세로 치수선 (하부장 깊이 + ㄱ자 날개 총 세로 길이)
       const rightDimX = pxEnd + (s.layoutType === 'l_right' ? wallT + 36 : 38);

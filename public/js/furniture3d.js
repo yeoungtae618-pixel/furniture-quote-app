@@ -27,6 +27,11 @@ class Furniture3DEngine {
       prepBayWidth: options.prepBayWidth || 800,
       cooktopBayWidth: options.cooktopBayWidth || 900,
 
+      // 키큰장 / 가전수납장 (밥솥·오븐장 / 냉장고장 / 롱팬트리)
+      tallCabinet: options.tallCabinet || 'none',       // 'none' | 'left' | 'right'
+      tallCabinetWidth: options.tallCabinetWidth || 600,
+      tallCabinetType: options.tallCabinetType || 'appliance', // 'appliance' | 'pantry' | 'fridge'
+
       upperHeight: options.upperHeight || 700,
       upperDepth: options.upperDepth || 350,
       midwayHeight: options.midwayHeight || 650,
@@ -243,6 +248,18 @@ class Furniture3DEngine {
       const sideSign = isRightL ? -0.8 : (isLeftL ? 0.8 : 0.4);
       const camDest = new THREE.Vector3(sideSign, 3.65, 2.35);
       this.cameraAnim = { targetPos, camDest, progress: 0 };
+    } else if (preset === 'cad_iso') {
+      // 씽크대 실측 도면 전용 표준 CAD 아이소메트릭 축측 투시 앵글
+      const targetPos = new THREE.Vector3(0, 1.12, 0.3);
+      const sideSign = isRightL ? -1.0 : (isLeftL ? 1.0 : 0.9);
+      const camDest = new THREE.Vector3(sideSign * (totalW * 0.72 + 0.6), 2.2, Math.max(3.3, totalW * 1.18));
+      this.cameraAnim = { targetPos, camDest, progress: 0 };
+      this.spec.showDimensions = true;
+      this.spec.showCadEdges = true;
+      this.spec.showCallouts = true;
+      if (this.overlay) this.overlay.style.display = 'block';
+      this.dimensionLines.forEach(l => l.visible = true);
+      this.cadEdgeLines.forEach(l => l.visible = true);
     } else {
       this.applyCameraConstraints(false);
     }
@@ -833,6 +850,7 @@ class Furniture3DEngine {
 
     this.dimBadges = {
       totalW: this.createDimBadge('전체 폭: 2,700mm'),
+      tallW: this.createDimBadge('키큰장 600mm'),
       sinkW: this.createDimBadge('개수대 1,000mm'),
       prepW: this.createDimBadge('조리대 800mm'),
       cookW: this.createDimBadge('가열대 900mm'),
@@ -845,6 +863,7 @@ class Furniture3DEngine {
     };
 
     this.calloutBadges = {
+      tall: this.createCalloutBadge('키큰 가전수납장 (밥솥/오븐 W600)'),
       sink: this.createCalloutBadge('싱크볼 (사각볼 W850)'),
       prep: this.createCalloutBadge('조리대 (3단 서랍장)'),
       cook: this.createCalloutBadge('가열대 (3구 인덕션)'),
@@ -934,12 +953,21 @@ class Furniture3DEngine {
     const isLeftL = this.spec.layoutType === 'l_left';
     const isRightL = this.spec.layoutType === 'l_right';
 
+    // 키큰장 (가전수납장 / 롱팬트리 / 냉장고장) 계산
+    const hasTall = Boolean(this.spec.tallCabinet && this.spec.tallCabinet !== 'none');
+    const isLeftTall = this.spec.tallCabinet === 'left';
+    const isRightTall = this.spec.tallCabinet === 'right';
+    const tallW = hasTall ? Math.min(1.2, (Number(this.spec.tallCabinetWidth) || 600) / 1000) : 0;
+    const tallH = lowerH + midwayH + upperH;
+    const counterW = hasTall ? Math.max(1.2, totalW - tallW) : totalW;
+    const lowerStartX = isLeftTall ? (startX + tallW) : startX;
+
     // A. 미드웨이 타일/빅슬랩 벽면 패널 (메인 + ㄱ자 측벽)
     const tilePanel = new THREE.Mesh(
-      new THREE.BoxGeometry(totalW + 0.04, midwayH + 0.14, 0.008),
+      new THREE.BoxGeometry(counterW + 0.04, midwayH + 0.14, 0.008),
       this.tileWallMat
     );
-    tilePanel.position.set(0, lowerH + midwayH / 2, 0.004);
+    tilePanel.position.set(lowerStartX + counterW / 2, lowerH + midwayH / 2, 0.004);
     tilePanel.receiveShadow = true;
     this.kitchenGroup.add(tilePanel);
 
@@ -957,29 +985,41 @@ class Furniture3DEngine {
       this.kitchenGroup.add(sideTile);
     }
 
+    // A-2. 키큰장 캐비닛 (밥솥/오븐장 / 냉장고장 / 롱팬트리)
+    if (hasTall) {
+      const tallCX = isLeftTall ? (startX + tallW / 2) : (lowerStartX + counterW + tallW / 2);
+      this.buildTallCabinet(tallCX, tallW, tallH, lowerD, plinthH, this.spec.tallCabinetType || 'appliance');
+    }
+
     // B. 하부장 캐비닛 (메인 라인 + ㄱ자 코너 날개장)
-    this.buildLowerCabinets(startX, totalW, lowerH, lowerD, plinthH, topT, sinkW, prepW, cookW);
+    const curSum = sinkW + prepW + cookW;
+    const scaleFactor = counterW / curSum;
+    const adjSinkW = sinkW * scaleFactor;
+    const adjPrepW = prepW * scaleFactor;
+    const adjCookW = cookW * scaleFactor;
+
+    this.buildLowerCabinets(lowerStartX, counterW, lowerH, lowerD, plinthH, topT, adjSinkW, adjPrepW, adjCookW);
 
     if ((isLeftL || isRightL) && sideLen > lowerD + 0.1) {
       this.buildWingCabinets(isLeftL ? 'left' : 'right', startX, totalW, lowerH, lowerD, plinthH, topT, sideLen, upperH, upperD, midwayH);
     }
 
     // C. Seamless Monolithic Beveled 인조대리석 상판 + 3D 싱크볼 + 수전 + 쿡탑
-    this.buildMonolithicCountertopAndAppliances(startX, totalW, lowerH, lowerD, topT, sinkW, prepW, cookW, sideLen);
+    this.buildMonolithicCountertopAndAppliances(lowerStartX, counterW, lowerH, lowerD, topT, adjSinkW, adjPrepW, adjCookW, sideLen);
 
     // D. 상부장 + 천장 써라운딩 몰딩 + 후드 + 간접조명
     if (this.spec.hasUpperCabinets) {
-      this.buildUpperCabinets(startX, totalW, lowerH, midwayH, upperH, upperD, sinkW, prepW, cookW);
+      this.buildUpperCabinets(lowerStartX, counterW, lowerH, midwayH, upperH, upperD, adjSinkW, adjPrepW, adjCookW);
     }
-    this.updateUnderLights(lowerH, midwayH, sinkW, prepW, totalW, startX);
+    this.updateUnderLights(lowerH, midwayH, adjSinkW, adjPrepW, counterW, lowerStartX);
 
     // E. 쇼룸 데코 소품
     if (this.spec.showProps) {
-      this.buildShowroomProps(startX, totalW, lowerH, lowerD, sinkW, prepW, sideLen);
+      this.buildShowroomProps(lowerStartX, counterW, lowerH, lowerD, adjSinkW, adjPrepW, sideLen);
     }
 
     // F. 도면 치수선 (CAD 표준 45° 사선 틱 & 연장선)
-    this.buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen);
+    this.buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, adjSinkW, adjPrepW, adjCookW, sideLen, hasTall, isLeftTall, tallW, counterW, lowerStartX);
 
     // G. 건축 CAD 윤곽선 생성 (SketchUp / AutoCAD 3D 투시도 스타일)
     this.addCadEdgesRecursively(this.kitchenGroup);
@@ -1013,6 +1053,147 @@ class Furniture3DEngine {
     });
   }
 
+  // B-0. 키큰장 / 가전수납장 (밥솥 슬라이딩장 / 오븐장 / 냉장고장 / 롱팬트리)
+  buildTallCabinet(cx, tallW, tallH, tallD, plinthH, type = 'appliance') {
+    const bodyH = tallH - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const T = 0.018;
+
+    const group = new THREE.Group();
+
+    // 1. 걸레받이
+    const plinth = new THREE.Mesh(
+      new THREE.BoxGeometry(tallW - 0.01, plinthH, tallD - 0.07),
+      this.darkGapMat
+    );
+    plinth.position.set(cx, plinthH / 2, (tallD - 0.07) / 2);
+    plinth.castShadow = true;
+    plinth.receiveShadow = true;
+    group.add(plinth);
+
+    // 2. 몸통 측판 / 뒷판 / 상하판
+    const leftSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, tallD), this.carcassWoodMat);
+    leftSide.position.set(cx - tallW / 2 + T / 2, bodyY, tallD / 2);
+    leftSide.castShadow = true;
+    leftSide.receiveShadow = true;
+    group.add(leftSide);
+
+    const rightSide = new THREE.Mesh(new THREE.BoxGeometry(T, bodyH, tallD), this.carcassWoodMat);
+    rightSide.position.set(cx + tallW / 2 - T / 2, bodyY, tallD / 2);
+    rightSide.castShadow = true;
+    rightSide.receiveShadow = true;
+    group.add(rightSide);
+
+    const backPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, bodyH, 0.009), this.carcassWoodMat);
+    backPanel.position.set(cx, bodyY, 0.005);
+    group.add(backPanel);
+
+    const topPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
+    topPanel.position.set(cx, plinthH + bodyH - T / 2, tallD / 2);
+    group.add(topPanel);
+
+    const botPanel = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
+    botPanel.position.set(cx, plinthH + T / 2, tallD / 2);
+    group.add(botPanel);
+
+    // 3. 천장 써라운딩 몰딩 마감
+    const ceilH = Math.max(tallH + 0.05, this.spec.ceilingHeight / 1000);
+    const surroundH = Math.max(0.04, ceilH - tallH);
+    const filler = new THREE.Mesh(new THREE.BoxGeometry(tallW, surroundH, tallD), this.doorMat);
+    filler.position.set(cx, tallH + surroundH / 2, tallD / 2);
+    filler.castShadow = true;
+    group.add(filler);
+
+    if (type === 'appliance') {
+      // 밥솥 / 전자레인지 가전수납장 (한국 표준 아파트 키큰장)
+      const lowerSecH = 0.82;
+      const nicheH = 0.85;
+
+      // 하부장과 중간 가전구역 분할 선반
+      const midShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
+      midShelf.position.set(cx, plinthH + lowerSecH, tallD / 2);
+      group.add(midShelf);
+
+      // 하부 2도어 (또는 2단 레일 서랍)
+      const lowerDoorW = (tallW - 0.006) / 2;
+      [-1, 1].forEach((dir) => {
+        const dMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(lowerDoorW - 0.003, lowerSecH - 0.008, 0.018),
+          this.doorMat
+        );
+        dMesh.position.set(cx + dir * (lowerDoorW / 2 + 0.0015), plinthH + lowerSecH / 2, tallD + 0.009);
+        dMesh.castShadow = true;
+        group.add(dMesh);
+      });
+
+      // 가전구역 상단 선반
+      const nicheTop = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
+      nicheTop.position.set(cx, plinthH + lowerSecH + nicheH, tallD / 2);
+      group.add(nicheTop);
+
+      // 밥솥 슬라이딩 인출 선반
+      const tray = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.08, 0.02, tallD - 0.08), this.darkGapMat);
+      tray.position.set(cx, plinthH + lowerSecH + 0.02, tallD / 2);
+      group.add(tray);
+
+      // 밥솥 모형
+      const cooker = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.18, 20), this.stainlessDarkMat);
+      cooker.position.set(cx - 0.08, plinthH + lowerSecH + 0.02 + 0.09, tallD / 2);
+      group.add(cooker);
+
+      // 광파오븐 중간 분할선반 & 오븐 모형
+      const ovenShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD - 0.04), this.carcassWoodMat);
+      ovenShelf.position.set(cx, plinthH + lowerSecH + 0.44, tallD / 2);
+      group.add(ovenShelf);
+
+      const oven = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.12, 0.28, 0.38), this.stainlessMat);
+      oven.position.set(cx, plinthH + lowerSecH + 0.44 + 0.15, tallD / 2 - 0.02);
+      group.add(oven);
+
+      // 상부 수납 도어 (플랩/스윙)
+      const upperSecH = tallH - (plinthH + lowerSecH + nicheH);
+      if (upperSecH > 0.15) {
+        const upperDoorW = (tallW - 0.006) / 2;
+        [-1, 1].forEach((dir) => {
+          const uMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(upperDoorW - 0.003, upperSecH - 0.008, 0.018),
+            this.doorMat
+          );
+          uMesh.position.set(cx + dir * (upperDoorW / 2 + 0.0015), plinthH + lowerSecH + nicheH + upperSecH / 2, tallD + 0.009);
+          uMesh.castShadow = true;
+          group.add(uMesh);
+        });
+      }
+    } else if (type === 'pantry') {
+      // 롱도어 팬트리 수납장
+      const doorH = bodyH - 0.008;
+      const doorW = (tallW - 0.006) / 2;
+      [-1, 1].forEach((dir) => {
+        const pDoor = new THREE.Mesh(
+          new THREE.BoxGeometry(doorW - 0.003, doorH, 0.018),
+          this.doorMat
+        );
+        pDoor.position.set(cx + dir * (doorW / 2 + 0.0015), bodyY, tallD + 0.009);
+        pDoor.castShadow = true;
+        group.add(pDoor);
+      });
+    } else {
+      // 냉장고장 (상부 플랩장 + 하부 냉장고 오픈 공간)
+      const bridgeH = 0.52;
+      const bridgeY = tallH - bridgeH / 2;
+      const bShelf = new THREE.Mesh(new THREE.BoxGeometry(tallW - 2 * T, T, tallD), this.carcassWoodMat);
+      bShelf.position.set(cx, tallH - bridgeH, tallD / 2);
+      group.add(bShelf);
+
+      const bDoor = new THREE.Mesh(new THREE.BoxGeometry(tallW - 0.006, bridgeH - 0.008, 0.018), this.doorMat);
+      bDoor.position.set(cx, bridgeY, tallD + 0.009);
+      bDoor.castShadow = true;
+      group.add(bDoor);
+    }
+
+    this.kitchenGroup.add(group);
+  }
+
   buildLowerCabinets(startX, totalW, lowerH, lowerD, plinthH, topT, sinkW, prepW, cookW) {
     const bodyH = lowerH - topT - plinthH;
     const bodyY = plinthH + bodyH / 2;
@@ -1023,7 +1204,7 @@ class Furniture3DEngine {
       new THREE.BoxGeometry(totalW - 0.02, plinthH, lowerD - 0.07),
       this.darkGapMat
     );
-    plinth.position.set(0, plinthH / 2, (lowerD - 0.07) / 2);
+    plinth.position.set(startX + totalW / 2, plinthH / 2, (lowerD - 0.07) / 2);
     plinth.castShadow = true;
     plinth.receiveShadow = true;
     this.kitchenGroup.add(plinth);
@@ -1033,7 +1214,7 @@ class Furniture3DEngine {
       new THREE.BoxGeometry(totalW - 0.008, bodyH - 0.008, 0.012),
       this.darkGapMat
     );
-    shadowBack.position.set(0, bodyY, lowerD - 0.007);
+    shadowBack.position.set(startX + totalW / 2, bodyY, lowerD - 0.007);
     this.kitchenGroup.add(shadowBack);
 
     const modules = [
@@ -1643,7 +1824,7 @@ class Furniture3DEngine {
     const fillerH = ceilH - upperTopY + 0.08;
     if (fillerH > 0.02) {
       const fillerW = isChimney ? (sinkW + prepW) : totalW;
-      const fillerX = isChimney ? (startX + fillerW / 2) : 0;
+      const fillerX = isChimney ? (startX + fillerW / 2) : (startX + totalW / 2);
       const surround = new THREE.Mesh(
         new THREE.BoxGeometry(fillerW, fillerH, 0.018),
         this.doorMat
@@ -1656,7 +1837,7 @@ class Furniture3DEngine {
     // T5 온백색 / 주백색 LED 바
     if (this.spec.underlightTemp !== 'off') {
       const ledW = isChimney ? (sinkW + prepW - 0.04) : (totalW - 0.04);
-      const ledX = isChimney ? (startX + (sinkW + prepW) / 2) : 0;
+      const ledX = isChimney ? (startX + (sinkW + prepW) / 2) : (startX + totalW / 2);
       const ledHex = this.spec.underlightTemp === 'neutral' ? 0xf2f7ff : 0xffe8c2;
       const ledBar = new THREE.Mesh(
         new THREE.BoxGeometry(ledW, 0.008, 0.014),
@@ -1725,7 +1906,7 @@ class Furniture3DEngine {
     }
   }
 
-  buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen) {
+  buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen, hasTall = false, isLeftTall = false, tallW = 0, counterW = 0, lowerStartX = 0) {
     const halfW = totalW / 2;
     const offset = 0.18;
     const isL = (this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right');
@@ -1741,22 +1922,28 @@ class Furniture3DEngine {
     this.createArchitecturalTick(-halfW, totalTopY, upperD, 'xy');
     this.createArchitecturalTick(halfW, totalTopY, upperD, 'xy');
 
-    // 2. 하부장 전면 모듈별 분할 치수선 (Sink / Prep / Cooktop)
+    // 2. 하부장 전면 모듈별 분할 치수선 (Sink / Prep / Cooktop + 키큰장)
     const dimY = 0.02;
     const dimZ = lowerD + offset;
-    const x1 = startX;
-    const x2 = startX + sinkW;
-    const x3 = x2 + prepW;
-    const x4 = x3 + cookW;
+    const xPts = [];
+    if (hasTall && isLeftTall) {
+      xPts.push(startX, startX + tallW, startX + tallW + sinkW, startX + tallW + sinkW + prepW, startX + tallW + sinkW + prepW + cookW);
+    } else if (hasTall && !isLeftTall) {
+      xPts.push(startX, startX + sinkW, startX + sinkW + prepW, startX + sinkW + prepW + cookW, startX + totalW);
+    } else {
+      xPts.push(startX, startX + sinkW, startX + sinkW + prepW, startX + sinkW + prepW + cookW);
+    }
 
     // 메인 전면 치수 기준선
-    this.createLine([x1, dimY, dimZ], [x4, dimY, dimZ]);
-    [x1, x2, x3, x4].forEach(x => {
-      // 바닥 연장선
-      this.createLine([x, 0, lowerD], [x, dimY, dimZ + 0.03]);
-      // 틱 마크
-      this.createArchitecturalTick(x, dimY, dimZ, 'xz');
-    });
+    if (xPts.length >= 2) {
+      this.createLine([xPts[0], dimY, dimZ], [xPts[xPts.length - 1], dimY, dimZ]);
+      xPts.forEach(x => {
+        // 바닥 연장선
+        this.createLine([x, 0, lowerD], [x, dimY, dimZ + 0.03]);
+        // 틱 마크
+        this.createArchitecturalTick(x, dimY, dimZ, 'xz');
+      });
+    }
 
     // 3. 우측면 수직 높이 치수선 (하부장, 미드웨이 타일, 상부장, 전체 높이)
     const rightX = halfW + offset;
@@ -1860,12 +2047,20 @@ class Furniture3DEngine {
     const isL = this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right';
     const isLeftL = this.spec.layoutType === 'l_left';
 
+    const hasTall = Boolean(this.spec.tallCabinet && this.spec.tallCabinet !== 'none');
+    const isLeftTall = this.spec.tallCabinet === 'left';
+    const tallW = hasTall ? Math.min(1.2, (Number(this.spec.tallCabinetWidth) || 600) / 1000) : 0;
+    const tallCX = isLeftTall ? (startX + tallW / 2) : (startX + totalW - tallW / 2);
+
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
 
     // 1. 치수선 텍스트 업데이트
     if (this.spec.showDimensions) {
       this.dimBadges.totalW.innerText = `전체 W: ${this.spec.totalWidth.toLocaleString()}mm`;
+      if (hasTall && this.dimBadges.tallW) {
+        this.dimBadges.tallW.innerText = `키큰장 ${this.spec.tallCabinetWidth}mm`;
+      }
       this.dimBadges.sinkW.innerText = `개수대 ${this.spec.sinkBayWidth}mm`;
       this.dimBadges.prepW.innerText = `조리대 ${this.spec.prepBayWidth}mm`;
       this.dimBadges.cookW.innerText = `가열대 ${this.spec.cooktopBayWidth}mm`;
@@ -1879,9 +2074,10 @@ class Furniture3DEngine {
       const wingX = isLeftL ? (startX + lowerD / 2) : (totalW / 2 - lowerD / 2);
       const points = {
         totalW: new THREE.Vector3(0, lowerH + midwayH + upperH + 0.16, upperD),
-        sinkW: new THREE.Vector3(startX + sinkW / 2, 0.04, lowerD + offset + 0.02),
-        prepW: new THREE.Vector3(startX + sinkW + prepW / 2, 0.04, lowerD + offset + 0.02),
-        cookW: new THREE.Vector3(startX + sinkW + prepW + cookW / 2, 0.04, lowerD + offset + 0.02),
+        tallW: new THREE.Vector3(tallCX, 0.04, lowerD + offset + 0.02),
+        sinkW: new THREE.Vector3(startX + (hasTall && isLeftTall ? tallW : 0) + sinkW / 2, 0.04, lowerD + offset + 0.02),
+        prepW: new THREE.Vector3(startX + (hasTall && isLeftTall ? tallW : 0) + sinkW + prepW / 2, 0.04, lowerD + offset + 0.02),
+        cookW: new THREE.Vector3(startX + (hasTall && isLeftTall ? tallW : 0) + sinkW + prepW + cookW / 2, 0.04, lowerD + offset + 0.02),
         lowerH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH / 2, lowerD),
         midwayH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH + midwayH / 2, upperD),
         upperH: new THREE.Vector3(totalW / 2 + offset + 0.02, lowerH + midwayH + upperH / 2, upperD),
@@ -1891,6 +2087,7 @@ class Furniture3DEngine {
       };
 
       for (const [key, badge] of Object.entries(this.dimBadges)) {
+        if (key === 'tallW' && !hasTall) { badge.style.display = 'none'; continue; }
         if (key === 'wingLen' && !isL) { badge.style.display = 'none'; continue; }
         if ((key === 'upperH' || key === 'midwayH' || key === 'totalH') && !this.spec.hasUpperCabinets) {
           badge.style.display = 'none'; continue;
@@ -1907,19 +2104,21 @@ class Furniture3DEngine {
 
     // 2. 부품 명칭 핀 (Callouts) 업데이트
     if (this.spec.showCallouts) {
-      let sinkCX = startX + sinkW / 2;
-      let cookCX = startX + sinkW + prepW + cookW / 2;
-      let prepCX = startX + sinkW + prepW / 2;
+      let sinkCX = startX + (hasTall && isLeftTall ? tallW : 0) + sinkW / 2;
+      let cookCX = startX + (hasTall && isLeftTall ? tallW : 0) + sinkW + prepW + cookW / 2;
+      let prepCX = startX + (hasTall && isLeftTall ? tallW : 0) + sinkW + prepW / 2;
       const calloutPts = {
+        tall: new THREE.Vector3(tallCX, lowerH * 0.9, lowerD + 0.02),
         sink: new THREE.Vector3(sinkCX, lowerH + 0.04, lowerD * 0.45),
         cook: new THREE.Vector3(cookCX, lowerH + 0.04, lowerD * 0.5),
         prep: new THREE.Vector3(prepCX, lowerH * 0.55, lowerD + 0.015),
-        top: new THREE.Vector3(startX + 0.15, lowerH + 0.03, lowerD + 0.02),
-        upper: new THREE.Vector3(startX + totalW * 0.35, lowerH + midwayH + upperH * 0.55, upperD + 0.015),
+        top: new THREE.Vector3(startX + (hasTall && isLeftTall ? tallW : 0) + 0.15, lowerH + 0.03, lowerD + 0.02),
+        upper: new THREE.Vector3(startX + (hasTall && isLeftTall ? tallW : 0) + (totalW - tallW) * 0.35, lowerH + midwayH + upperH * 0.55, upperD + 0.015),
         wing: new THREE.Vector3(isLeftL ? (startX + lowerD * 0.5) : (totalW / 2 - lowerD * 0.5), lowerH + 0.03, Math.min(sideLen * 0.7, sideLen - 0.2))
       };
 
       for (const [key, badge] of Object.entries(this.calloutBadges)) {
+        if (key === 'tall' && !hasTall) { badge.style.display = 'none'; continue; }
         if (key === 'wing' && !isL) { badge.style.display = 'none'; continue; }
         if (key === 'upper' && !this.spec.hasUpperCabinets) { badge.style.display = 'none'; continue; }
         const pt = calloutPts[key];
@@ -1966,6 +2165,7 @@ class Furniture3DEngine {
     const kitchenKeys = new Set([
       'layoutType', 'sideLength', 'wingHasUpper',
       'totalWidth', 'ceilingHeight', 'lowerHeight', 'lowerDepth', 'sinkBayWidth', 'prepBayWidth', 'cooktopBayWidth',
+      'tallCabinet', 'tallCabinetWidth', 'tallCabinetType',
       'upperHeight', 'upperDepth', 'midwayHeight', 'hasUpperCabinets',
       'doorColor', 'doorStyle', 'countertopType', 'handleType', 'handleColor',
       'tileDesign', 'hoodType', 'cooktopType', 'faucetType', 'underlightTemp'
