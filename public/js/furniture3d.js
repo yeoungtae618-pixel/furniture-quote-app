@@ -59,7 +59,7 @@ class Furniture3DEngine {
       showDimensions: true,
       showCadEdges: options.showCadEdges !== false,
       showCallouts: options.showCallouts !== false,
-      showProps: options.showProps !== false
+      showProps: false // 후추통 등 불필요한 소품 3D 겹침 완전 방지
     };
 
     this.doors = [];
@@ -1263,6 +1263,14 @@ class Furniture3DEngine {
 
     this.buildLowerCabinets(lowerStartX, counterW, lowerH, lowerD, plinthH, topT, adjSinkW, adjPrepW, adjCookW);
 
+    // 코너 일체형 연결장 (L자 좌측 / 우측 / ㄷ자 양측) — 상·하부 코너장 일체화 연결
+    if (isLeftL || isU) {
+      this.buildCornerCabinet('left', startX, totalW, lowerH, lowerD, plinthH, topT, upperH, upperD, midwayH);
+    }
+    if (isRightL || isU) {
+      this.buildCornerCabinet('right', startX, totalW, lowerH, lowerD, plinthH, topT, upperH, upperD, midwayH);
+    }
+
     // 날개장 (좌측 / 우측 / 양쪽)
     if ((isLeftL || isU) && sideLen > lowerD + 0.1) {
       const wingLen = isLeftTall ? (sideLen - tallW) : sideLen;
@@ -1276,9 +1284,18 @@ class Furniture3DEngine {
     // C. Seamless Monolithic Beveled 인조대리석 상판 + 3D 싱크볼 + 수전 + 쿡탑
     this.buildMonolithicCountertopAndAppliances(startX, totalW, lowerH, lowerD, topT, adjSinkW, adjPrepW, adjCookW, sideLen);
 
-    // D. 상부장 + 천장 써라운딩 몰딩 + 후드 + 간접조명
+    // D. 상부장 + 천장 써라운딩 몰딩 + 후드 + 간접조명 (코너장과 틈새 없이 완벽 연결)
     if (this.spec.hasUpperCabinets) {
-      this.buildUpperCabinets(lowerStartX, counterW, lowerH, midwayH, upperH, upperD, adjSinkW, adjPrepW, adjCookW);
+      let upperStartX = lowerStartX;
+      let upperCounterW = counterW;
+      if (isLeftL || isU) {
+        upperStartX = startX + upperD;
+        upperCounterW = (isRightL || isU) ? Math.max(0.6, totalW - upperD * 2) : Math.max(0.6, totalW - upperD);
+      } else if (isRightL) {
+        upperStartX = startX;
+        upperCounterW = Math.max(0.6, totalW - upperD);
+      }
+      this.buildUpperCabinets(upperStartX, upperCounterW, lowerH, midwayH, upperH, upperD, adjSinkW, adjPrepW, adjCookW);
     }
     this.updateUnderLights(lowerH, midwayH, adjSinkW, adjPrepW, counterW, lowerStartX);
 
@@ -2456,6 +2473,79 @@ class Furniture3DEngine {
     }
   }
 
+  // ㄱ/ㄴ/ㄷ자 일체형 코너장 (하부 코너장 + 상부 코너장 틈새 없이 완벽 결합)
+  buildCornerCabinet(side, startX, totalW, lowerH, lowerD, plinthH, topT, upperH, upperD, midwayH) {
+    const isLeft = (side === 'left');
+    const bodyH = lowerH - topT - plinthH;
+    const bodyY = plinthH + bodyH / 2;
+    const T = 0.018;
+
+    const cornerX = isLeft ? (startX + lowerD / 2) : (startX + totalW - lowerD / 2);
+    const cornerZ = lowerD / 2;
+    const wallX = isLeft ? startX : (startX + totalW);
+    const faceDir = isLeft ? 1 : -1;
+
+    // 1. 하부 코너장 - 원목 몸통 바닥판
+    const cBot = new THREE.Mesh(new THREE.BoxGeometry(lowerD, T, lowerD), this.carcassWoodMat);
+    cBot.position.set(cornerX, plinthH + T / 2, cornerZ);
+    cBot.receiveShadow = true;
+    this.kitchenGroup.add(cBot);
+
+    // 2. 하부 코너장 - 뒷벽 후판 (뒷벽 밀착)
+    const cBack = new THREE.Mesh(new THREE.BoxGeometry(lowerD, bodyH, 0.008), this.carcassWoodMat);
+    cBack.position.set(cornerX, bodyY, 0.008);
+    this.kitchenGroup.add(cBack);
+
+    // 3. 하부 코너장 - 측벽 후판 (측벽 밀착)
+    const cSideBack = new THREE.Mesh(new THREE.BoxGeometry(0.008, bodyH, lowerD), this.carcassWoodMat);
+    cSideBack.position.set(wallX + faceDir * 0.004, bodyY, cornerZ);
+    this.kitchenGroup.add(cSideBack);
+
+    // 4. 하부 코너장 - 중간 선반
+    const cShelf = new THREE.Mesh(new THREE.BoxGeometry(lowerD - 0.04, T, lowerD - 0.04), this.carcassWoodMat);
+    cShelf.position.set(cornerX, plinthH + bodyH * 0.48, cornerZ);
+    this.kitchenGroup.add(cShelf);
+
+    // 5. 하부 코너장 - 90° 코너 기둥 및 블라인드 연결 필러 (도어 간섭 방지 60mm 기둥)
+    const pillarW = 0.06;
+    const pillar = this.createDoorPanel(pillarW, bodyH, 0.018);
+    pillar.position.set(cornerX + faceDir * (lowerD / 2 - pillarW / 2), bodyY, lowerD + 0.009);
+    this.kitchenGroup.add(pillar);
+
+    // 6. 하부 코너 전면 도어 (코너장 전용 도어)
+    const doorW = lowerD - pillarW - 0.006;
+    const doorCX = cornerX - faceDir * (pillarW / 2);
+    const cDoor = this.createDoorPanel(doorW, bodyH - 0.008, 0.018);
+    cDoor.position.set(doorCX, bodyY, lowerD + 0.009);
+    this.kitchenGroup.add(cDoor);
+    this.addDoorHandleOrChannel(cDoor, doorW, bodyH, false, isLeft);
+
+    // 7. 상부 코너장 (상부장 옵션 활성 시 — 틈새 없이 뒷벽/측벽 일체형 시공)
+    if (this.spec.hasUpperCabinets) {
+      const upperY = lowerH + midwayH + upperH / 2;
+      const uCornerX = isLeft ? (startX + upperD / 2) : (startX + totalW - upperD / 2);
+      const uCornerZ = upperD / 2;
+
+      // 상부 코너장 몸통 박스
+      const uBox = new THREE.Mesh(new THREE.BoxGeometry(upperD, upperH, upperD), this.carcassWoodMat);
+      uBox.position.set(uCornerX, upperY, uCornerZ);
+      this.kitchenGroup.add(uBox);
+
+      // 상부 코너장 도어 & 블라인드 필러
+      const uPillarW = 0.05;
+      const uPillar = this.createDoorPanel(uPillarW, upperH, 0.018);
+      uPillar.position.set(uCornerX + faceDir * (upperD / 2 - uPillarW / 2), upperY, upperD + 0.009);
+      this.kitchenGroup.add(uPillar);
+
+      const uDoorW = upperD - uPillarW - 0.006;
+      const uDoorCX = uCornerX - faceDir * (uPillarW / 2);
+      const uDoor = this.createDoorPanel(uDoorW, upperH - 0.008, 0.018);
+      uDoor.position.set(uDoorCX, upperY, upperD + 0.009);
+      this.kitchenGroup.add(uDoor);
+      this.addDoorHandleOrChannel(uDoor, uDoorW, upperH, false, isLeft);
+    }
+  }
+
   // ㄱ자 코너 보조 날개장 (L-Return Wing)
   buildWingCabinets(side, startX, totalW, lowerH, lowerD, plinthH, topT, sideLen, upperH, upperD, midwayH) {
     const wingNet = sideLen - lowerD;
@@ -3047,62 +3137,9 @@ class Furniture3DEngine {
     }
   }
 
-  // E. 모델하우스 쇼룸 소품
+  // E. 모델하우스 쇼룸 소품 (사용자 요청: 3D 회전 시 겹치거나 지워지지 않는 후추통/조미료병 오버랩 완전 제거)
   buildShowroomProps(startX, totalW, topY, depth, sinkW, prepW, sideLen) {
-    const prepCX = startX + sinkW + prepW / 2;
-
-    // 1. 월넛 도마
-    const board = new THREE.Mesh(
-      new THREE.BoxGeometry(0.27, 0.35, 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x8d633d, roughness: 0.58 })
-    );
-    board.position.set(prepCX - 0.14, topY + 0.175, 0.07);
-    board.rotation.x = -0.12;
-    board.castShadow = true;
-    board.userData.isProp = true;
-    this.kitchenGroup.add(board);
-
-    // 2. 도자기 오일병 2종
-    const bottleMat1 = new THREE.MeshStandardMaterial({ color: 0x43352c, roughness: 0.25 });
-    const bottle1 = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.036, 0.19, 18), bottleMat1);
-    bottle1.position.set(prepCX + 0.12, topY + 0.095, 0.11);
-    bottle1.castShadow = true;
-    bottle1.userData.isProp = true;
-    this.kitchenGroup.add(bottle1);
-
-    const bottleMat2 = new THREE.MeshStandardMaterial({ color: 0xded6ca, roughness: 0.35 });
-    const bottle2 = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.03, 0.14, 18), bottleMat2);
-    bottle2.position.set(prepCX + 0.2, topY + 0.07, 0.14);
-    bottle2.castShadow = true;
-    bottle2.userData.isProp = true;
-    this.kitchenGroup.add(bottle2);
-
-    // 3. ㄱ자 날개 코너가 있는 경우 에스프레소/드립 케틀 실루엣 + 도자기 화병
-    if ((this.spec.layoutType === 'l_left' || this.spec.layoutType === 'l_right') && sideLen > depth + 0.3) {
-      const isLeft = this.spec.layoutType === 'l_left';
-      const kx = isLeft ? (startX + depth * 0.5) : (startX + totalW - depth * 0.5);
-      const kz = depth + 0.38;
-
-      const vase = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.042, 0.056, 0.17, 20),
-        new THREE.MeshStandardMaterial({ color: 0xe6dfd5, roughness: 0.52 })
-      );
-      vase.position.set(kx, topY + 0.085, kz);
-      vase.castShadow = true;
-      vase.userData.isProp = true;
-      this.kitchenGroup.add(vase);
-
-      const stemMat = new THREE.MeshStandardMaterial({ color: 0x5d6e52, roughness: 0.7 });
-      for (let i = 0; i < 3; i++) {
-        const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), stemMat);
-        leaf.scale.set(0.7, 1.3, 0.6);
-        leaf.position.set(kx + (i - 1) * 0.03, topY + 0.21 + i * 0.015, kz + (i % 2) * 0.02);
-        leaf.rotation.z = (i - 1) * 0.25;
-        leaf.castShadow = true;
-        leaf.userData.isProp = true;
-        this.kitchenGroup.add(leaf);
-      }
-    }
+    // 순수 가구 도면 및 깔끔한 3D 실사 렌더링을 위해 불필요한 원통 오브제 소품을 일체 배제합니다.
   }
 
   buildDimensionGuides(startX, totalW, lowerH, lowerD, upperH, upperD, midwayH, sinkW, prepW, cookW, sideLen, hasTall = false, isLeftTall = false, tallW = 0, counterW = 0, lowerStartX = 0) {

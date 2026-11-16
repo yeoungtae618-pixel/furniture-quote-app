@@ -442,6 +442,23 @@ document.addEventListener('DOMContentLoaded', async () => {
           ? `ㄱ자형 (${s.layoutType === 'l_left' ? '좌코너' : '우코너'}) ${tW.toLocaleString()} × ${(s.sideLength || 1800).toLocaleString()}mm`
           : `일자형 전체 폭 ${tW.toLocaleString()}mm`);
 
+      const sfMap = {
+        square_gooseneck: '백조 Grand 사각 싱크볼 + 프리미엄 거위목 수전 세트',
+        round_standard: '기본 라운드 점보 싱크볼 + 일반 입수전 세트',
+        emboss_waterfall: '최고급 엠보 방음 사각볼 + 폭포수 멀티 거위목 수전 세트',
+        none: '싱크볼 / 수전 제외 (고객 직접 준비)'
+      };
+      const hwMap = {
+        damper_3ball: '문앤문 110° 댐핑 경첩 + 3단 볼베어링 레일 조합 (충격방지 댐퍼 일체)',
+        standard_2ball: '일반 스프링 경첩 + 2단 볼레일 기본형',
+        hafele_under: '독일 헤펠레(Häfele) 댐핑 경첩 + 언더 댐퍼레일 세트',
+        blum_tandem: '오스트리아 블룸(Blum) 댐퍼 경첩 + 무소음 탠덤 언더레일 세트'
+      };
+
+      const sinkFaucetDetail = sfMap[s.sinkFaucetCombo] || `${faucetName} · 사각 싱크볼 구성`;
+      const hardwareDetail = hwMap[s.hardwareCombo] || '문앤문 110° 댐핑 경첩 + 3단 볼베어링 레일 조합';
+      const isCornerLayout = (s.layoutType === 'l_left' || s.layoutType === 'l_right' || s.layoutType === 'u_shape');
+
       rows = [
         {
           item: '맞춤 가구 몸통 (원목)',
@@ -459,16 +476,35 @@ document.addEventListener('DOMContentLoaded', async () => {
           basis: '1식'
         },
         {
-          item: '주방 기기 및 수전 구성',
-          detail: `${hoodName} · ${cookName} · ${faucetName}`,
+          item: '싱크볼 & 수전 세트',
+          detail: sinkFaucetDetail,
           basis: '지정 사양'
         },
         {
-          item: '하드웨어 및 현장 시공',
-          detail: includedList.length > 0 ? `${includedList.join(', ')} 및 전문 시공` : '기본 하드웨어 및 전문 현장 시공',
-          basis: '포함 (1식)'
+          item: '주방 빌트인 가전',
+          detail: `${hoodName} · ${cookName}`,
+          basis: '지정 사양'
+        },
+        {
+          item: '하드웨어 (경첩/레일)',
+          detail: hardwareDetail,
+          basis: '지정 사양'
         }
       ];
+
+      if (isCornerLayout) {
+        rows.push({
+          item: '코너 일체형 연결',
+          detail: '상부·하부 코너장 일체화 연결 시공 및 인조대리석 코너 현장 접합 연마 1식',
+          basis: '일체 포함'
+        });
+      }
+
+      rows.push({
+        item: '전문 현장 시공비',
+        detail: '피앙세가구 전문 직영팀 양중, 수평 레벨링, 훼손 방지 보양 및 폐기물 수거',
+        basis: '포함 (1식)'
+      });
     }
 
     const tbody = document.getElementById('doc-items-tbody');

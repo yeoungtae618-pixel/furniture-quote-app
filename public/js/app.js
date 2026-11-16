@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let plan2dEngine = null;
 
   const FURNITURE_CATEGORIES = [
-    { id: 'sink', name: '주방 씽크대', icon: '🍳', desc: '일자/ㄱ/ㄴ/ㄷ자 개수대·조리대·가열대 모듈', defaultW: 2700, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: true },
+    { id: 'sink', name: '맞춤 씽크대 (주방)', icon: '🍳', desc: '일자/ㄱ자/ㄴ자/ㄷ자 일체형 코너장 연결 (상부·하부 코너장 일체화 시공)', defaultW: 2700, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: true },
     { id: 'wardrobe', name: '붙박이장', icon: '🚪', desc: '천장 마감 슬라이딩/여닫이, 내부 서랍 및 옷걸이봉', defaultW: 3000, defaultH: 2350, defaultD: 650, hasCountertop: false, hasUpper: false },
     { id: 'shoe_cabinet', name: '신발장', icon: '👞', desc: '하부 200mm 띄움 시공 & T5 조명 & 중간 오픈 니치', defaultW: 1200, defaultH: 2300, defaultD: 380, hasCountertop: false, hasUpper: false },
     { id: 'storage', name: '수납장(팬트리)', icon: '📦', desc: '다목적 5단 이동 선반 다용도실/팬트리 수납', defaultW: 900, defaultH: 2100, defaultD: 450, hasCountertop: false, hasUpper: false },
@@ -21,9 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     { id: 'prep_counter', name: '조리대', icon: '🔪', desc: '인조대리석 상판 수납 서랍 독립 조리 작업대', defaultW: 1000, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: false },
     { id: 'tall_cabinet', name: '키큰장(가전)', icon: '⚡', desc: '밥솥 인출 레일 & 광파오븐 수납 단독 키큰장', defaultW: 600, defaultH: 2350, defaultD: 600, hasCountertop: false, hasUpper: false },
     { id: 'tv_console', name: '티비다이', icon: '📺', desc: '거실 모던 로우보드, 오픈 AV 니치 & 배선홀', defaultW: 2000, defaultH: 450, defaultD: 420, hasCountertop: false, hasUpper: false },
-    { id: 'hood_cabinet', name: '후드장', icon: '💨', desc: '빌트인 하이드 후드 & 상부 은색 배기 연통 덕트', defaultW: 800, defaultH: 700, defaultD: 350, hasCountertop: false, hasUpper: false },
-    { id: 'base_corner', name: '하부 코너장', icon: '📐', desc: '90° 코너 오각/블라인드장 & 2단 회전 매직 선반', defaultW: 900, defaultH: 860, defaultD: 900, hasCountertop: true, hasUpper: false },
-    { id: 'upper_corner', name: '상부 코너장', icon: '📐', desc: '600x600 벽체 코너 연결 전용 상부장', defaultW: 600, defaultH: 700, defaultD: 600, hasCountertop: false, hasUpper: false }
+    { id: 'hood_cabinet', name: '후드장', icon: '💨', desc: '빌트인 하이드 후드 & 상부 은색 배기 연통 덕트', defaultW: 800, defaultH: 700, defaultD: 350, hasCountertop: false, hasUpper: false }
   ];
 
   const state = {
@@ -61,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       hoodType: 'hidden',
       cooktopType: 'black_ind',
       faucetType: 'gooseneck',
+      sinkFaucetCombo: 'square_gooseneck',
+      hardwareCombo: 'damper_3ball',
       showDimensions: true
     },
     selectedDoor: null,
@@ -297,18 +297,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       doorCost = roundThousand(W_m * 0.7 * doorPrice);
       hardwareCost = 150000;
       installCost = roundThousand(70000);
-    } else if (cat === 'base_corner') {
-      bodyCost = roundThousand(0.9 * woodRate * 1.35);
-      doorCost = roundThousand(0.9 * 0.74 * doorPrice);
-      topCost = roundThousand(0.9 * topRate + 40000);
-      hardwareCost = 180000;
-      installCost = roundThousand(100000);
-    } else if (cat === 'upper_corner') {
-      bodyCost = roundThousand(0.6 * woodRate * 0.75);
-      doorCost = roundThousand(0.6 * 0.7 * doorPrice);
-      hardwareCost = 60000;
-      installCost = roundThousand(60000);
     } else {
+      // 씽크대 (주방 가구)
       const isL = s.layoutType === 'l_left' || s.layoutType === 'l_right';
       const isU = s.layoutType === 'u_shape';
       const wingMult = isU ? 2 : (isL ? 1 : 0);
@@ -321,7 +311,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tallBodyExtra = hasTall ? roundThousand(tallW * woodRate * 1.5) : 0;
       const tallDoorExtra = hasTall ? roundThousand(tallW * 2.2 * doorPrice) : 0;
 
-      bodyCost = roundThousand(totalM * woodRate) + tallBodyExtra;
+      // ㄱ자/ㄴ자/ㄷ자 일체형 코너장 연결 가공 및 코너 대리석 접합 보강비
+      const cornerCount = isU ? 2 : (isL ? 1 : 0);
+      const cornerExtra = cornerCount * 120000;
+
+      bodyCost = roundThousand(totalM * woodRate) + tallBodyExtra + cornerExtra;
 
       const lowerDoorArea = totalM * 0.74;
       const upperDoorArea = s.hasUpperCabinets ? (upperM * ((Number(s.upperHeight) || 700) / 1000)) : 0;
@@ -331,11 +325,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         totalM * topRate + (Number(settings.countertopHoleCut) || 60000)
       );
 
-      hardwareCost = roundThousand(
-        (settings.fixedItems || [])
-          .filter(fi => fi.enabled)
-          .reduce((sum, fi) => sum + (parseInt(fi.price) || 0), 0)
-      );
+      // 사용자가 품목에서 직접 조정한 싱크볼 & 수전 조합 단가
+      const sfCombo = s.sinkFaucetCombo || 'square_gooseneck';
+      let sfPrice = 210000;
+      const fixedSink = (settings.fixedItems || []).find(fi => fi.id === 'item-sink');
+      const baseSinkPrice = fixedSink ? (parseInt(fixedSink.price) || 210000) : 210000;
+      if (sfCombo === 'square_gooseneck') sfPrice = baseSinkPrice;
+      else if (sfCombo === 'round_standard') sfPrice = 120000;
+      else if (sfCombo === 'emboss_waterfall') sfPrice = 320000;
+      else if (sfCombo === 'none') sfPrice = 0;
+
+      // 사용자가 품목에서 직접 조정한 경첩 & 볼레일 하드웨어 조합 단가
+      const hwCombo = s.hardwareCombo || 'damper_3ball';
+      let hwPrice = 130000;
+      const fixedHinge = (settings.fixedItems || []).find(fi => fi.id === 'item-hinge');
+      const baseHingePrice = fixedHinge ? (parseInt(fixedHinge.price) || 130000) : 130000;
+      if (hwCombo === 'damper_3ball') hwPrice = baseHingePrice;
+      else if (hwCombo === 'standard_2ball') hwPrice = 70000;
+      else if (hwCombo === 'hafele_under') hwPrice = 210000;
+      else if (hwCombo === 'blum_tandem') hwPrice = 350000;
+
+      // T5 LED 간접조명 (설정에서 활성 시)
+      const fixedLed = (settings.fixedItems || []).find(fi => fi.id === 'item-led');
+      const ledPrice = (fixedLed && fixedLed.enabled) ? (parseInt(fixedLed.price) || 60000) : 0;
+
+      hardwareCost = sfPrice + hwPrice + ledPrice;
 
       installCost = roundThousand(
         (settings.installBase || 250000) + totalM * (settings.installPerMeter || 40000)
@@ -1035,6 +1049,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 주방 기기 및 수전 모델 선택 (카탈로그 모델 실시간 3D/2D 반영)
+  const selSinkFaucet = document.getElementById('select-sink-faucet-combo');
+  if (selSinkFaucet) {
+    selSinkFaucet.addEventListener('change', e => {
+      state.spec.sinkFaucetCombo = e.target.value;
+      const fS = document.getElementById('field-select-sink-faucet');
+      if (fS) fS.value = state.spec.sinkFaucetCombo;
+      calculateQuote();
+      syncVisualEngines();
+    });
+  }
+  const selHw = document.getElementById('select-hardware-combo');
+  if (selHw) {
+    selHw.addEventListener('change', e => {
+      state.spec.hardwareCombo = e.target.value;
+      const fH = document.getElementById('field-select-hardware');
+      if (fH) fH.value = state.spec.hardwareCombo;
+      calculateQuote();
+    });
+  }
+
   document.getElementById('select-hood-type').addEventListener('change', e => {
     state.spec.hoodType = e.target.value;
     syncVisualEngines();
@@ -1131,6 +1165,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     setVal('field-select-hood', state.spec.hoodType);
     setVal('field-select-cooktop', state.spec.cooktopType);
     setVal('field-select-faucet', state.spec.faucetType);
+    setVal('field-select-sink-faucet', state.spec.sinkFaucetCombo || 'square_gooseneck');
+    setVal('field-select-hardware', state.spec.hardwareCombo || 'damper_3ball');
 
     const dateEl = document.getElementById('field-measure-date');
     if (dateEl && !dateEl.value) {
@@ -1333,6 +1369,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const sF = document.getElementById('select-faucet-type');
         if (sF) sF.value = state.spec.faucetType;
         syncVisualEngines();
+      });
+    }
+    const fSinkFaucet = document.getElementById('field-select-sink-faucet');
+    if (fSinkFaucet) {
+      fSinkFaucet.addEventListener('change', e => {
+        state.spec.sinkFaucetCombo = e.target.value;
+        const sS = document.getElementById('select-sink-faucet-combo');
+        if (sS) sS.value = state.spec.sinkFaucetCombo;
+        calculateQuote();
+        syncVisualEngines();
+      });
+    }
+    const fHw = document.getElementById('field-select-hardware');
+    if (fHw) {
+      fHw.addEventListener('change', e => {
+        state.spec.hardwareCombo = e.target.value;
+        const sH = document.getElementById('select-hardware-combo');
+        if (sH) sH.value = state.spec.hardwareCombo;
+        calculateQuote();
       });
     }
 
