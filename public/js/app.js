@@ -1,5 +1,5 @@
 /**
- * app.js - 우드크래프트 스튜디오 통합 관리자 & 현장 실측 앱 로직
+ * app.js - 피앙세가구 통합 관리자 & 현장 실측 앱 로직
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let serverInfo = { localIp: window.location.hostname, port: window.location.port || 3000 };
   let engine = null;
   let plan2dEngine = null;
+  let drawingEngine = null;
 
   const FURNITURE_CATEGORIES = [
     { id: 'sink', name: '맞춤 씽크대 (주방)', icon: '🍳', desc: '일자/ㄱ자/ㄴ자/ㄷ자 일체형 코너장 연결 (상부·하부 코너장 일체화 시공)', defaultW: 2700, defaultH: 860, defaultD: 600, hasCountertop: true, hasUpper: true },
@@ -131,6 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // 영업사원 실측 워크벤치 바인딩 및 동기화
       bindFieldFormEvents();
       syncFieldFormFromState();
+      setupHouseAuthorityControls();
     } catch (err) {
       console.error('Initial load error:', err);
       showToast('서버 데이터 로딩 중 오류가 발생했습니다.');
@@ -301,10 +303,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       // 씽크대 (주방 가구)
       const isL = s.layoutType === 'l_left' || s.layoutType === 'l_right';
       const isU = s.layoutType === 'u_shape';
-      const wingMult = isU ? 2 : (isL ? 1 : 0);
+      const isP = s.layoutType === 'u_peninsula';
+      const wingMult = (isU || isP) ? 2 : (isL ? 1 : 0);
       const wingNet = wingMult * Math.max(0, (Number(s.sideLength) || 1800) - (Number(s.lowerDepth) || 600));
       const totalM = (Number(s.totalWidth) + wingNet) / 1000;
-      const upperM = (Number(s.totalWidth) + (s.wingHasUpper ? wingNet : 0)) / 1000;
+      const upperWingNet = isP ? (Math.max(0, (Number(s.sideLength) || 1800) - (Number(s.lowerDepth) || 600)) * (s.wingHasUpper ? 1 : 0)) : (s.wingHasUpper ? wingNet : 0);
+      const upperM = (Number(s.totalWidth) + upperWingNet) / 1000;
 
       const hasTall = Boolean(s.tallCabinet && s.tallCabinet !== 'none');
       const tallW = hasTall ? (Number(s.tallCabinetWidth) || 600) / 1000 : 0;
@@ -312,7 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tallDoorExtra = hasTall ? roundThousand(tallW * 2.2 * doorPrice) : 0;
 
       // ㄱ자/ㄴ자/ㄷ자 일체형 코너장 연결 가공 및 코너 대리석 접합 보강비
-      const cornerCount = isU ? 2 : (isL ? 1 : 0);
+      const cornerCount = (isU || isP) ? 2 : (isL ? 1 : 0);
       const cornerExtra = cornerCount * 120000;
 
       bodyCost = roundThousand(totalM * woodRate) + tallBodyExtra + cornerExtra;
@@ -744,9 +748,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 상단/하단 전환)
-  const navViews = ['studio', 'field', 'orders', 'company', 'settings', 'doors', 'dev'];
+  const navViews = ['studio', 'drawing', 'field', 'orders', 'company', 'settings', 'doors', 'dev'];
   const pageTitles = {
     studio: { title: '3D 도면 설계 및 현장 실측', desc: '주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.' },
+    drawing: { title: '📐 평면 도면 직접 드로잉 스튜디오', desc: '방 크기를 설정하고 마우스로 벽체와 맞춤 가구 모듈을 자유롭게 배치하여 3D 및 견적으로 즉시 변환합니다.' },
     field: { title: '영업사원 현장 실측 & 발주 관리 워크벤치', desc: '현장 실측 치수(전체길이, 천장고, 키큰장, 하부/상부 모듈, 배관위치, 체크리스트)를 정밀 입력하고 도면과 견적을 즉시 연동합니다.' },
     orders: { title: '수주 및 고객 견적 관리', desc: '발송된 견적 현황과 계약서 서명, 입금 완료 및 누적 매출을 관리합니다.' },
     company: { title: '피앙세가구 사업자 정보 관리', desc: '상호명, 대표자, 사업자등록번호, 주소, 입금 계좌 및 직인을 관리하며 계약서와 문자에 자동 연동됩니다.' },
@@ -771,6 +776,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('pc-page-desc').innerText = info.desc;
     }
 
+    if (viewName === 'drawing') initDrawingCadEngine();
     if (viewName === 'field') syncFieldFormFromState();
     if (viewName === 'orders') loadOrdersTable();
     if (viewName === 'company') populateCompanyForm();
@@ -1134,6 +1140,179 @@ document.addEventListener('DOMContentLoaded', async () => {
     showToast('고화질 3D 도면 이미지가 저장되었습니다.');
   });
 
+  // -------------------------------------------------------------
+  // [신규] 🏠 집안 전체 공간 수정 권한 컨트롤러 (Full House Authority)
+  // -------------------------------------------------------------
+  function setupHouseAuthorityControls() {
+    // 1. 구역별 가구 표시 토글
+    document.querySelectorAll('.zone-vis-chk').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const zone = e.target.dataset.zone;
+        if (engine) engine.setZoneVisibility(zone, e.target.checked);
+      });
+    });
+
+    // 2. 골조 투시 모드 (X-Ray)
+    const btnXRay = document.getElementById('btn-toggle-xray');
+    let isXRay = false;
+    if (btnXRay) {
+      btnXRay.addEventListener('click', () => {
+        isXRay = !isXRay;
+        btnXRay.classList.toggle('active', isXRay);
+        btnXRay.style.background = isXRay ? 'var(--brand)' : '';
+        btnXRay.style.color = isXRay ? '#fff' : '';
+        if (engine) engine.toggleXRayMode(isXRay);
+        showToast(isXRay ? '👻 골조 투시 모드(X-Ray)가 활성화되었습니다.' : '골조 투시 모드가 해제되었습니다.');
+      });
+    }
+
+    // 3. 전체 조명 색온도
+    const selKelvin = document.getElementById('select-house-kelvin');
+    if (selKelvin) {
+      selKelvin.addEventListener('change', (e) => {
+        const k = parseInt(e.target.value) || 4000;
+        if (engine) engine.setLightTemperature(k);
+        showToast(`전체 조명 색온도가 ${k}K로 설정되었습니다.`);
+      });
+    }
+  }
+
+  // -------------------------------------------------------------
+  // [신규] 📐 평면 도면 직접 드로잉 스튜디오 엔진 초기화 및 이벤트
+  // -------------------------------------------------------------
+  function initDrawingCadEngine() {
+    if (!drawingEngine) {
+      const container = document.getElementById('drawing-cad-container');
+      if (container && typeof DrawingCadEngine !== 'undefined') {
+        drawingEngine = new DrawingCadEngine(container);
+        setupDrawingCadControls();
+      }
+    } else {
+      setTimeout(() => drawingEngine.resizeCanvas(), 50);
+    }
+  }
+
+  function setupDrawingCadControls() {
+    // 1. 3D 변환 및 견적 산출 버튼
+    const btnConvert = document.getElementById('btn-drawing-convert-3d');
+    if (btnConvert) {
+      btnConvert.addEventListener('click', () => {
+        if (!drawingEngine) return;
+        const res = drawingEngine.exportTo3DAndQuote();
+        if (!res) return;
+
+        // state.spec 갱신
+        Object.assign(state.spec, res.kitchenSpec);
+        // state.items 갱신
+        state.items = res.allItems;
+        state.activeItemIndex = 0;
+
+        renderOrderItemTabs();
+        syncFormInputsFromSpec();
+        calculateQuote();
+
+        // 3D 뷰로 전환 및 3D 렌더링
+        switchView('studio');
+        setTimeout(() => {
+          if (engine) {
+            if (state.items.length > 1) {
+              const fullHouseBtn = document.getElementById('btn-viewmode-fullhouse');
+              if (fullHouseBtn) fullHouseBtn.click();
+            } else {
+              engine.updateSpec(state.spec);
+              engine.setCameraPreset('cad_iso');
+            }
+          }
+          showToast(`🎉 드로잉 도면의 ${state.items.length}개 가구 모듈이 3D 시뮬레이션과 발주 견적으로 즉시 변환되었습니다!`);
+        }, 120);
+      });
+    }
+
+    // 2. 도면 PNG 내보내기
+    const btnPng = document.getElementById('btn-drawing-export-png');
+    if (btnPng) {
+      btnPng.addEventListener('click', () => {
+        if (drawingEngine) drawingEngine.exportAsPNG();
+      });
+    }
+
+    // 3. 초기화
+    const btnReset = document.getElementById('btn-drawing-reset');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        if (confirm('평면 도면의 모든 가구 배치를 초기화하시겠습니까?')) {
+          if (drawingEngine) drawingEngine.clearCanvas();
+        }
+      });
+    }
+
+    // 4. 방 크기 프리셋
+    document.querySelectorAll('.cad-room-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cad-room-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const w = parseInt(btn.dataset.w);
+        const d = parseInt(btn.dataset.d);
+        const layout = btn.dataset.layout;
+        const inpW = document.getElementById('input-cad-room-w');
+        const inpD = document.getElementById('input-cad-room-d');
+        if (inpW) inpW.value = w;
+        if (inpD) inpD.value = d;
+        if (drawingEngine) drawingEngine.setRoomSize(w, d, layout);
+      });
+    });
+
+    // 5. 방 크기 직접 적용
+    const btnApplyRoom = document.getElementById('btn-apply-cad-room');
+    if (btnApplyRoom) {
+      btnApplyRoom.addEventListener('click', () => {
+        const w = parseInt(document.getElementById('input-cad-room-w').value);
+        const d = parseInt(document.getElementById('input-cad-room-d').value);
+        if (drawingEngine) drawingEngine.setRoomSize(w, d);
+        showToast(`방 크기가 ${w.toLocaleString()} × ${d.toLocaleString()}mm로 설정되었습니다.`);
+      });
+    }
+
+    // 6. 가구 스탬프 팔레트 버튼 클릭
+    document.querySelectorAll('.cad-stamp-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!drawingEngine) return;
+        const type = btn.dataset.type;
+        const name = btn.dataset.name;
+        const w = parseInt(btn.dataset.w);
+        const d = parseInt(btn.dataset.d);
+        const category = btn.dataset.cat;
+        drawingEngine.addItem({ type, name, w, d, category, x: 0, y: 0 });
+        showToast(`[${name}] 모듈이 도면에 추가되었습니다.`);
+      });
+    });
+
+    // 7. 툴 선택 (선택 vs 벽체 펜)
+    const btnToolSelect = document.getElementById('btn-cad-tool-select');
+    const btnToolWall = document.getElementById('btn-cad-tool-wall');
+    if (btnToolSelect && btnToolWall) {
+      btnToolSelect.addEventListener('click', () => {
+        btnToolSelect.classList.add('active');
+        btnToolWall.classList.remove('active');
+        if (drawingEngine) drawingEngine.activeTool = 'select';
+      });
+      btnToolWall.addEventListener('click', () => {
+        btnToolWall.classList.add('active');
+        btnToolSelect.classList.remove('active');
+        if (drawingEngine) drawingEngine.activeTool = 'wall_pen';
+        showToast('벽체 그리기 모드: 마우스를 클릭하고 드래그하여 벽체를 그리세요.');
+      });
+    }
+
+    // 8. 화면 맞춤
+    const btnFit = document.getElementById('btn-cad-fit');
+    if (btnFit) {
+      btnFit.addEventListener('click', () => {
+        if (drawingEngine) drawingEngine.fitToScreen();
+      });
+    }
+  }
+
   // 5-5. 영업사원 현장 실측 워크벤치 양방향 동기화 및 이벤트
   function syncFieldFormFromState() {
     const setVal = (id, val) => {
@@ -1451,7 +1630,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const chkDemo = document.getElementById('chk-field-demo')?.checked;
 
     const isL = state.spec.layoutType === 'l_left' || state.spec.layoutType === 'l_right';
-    const layoutLabel = isL ? (state.spec.layoutType === 'l_left' ? 'ㄱ자형 (좌측 코너)' : 'ㄱ자형 (우측 코너)') : '일자형 (I-Type)';
+    const isU = state.spec.layoutType === 'u_shape';
+    const isP = state.spec.layoutType === 'u_peninsula';
+    let layoutLabel = '일자형 (I-Type)';
+    if (isP) layoutLabel = 'ㄷ자형 (반도형 식탁 일체형)';
+    else if (isU) layoutLabel = 'ㄷ자형 (양측 코너)';
+    else if (isL) layoutLabel = state.spec.layoutType === 'l_left' ? 'ㄱ자형 (좌측 코너)' : 'ㄴ자형 (우측 코너)';
 
     const hasTall = state.spec.tallCabinet && state.spec.tallCabinet !== 'none';
     const tallLabel = hasTall ? `W:${state.spec.tallCabinetWidth} (${state.spec.tallCabinet === 'left' ? '좌' : '우'}측)` : '설치 안함';
@@ -1656,6 +1840,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   function getLayoutLabel(specObj = state.spec) {
     const cat = specObj.category || 'sink';
     const catMeta = FURNITURE_CATEGORIES.find(c => c.id === cat) || FURNITURE_CATEGORIES[0];
+    if (specObj.layoutType === 'u_peninsula') {
+      return `ㄷ자(아일랜드식탁형) ${Number(specObj.totalWidth).toLocaleString()} × ${Number(specObj.sideLength || 1800).toLocaleString()}mm`;
+    }
     if (specObj.layoutType === 'u_shape') {
       return `ㄷ자(양측코너) ${Number(specObj.totalWidth).toLocaleString()} × ${Number(specObj.sideLength || 1800).toLocaleString()}mm`;
     }

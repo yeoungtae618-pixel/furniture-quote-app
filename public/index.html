@@ -14,6 +14,7 @@
   
   <script src="/js/furniture3d.js"></script>
   <script src="/js/plan2d.js"></script>
+  <script src="/js/drawingCad.js"></script>
   <script src="/js/app.js"></script>
 </head>
 <body>
@@ -35,6 +36,10 @@
         <button class="nav-item active" data-nav="studio">
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
           3D 도면 설계 및 실측
+        </button>
+        <button class="nav-item" data-nav="drawing">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/><path d="m14 14 3 3"/></svg>
+          📐 평면 도면 직접 드로잉
         </button>
         <button class="nav-item" data-nav="field">
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><circle cx="10" cy="9" r="1.5"/></svg>
@@ -201,6 +206,7 @@
                 <button type="button" class="layout-pill" data-layout="l_left">ㄱ자 (좌측 코너)</button>
                 <button type="button" class="layout-pill" data-layout="l_right">ㄴ자 (우측 코너)</button>
                 <button type="button" class="layout-pill" data-layout="u_shape">ㄷ자 (양측 코너)</button>
+                <button type="button" class="layout-pill" data-layout="u_peninsula">🍽️ ㄷ자 (아일랜드 식탁형)</button>
               </div>
               <div id="wing-config-box" class="wing-config-box" style="display:none;">
                 <div class="grid-2" style="align-items:end; margin-bottom:8px;">
@@ -465,9 +471,17 @@
                   <span class="design-chip" style="background:#e6ded2;"></span>
                   <span class="design-label">파리지앵 크림<br><small style="color:var(--text-secondary);">유럽 미장</small></span>
                 </button>
-                <button type="button" class="design-swatch-card" data-wall="sage_olive">
-                  <span class="design-chip" style="background:#b3bdb0;"></span>
-                  <span class="design-label">세이지 올리브<br><small style="color:var(--text-secondary);">내추럴 톤</small></span>
+                <button type="button" class="design-swatch-card" data-wall="calacatta_marble">
+                  <span class="design-chip" style="background:linear-gradient(135deg, #f8f6f2 40%, #d4cbbe 100%);"></span>
+                  <span class="design-label">비앙코 카라라<br><small style="color:var(--text-secondary);">대리석 아트월</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="tambour_wood">
+                  <span class="design-chip" style="background:repeating-linear-gradient(90deg, #9e7f59 0px, #9e7f59 3px, #c7ad85 3px, #c7ad85 6px);"></span>
+                  <span class="design-label">내추럴 오크<br><small style="color:var(--text-secondary);">세로 템바보드</small></span>
+                </button>
+                <button type="button" class="design-swatch-card" data-wall="modern_concrete">
+                  <span class="design-chip" style="background:#9c9892;"></span>
+                  <span class="design-label">모던 콘크리트<br><small style="color:var(--text-secondary);">도시적 미장</small></span>
                 </button>
                 <button type="button" class="design-swatch-card" data-wall="deep_charcoal">
                   <span class="design-chip" style="background:#46423d;"></span>
@@ -541,6 +555,14 @@
                   <span class="design-chip" style="background:#c5a883;"></span>
                   <span class="design-label">내추럴 오크 마루</span>
                 </button>
+                <button type="button" class="design-swatch-card" data-floor="herringbone_wood">
+                  <span class="design-chip" style="background:repeating-linear-gradient(45deg, #b89874 0px, #b89874 4px, #caa986 4px, #caa986 8px);"></span>
+                  <span class="design-label">프렌치 헤링본</span>
+                </button>
+                <button type="button" class="design-swatch-card" data-floor="porcelain_gray">
+                  <span class="design-chip" style="background:#aba59d;"></span>
+                  <span class="design-label">포세린 무광 타일</span>
+                </button>
                 <button type="button" class="design-swatch-card" data-floor="light_ash">
                   <span class="design-chip" style="background:#e2d6c5;"></span>
                   <span class="design-label">화이트 애쉬 마루</span>
@@ -549,9 +571,9 @@
                   <span class="design-chip" style="background:#6b5341;"></span>
                   <span class="design-label">스모크드 월넛</span>
                 </button>
-                <button type="button" class="design-swatch-card" data-floor="limestone_tile">
-                  <span class="design-chip" style="background:#cfc9bf;"></span>
-                  <span class="design-label">그레이지 석재 타일</span>
+                <button type="button" class="design-swatch-card" data-floor="terrazzo_stone">
+                  <span class="design-chip" style="background:#dbd4ca;"></span>
+                  <span class="design-label">테라조 폴리싱</span>
                 </button>
               </div>
             </div>
@@ -585,12 +607,201 @@
               </div>
             </div>
 
+            <!-- 신규: 6. 집안 전체 공간 수정 권한 (구역별 가구 On/Off & 골조 투시 & 전체 조명) -->
+            <div class="form-section" style="background:var(--bg-subtle); padding:12px 14px; border-radius:10px; border:1px solid var(--border);">
+              <div class="section-label" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:800; color:var(--brand-dark);">🏠 집안 전체 공간 제어 권한</span>
+                <span class="badge" style="background:var(--brand); color:#fff; font-size:10px; padding:2px 6px; border-radius:10px;">관리자 권한</span>
+              </div>
+              
+              <div style="font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">
+                구역별 가구 표시 / 숨김 (토글)
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:6px; margin-bottom:12px;">
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-sink" class="zone-vis-chk" data-zone="sink" checked> 🍳 주방
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-island" class="zone-vis-chk" data-zone="island" checked> 🍽️ 아일랜드
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-wardrobe" class="zone-vis-chk" data-zone="wardrobe" checked> 🚪 붙박이장
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-shoe" class="zone-vis-chk" data-zone="shoe_cabinet" checked> 👟 신발장
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-tv" class="zone-vis-chk" data-zone="tv_console" checked> 📺 TV장
+                </label>
+                <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer;">
+                  <input type="checkbox" id="zone-toggle-drawers" class="zone-vis-chk" data-zone="drawers" checked> 🗄️ 서랍장
+                </label>
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button type="button" id="btn-toggle-xray" class="btn-outline btn-sm" style="flex:1; font-weight:700;">
+                  👻 골조 투시 모드 (X-Ray)
+                </button>
+                <select id="select-house-kelvin" class="input-control" style="flex:1; font-size:12px; padding:4px 8px;">
+                  <option value="3000">조명: 3000K 전구색 (아늑함)</option>
+                  <option value="4000" selected>조명: 4000K 주백색 (자연광)</option>
+                  <option value="5700">조명: 5700K 주광색 (선명함)</option>
+                </select>
+              </div>
+            </div>
+
             <button type="button" class="btn-outline" style="width:100%;" onclick="document.querySelector('[data-studiotab=spec]').click()">
               &lsaquo; 실측 치수 · 견적서로 돌아가기
             </button>
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 1-B: [신규] 📐 평면 도면 직접 드로잉 스튜디오
+         =================================================== -->
+    <section id="view-drawing" style="display:none;">
+      <div class="card" style="margin-bottom:14px; background:linear-gradient(135deg, #FAF7F2 0%, #F5ECE0 100%); border-left:4px solid var(--brand);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h2 style="font-size:18px; font-weight:800; color:var(--text-primary); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+              <span>📐 평면 도면 직접 드로잉 스튜디오</span>
+              <span class="badge" style="background:var(--brand); color:#fff; font-size:11px; padding:2px 8px; border-radius:12px;">CAD 자유 설계</span>
+            </h2>
+            <p style="font-size:13px; color:var(--text-secondary); margin:0;">
+              방 크기를 설정하고 벽체와 가구 모듈(씽크대, 붙박이장, 신발장, 아일랜드 등)을 마우스로 자유롭게 배치하세요. 버튼 한 번으로 3D 가상 쇼룸과 발주 견적이 즉시 생성됩니다.
+            </p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button type="button" id="btn-drawing-convert-3d" class="btn-primary" style="padding:10px 20px; font-weight:800; font-size:14px; box-shadow:0 4px 14px rgba(140,98,57,0.35);">
+              ⚡ 3D 시뮬레이션 및 견적서로 즉시 변환
+            </button>
+            <button type="button" id="btn-drawing-export-png" class="btn-outline" style="padding:10px 14px;">
+              📥 도면 PNG 저장
+            </button>
+            <button type="button" id="btn-drawing-reset" class="btn-outline" style="padding:10px 14px; color:var(--danger); border-color:#e0b2b2;">
+              🔄 초기화
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상단 컨트롤 리본 바 -->
+      <div class="card" style="margin-bottom:14px; padding:12px 18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+          <!-- 방 크기 & 구조 프리셋 -->
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">방 프리셋:</span>
+            <button type="button" class="preset-pill cad-room-preset active" data-w="3600" data-d="3000" data-layout="l_left">3.6m × 3.0m (국민평형 주방)</button>
+            <button type="button" class="preset-pill cad-room-preset" data-w="3000" data-d="2400" data-layout="straight">3.0m × 2.4m (소형 일자형)</button>
+            <button type="button" class="preset-pill cad-room-preset" data-w="4800" data-d="3600" data-layout="u_shape">4.8m × 3.6m (대형 LDK ㄷ자)</button>
+            <button type="button" class="preset-pill cad-room-preset" data-w="4000" data-d="3500" data-layout="box">4.0m × 3.5m (침실 4면 밀폐)</button>
+          </div>
+
+          <!-- 직접 치수 입력 -->
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">방 치수:</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-size:12px;">가로</span>
+              <input type="number" id="input-cad-room-w" value="3600" step="100" min="1800" max="10000" class="input-control" style="width:78px; padding:4px 8px; font-size:12px;">
+              <span style="font-size:12px;">mm</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-size:12px;">세로</span>
+              <input type="number" id="input-cad-room-d" value="3000" step="100" min="1800" max="8000" class="input-control" style="width:78px; padding:4px 8px; font-size:12px;">
+              <span style="font-size:12px;">mm</span>
+            </div>
+            <button type="button" id="btn-apply-cad-room" class="btn-outline btn-sm">크기 적용</button>
+          </div>
+
+          <!-- 도구 토글 -->
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" id="btn-cad-tool-select" class="preset-pill active">👆 가구 선택/이동</button>
+            <button type="button" id="btn-cad-tool-wall" class="preset-pill">✏️ 벽체 직접 그리기</button>
+            <button type="button" id="btn-cad-fit" class="preset-pill">🔍 화면 맞춤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 드로잉 메인 그리드 (좌측: 가구 팔레트 스탬프, 중앙: 대형 캔버스) -->
+      <div style="display:grid; grid-template-columns: 280px 1fr; gap:16px; min-height:680px;">
+        <!-- 좌측 가구 스탬프 팔레트 -->
+        <div class="card" style="padding:16px; overflow-y:auto; max-height:720px;">
+          <h3 style="font-size:14px; font-weight:800; color:var(--text-primary); margin-bottom:12px;">
+            📦 가구 모듈 스탬프 팔레트
+          </h3>
+          <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+            클릭하면 도면 중앙에 모듈이 자동 추가되며, 마우스로 드래그하여 벽면에 부착할 수 있습니다.
+          </p>
+
+          <!-- 주방 가구 모듈 -->
+          <div style="font-size:12px; font-weight:800; color:var(--brand-dark); margin:12px 0 6px 0; border-bottom:1px solid var(--border); padding-bottom:4px;">
+            🍳 주방 씽크대 모듈
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="sink_base" data-name="싱크볼 하부장" data-w="1000" data-d="600" data-cat="sink" style="text-align:left; padding:8px;">
+              <strong>🍳 싱크볼장</strong><br><small style="color:var(--text-secondary);">1000×600</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="cook_base" data-name="인덕션/쿡탑장" data-w="900" data-d="600" data-cat="sink" style="text-align:left; padding:8px;">
+              <strong>🔥 쿡탑/인덕션</strong><br><small style="color:var(--text-secondary);">900×600</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="prep_base" data-name="조리대 수납장" data-w="800" data-d="600" data-cat="sink" style="text-align:left; padding:8px;">
+              <strong>🔪 조리대서랍</strong><br><small style="color:var(--text-secondary);">800×600</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="tall_pantry" data-name="키큰 가전장" data-w="600" data-d="600" data-cat="sink" style="text-align:left; padding:8px;">
+              <strong>🧊 키큰 밥솥장</strong><br><small style="color:var(--text-secondary);">600×600</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="island_table" data-name="아일랜드 식탁" data-w="1600" data-d="800" data-cat="island" style="grid-column: span 2; text-align:left; padding:8px;">
+              <strong>🍽️ 대면형 아일랜드 식탁</strong><br><small style="color:var(--text-secondary);">1600×800 (무릎 공간)</small>
+            </button>
+          </div>
+
+          <!-- 수납 및 침실 가구 -->
+          <div style="font-size:12px; font-weight:800; color:var(--brand-dark); margin:18px 0 6px 0; border-bottom:1px solid var(--border); padding-bottom:4px;">
+            🚪 맞춤 붙박이장 & 수납장
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="wardrobe" data-name="슬라이딩 붙박이장" data-w="1200" data-d="650" data-cat="wardrobe" style="grid-column:span 2; text-align:left; padding:8px;">
+              <strong>🚪 슬라이딩 붙박이장</strong><br><small style="color:var(--text-secondary);">1200×650</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="drawers" data-name="3단 서랍장" data-w="800" data-d="500" data-cat="drawers" style="text-align:left; padding:8px;">
+              <strong>🗄️ 3단 서랍장</strong><br><small style="color:var(--text-secondary);">800×500</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="storage_unit" data-name="시스템 수납장" data-w="900" data-d="450" data-cat="storage" style="text-align:left; padding:8px;">
+              <strong>📦 다용도수납</strong><br><small style="color:var(--text-secondary);">900×450</small>
+            </button>
+          </div>
+
+          <!-- 거실 및 현관 가구 -->
+          <div style="font-size:12px; font-weight:800; color:var(--brand-dark); margin:18px 0 6px 0; border-bottom:1px solid var(--border); padding-bottom:4px;">
+            👟 현관 신발장 & 거실 TV장
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="shoe_rack" data-name="키큰 신발장" data-w="1000" data-d="400" data-cat="shoe_cabinet" style="text-align:left; padding:8px;">
+              <strong>👟 현관 신발장</strong><br><small style="color:var(--text-secondary);">1000×400</small>
+            </button>
+            <button type="button" class="btn-outline btn-sm cad-stamp-btn" data-type="tv_console" data-name="거실 프리미엄 TV장" data-w="1800" data-d="450" data-cat="tv_console" style="text-align:left; padding:8px;">
+              <strong>📺 거실 TV장</strong><br><small style="color:var(--text-secondary);">1800×450</small>
+            </button>
+          </div>
+
+          <div style="margin-top:16px; padding:10px; background:var(--bg-subtle); border-radius:8px; font-size:11px; line-height:1.5; color:var(--text-secondary);">
+            💡 <strong>조작 안내:</strong><br>
+            • 마우스 왼쪽 드래그: 가구 이동 (벽면/가구 자석 스냅)<br>
+            • 마우스 휠: 확대 / 축소<br>
+            • 빈 공간 드래그 / 우클릭: 도면 이동 (Pan)<br>
+            • 가구 클릭 시 하단에 <strong>90도 회전 · 치수 수정 · 삭제</strong> 팝오버 표시
+          </div>
+        </div>
+
+        <!-- 중앙 드로잉 캔버스 -->
+        <div class="card" style="padding:0; position:relative; min-height:680px; overflow:hidden;">
+          <div id="drawing-cad-container" style="width:100%; height:100%; min-height:680px; position:relative;">
+            <!-- DrawingCadEngine renders here -->
+          </div>
+        </div>
       </div>
     </section>
 
@@ -654,6 +865,7 @@
                 <button type="button" class="layout-pill" data-field-layout="l_left">ㄱ자형 (좌측 코너)</button>
                 <button type="button" class="layout-pill" data-field-layout="l_right">ㄴ자형 (우측 코너)</button>
                 <button type="button" class="layout-pill" data-field-layout="u_shape">ㄷ자형 (양측 코너)</button>
+                <button type="button" class="layout-pill" data-field-layout="u_peninsula">🍽️ ㄷ자형 (식탁형)</button>
               </div>
             </div>
             <div class="grid-3" style="margin-bottom:10px;">
@@ -1450,6 +1662,10 @@
     <button class="mobile-nav-btn active" data-nav="studio">
       <svg class="icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       <span>3D설계</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="drawing">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      <span>도면드로잉</span>
     </button>
     <button class="mobile-nav-btn" data-nav="field">
       <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>

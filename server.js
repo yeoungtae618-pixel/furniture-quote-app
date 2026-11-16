@@ -352,7 +352,7 @@ app.delete('/api/dev-requests', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   const localIp = getLocalIpAddress();
   console.log(`\n======================================================`);
-  console.log(`🪵 우드크래프트 스튜디오 (맞춤 씽크대 견적 & 관리자 시스템)`);
+  console.log(`✨ 피앙세가구 (프리미엄 맞춤 가구 설계 & 견적 포털)`);
   console.log(`💻 [PC 관리자 페이지]:    http://localhost:${PORT}`);
   console.log(`📱 [모바일 앱/현장 실측]: http://${localIp}:${PORT}`);
   console.log(`======================================================\n`);

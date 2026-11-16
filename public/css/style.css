@@ -1150,19 +1150,15 @@ input[type="range"].styled-range {
 }
 
 .layout-pill-group {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-bottom: 10px;
 }
 
-@media (min-width: 540px) {
-  .layout-pill-group {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 .layout-pill {
+  flex: 1 1 calc(50% - 6px);
+  min-width: 110px;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -1173,6 +1169,23 @@ input[type="range"].styled-range {
   cursor: pointer;
   text-align: center;
   transition: all 0.15s ease;
+}
+
+@media (min-width: 600px) {
+  .layout-pill {
+    flex: 1 1 auto;
+  }
+}
+
+.cad-stamp-btn {
+  transition: all 0.15s ease;
+  border: 1px solid var(--border);
+}
+
+.cad-stamp-btn:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  transform: translateY(-1px);
 }
 
 .layout-pill.active {
