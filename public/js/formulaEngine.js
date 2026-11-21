@@ -8,6 +8,8 @@
  * 3. 몰딩: 평균 3개, 개당 50,000원 / 걸레받이: 개당 30,000원 (일자 1개, 코너마다 1개씩 추가)
  * 4. 시공비: 전체 길이 m 당 50,000원 (VAT 별도)
  * 5. 키큰장: 3개 장 복합 모듈, 폭 m 기준 적용, EP 1~2장(장당 100,000원)
+ * 6. 상판 (인조대리석): m당 220,000원 (VAT 별도)
+ * 7. 문짝 (도어): 개당 35,000원 (VAT 별도), 보통 600mm당 1개씩 적용
  * 
  * [원장(Raw Board) 네스팅 & 자투리 극대화]
  * - 원장 규격: 2220 x 2440 mm (면적 5.4168 m²)
@@ -34,6 +36,9 @@ const FORMULA_PRESETS = {
     tallEpCount: 1,
     closetW: 3000, // 10자 (3000mm)
     shoeW: 0,
+    hasCountertop: true,
+    countertopPricePerM: 220000, // 상판 m당 22만원
+    doorPricePerPiece: 35000,    // 문짝 개당 3.5만원 (600mm당 1개)
     rawBoardPrice: 68000 // 원장 장당 원가(E0 18T PB/MDF)
   },
   presetStudio: {
@@ -49,6 +54,9 @@ const FORMULA_PRESETS = {
     tallEpCount: 0,
     closetW: 0,
     shoeW: 900, // 3자 (900mm)
+    hasCountertop: true,
+    countertopPricePerM: 220000,
+    doorPricePerPiece: 35000,
     rawBoardPrice: 68000
   },
   preset50: {
@@ -65,6 +73,9 @@ const FORMULA_PRESETS = {
     tallEpCount: 2,
     closetW: 3600, // 12자 (3600mm)
     shoeW: 1200,   // 4자 (1200mm)
+    hasCountertop: true,
+    countertopPricePerM: 220000,
+    doorPricePerPiece: 35000,
     rawBoardPrice: 68000
   }
 };
@@ -82,17 +93,22 @@ let currentFormulaState = {
   tallEpCount: 1,
   closetW: 3000,
   shoeW: 0,
+  hasCountertop: true,
+  countertopM: null,          // null이면 하부장 실연장 자동 적용
+  countertopPricePerM: 220000, // 상판 미터당 22만원
+  doorCount: null,            // null이면 600mm당 1개 자동 계산
+  doorPricePerPiece: 35000,   // 문짝 개당 3.5만원
   rawBoardPrice: 68000,
-  edgeCostPerM: 800,     // 엣지 밴딩 m당
-  hardwareBaseCost: 150000, // 경첩, 레일, 피스 등
-  installCostPerM: 50000    // 시공비 m당
+  edgeCostPerM: 800,          // 엣지 밴딩 m당
+  hardwareBaseCost: 150000,   // 경첩, 레일, 피스 등
+  installCostPerM: 50000      // 시공비 m당
 };
 
 let currentNestingResult = null;
 let currentActiveSheetIndex = 0;
 
 /**
- * 1. 현장 표준 가구 산출식 계산 (규칙 1~5)
+ * 1. 현장 표준 가구 산출식 계산 (규칙 1~7)
  */
 function calculateStandardFormula(state) {
   // 1) 붙박이장 & 신발장 (자 당 120,000원, 1자 = 300mm)
@@ -146,14 +162,35 @@ function calculateStandardFormula(state) {
   const tallCost = tallBaseCost + tallEpCost;
 
   // 5) 시공비: 전체 가구 길이 합계 m당 50,000원 (VAT 별도)
-  // 전체 길이 = 씽크대 하부 실길이 + 키큰장 + 붙박이장 + 신발장
   const closetM = (state.closetW || 0) / 1000;
   const shoeM = (state.shoeW || 0) / 1000;
   const totalFurnitureM = lowerM + tallM + closetM + shoeM;
   const installCost = Math.round(totalFurnitureM * (state.installCostPerM || 50000));
 
+  // 6) 상판 (인조대리석): m당 220,000원 (VAT 별도)
+  // 상판 길이는 하부장 실연장(m)을 기본값으로 사용
+  const hasCountertop = state.hasCountertop !== false;
+  const countertopM = (state.countertopM !== null && state.countertopM !== undefined && state.countertopM >= 0) ? 
+                      state.countertopM : lowerM;
+  const countertopPricePerM = state.countertopPricePerM || 220000;
+  const countertopCost = hasCountertop ? Math.round(countertopM * countertopPricePerM) : 0;
+
+  // 7) 문짝 (도어): 개당 35,000원 (VAT 별도) - 보통 600mm당 1개씩 들어감
+  // 600mm당 1개 자동 계산 수량 산출
+  const lowerDoors = Math.max(0, Math.round((lowerM * 1000) / 600));
+  const upperDoors = state.hasUpper ? Math.max(0, Math.round((upperM * 1000) / 600)) : 0;
+  const tallDoors = (state.tallW || 0) > 0 ? Math.max(1, Math.round((state.tallW || 0) / 600) * 3) : 0; // 3단 모듈
+  const closetDoors = (state.closetW || 0) > 0 ? Math.max(1, Math.round((state.closetW || 0) / 600)) : 0;
+  const shoeDoors = (state.shoeW || 0) > 0 ? Math.max(1, Math.round((state.shoeW || 0) / 600)) : 0;
+  const autoCalculatedDoors = lowerDoors + upperDoors + tallDoors + closetDoors + shoeDoors;
+
+  const doorCount = (state.doorCount !== null && state.doorCount !== undefined && state.doorCount >= 0) ?
+                    state.doorCount : autoCalculatedDoors;
+  const doorPricePerPiece = state.doorPricePerPiece || 35000;
+  const doorCost = Math.round(doorCount * doorPricePerPiece);
+
   // 품목별 합산 (공급가액, VAT 별도)
-  const supplyTotal = closetCost + shoeCost + sinkBaseCost + epCost + moldingCost + plinthCost + tallCost + installCost;
+  const supplyTotal = closetCost + shoeCost + sinkBaseCost + epCost + moldingCost + plinthCost + tallCost + installCost + countertopCost + doorCost;
   const vat = Math.round(supplyTotal * 0.1);
   const grandTotal = supplyTotal + vat;
 
@@ -180,6 +217,19 @@ function calculateStandardFormula(state) {
     tallCost,
     totalFurnitureM,
     installCost,
+    hasCountertop,
+    countertopM,
+    countertopPricePerM,
+    countertopCost,
+    autoCalculatedDoors,
+    lowerDoors,
+    upperDoors,
+    tallDoors,
+    closetDoors,
+    shoeDoors,
+    doorCount,
+    doorPricePerPiece,
+    doorCost,
     supplyTotal,
     vat,
     grandTotal
@@ -188,12 +238,10 @@ function calculateStandardFormula(state) {
 
 /**
  * 2. 원장(2220 x 2440 mm) 기준 가구 부재 목록 생성
- * 각 가구 모듈의 박스(측판, 천지판, 선반, 도어, 백패널, 걸레받이목 등) 컷리스트 도출
  */
 function generateFurnitureParts(state) {
   const parts = [];
 
-  // 색상 팔레트
   const COLORS = {
     carcase: '#3B82F6',   // 측판/천지판 (파랑)
     shelf: '#10B981',     // 선반 (초록)
@@ -208,23 +256,17 @@ function generateFurnitureParts(state) {
                    (state.sinkShape === 'L') ? (state.sinkMainW + Math.max(0, state.sinkSubW - 600)) :
                    (state.sinkMainW + Math.max(0, state.sinkSubW - 600) + Math.max(0, (state.sinkSub2W || 1200) - 600));
   
-  const lowerBoxCount = Math.max(1, Math.round(lowerLen / 800)); // 약 800mm 단위 박스 모듈
+  const lowerBoxCount = Math.max(1, Math.round(lowerLen / 800));
   const boxW = Math.round(lowerLen / lowerBoxCount);
 
   for (let i = 0; i < lowerBoxCount; i++) {
-    // 측판 2장 (820 x 580)
     parts.push({ name: `하부장[${i+1}] 측판L`, w: 820, h: 580, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `하부장[${i+1}] 측판R`, w: 820, h: 580, color: COLORS.carcase, type: 'carcase' });
-    // 지판 1장 (boxW x 580)
     parts.push({ name: `하부장[${i+1}] 지판`, w: Math.min(boxW, 1100), h: 580, color: COLORS.carcase, type: 'carcase' });
-    // 선반 1장
     parts.push({ name: `하부장[${i+1}] 선반`, w: Math.min(boxW, 1100), h: 540, color: COLORS.shelf, type: 'shelf' });
-    // 도어 2장
     parts.push({ name: `하부[${i+1}] 도어L`, w: 720, h: Math.round(boxW / 2) - 4, color: COLORS.door, type: 'door' });
     parts.push({ name: `하부[${i+1}] 도어R`, w: 720, h: Math.round(boxW / 2) - 4, color: COLORS.door, type: 'door' });
-    // 백패널
     parts.push({ name: `하부[${i+1}] 백패널`, w: 720, h: Math.min(boxW, 1100), color: COLORS.back, type: 'back' });
-    // 상부 연결 보강대 2개 (자투리 재활용 부재)
     parts.push({ name: `하부[${i+1}] 보강대1`, w: Math.min(boxW, 1100), h: 100, color: COLORS.filler, type: 'filler' });
     parts.push({ name: `하부[${i+1}] 보강대2`, w: Math.min(boxW, 1100), h: 100, color: COLORS.filler, type: 'filler' });
   }
@@ -234,18 +276,13 @@ function generateFurnitureParts(state) {
     const upperBoxCount = lowerBoxCount;
     const uBoxW = boxW;
     for (let i = 0; i < upperBoxCount; i++) {
-      // 측판 2장 (700 x 330)
       parts.push({ name: `상부장[${i+1}] 측판L`, w: 700, h: 330, color: COLORS.carcase, type: 'carcase' });
       parts.push({ name: `상부장[${i+1}] 측판R`, w: 700, h: 330, color: COLORS.carcase, type: 'carcase' });
-      // 천판/지판 2장
       parts.push({ name: `상부장[${i+1}] 천판`, w: Math.min(uBoxW, 1100), h: 330, color: COLORS.carcase, type: 'carcase' });
       parts.push({ name: `상부장[${i+1}] 지판`, w: Math.min(uBoxW, 1100), h: 330, color: COLORS.carcase, type: 'carcase' });
-      // 선반 1장
       parts.push({ name: `상부장[${i+1}] 선반`, w: Math.min(uBoxW, 1100), h: 310, color: COLORS.shelf, type: 'shelf' });
-      // 도어 2장
       parts.push({ name: `상부[${i+1}] 도어L`, w: 700, h: Math.round(uBoxW / 2) - 4, color: COLORS.door, type: 'door' });
       parts.push({ name: `상부[${i+1}] 도어R`, w: 700, h: Math.round(uBoxW / 2) - 4, color: COLORS.door, type: 'door' });
-      // 백패널
       parts.push({ name: `상부[${i+1}] 백패널`, w: 680, h: Math.min(uBoxW, 1100), color: COLORS.back, type: 'back' });
     }
   }
@@ -253,42 +290,32 @@ function generateFurnitureParts(state) {
   // 3) 키큰장 부재
   if (state.tallW > 0) {
     const tW = state.tallW;
-    // 측판 2장 (전장 높이 2150 x 580)
     parts.push({ name: `키큰장 측판L`, w: 2150, h: 580, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `키큰장 측판R`, w: 2150, h: 580, color: COLORS.carcase, type: 'carcase' });
-    // 천판/지판 2장
     parts.push({ name: `키큰장 천판`, w: tW - 36, h: 580, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `키큰장 지판`, w: tW - 36, h: 580, color: COLORS.carcase, type: 'carcase' });
-    // 고정선반 3장 (밥솥/전자렌지/수납)
     for (let s = 1; s <= 3; s++) {
       parts.push({ name: `키큰장 고정선반${s}`, w: tW - 36, h: 560, color: COLORS.shelf, type: 'shelf' });
     }
-    // 도어 3단
     parts.push({ name: `키큰장 상단도어`, w: 700, h: tW - 4, color: COLORS.door, type: 'door' });
     parts.push({ name: `키큰장 하단도어`, w: 750, h: tW - 4, color: COLORS.door, type: 'door' });
     parts.push({ name: `키큰장 밥솥인출판`, w: tW - 40, h: 450, color: COLORS.shelf, type: 'shelf' });
-    // 백패널
     parts.push({ name: `키큰장 백패널`, w: 2100, h: tW - 4, color: COLORS.back, type: 'back' });
   }
 
-  // 4) 붙박이장 부재 (자당 300mm 단위)
+  // 4) 붙박이장 부재
   if (state.closetW > 0) {
-    const cBoxCount = Math.max(1, Math.round(state.closetW / 900)); // 약 900mm(3자) 모듈 박스
+    const cBoxCount = Math.max(1, Math.round(state.closetW / 900));
     const cBoxW = Math.round(state.closetW / cBoxCount);
     for (let i = 0; i < cBoxCount; i++) {
-      // 대형 측판 2장 (2300 x 580)
       parts.push({ name: `붙박이[${i+1}] 측판L`, w: 2300, h: 580, color: COLORS.carcase, type: 'carcase' });
       parts.push({ name: `붙박이[${i+1}] 측판R`, w: 2300, h: 580, color: COLORS.carcase, type: 'carcase' });
-      // 천지판 2장
       parts.push({ name: `붙박이[${i+1}] 천판`, w: cBoxW - 36, h: 580, color: COLORS.carcase, type: 'carcase' });
       parts.push({ name: `붙박이[${i+1}] 지판`, w: cBoxW - 36, h: 580, color: COLORS.carcase, type: 'carcase' });
-      // 고정선반 & 옷걸이 보강목
       parts.push({ name: `붙박이[${i+1}] 중선반`, w: cBoxW - 36, h: 560, color: COLORS.shelf, type: 'shelf' });
       parts.push({ name: `붙박이[${i+1}] 하선반`, w: cBoxW - 36, h: 560, color: COLORS.shelf, type: 'shelf' });
-      // 도어 2장
       parts.push({ name: `붙박이[${i+1}] 도어L`, w: 2260, h: Math.round(cBoxW / 2) - 4, color: COLORS.door, type: 'door' });
       parts.push({ name: `붙박이[${i+1}] 도어R`, w: 2260, h: Math.round(cBoxW / 2) - 4, color: COLORS.door, type: 'door' });
-      // 백패널
       parts.push({ name: `붙박이[${i+1}] 백패널`, w: 2260, h: cBoxW - 4, color: COLORS.back, type: 'back' });
     }
   }
@@ -296,16 +323,13 @@ function generateFurnitureParts(state) {
   // 5) 신발장 부재
   if (state.shoeW > 0) {
     const sBoxW = state.shoeW;
-    // 측판 2장 (2200 x 350)
     parts.push({ name: `신발장 측판L`, w: 2200, h: 350, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `신발장 측판R`, w: 2200, h: 350, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `신발장 천판`, w: sBoxW - 36, h: 350, color: COLORS.carcase, type: 'carcase' });
     parts.push({ name: `신발장 지판`, w: sBoxW - 36, h: 350, color: COLORS.carcase, type: 'carcase' });
-    // 다단 신발 선반 5장
     for (let k = 1; k <= 5; k++) {
       parts.push({ name: `신발장 선반${k}`, w: sBoxW - 36, h: 330, color: COLORS.shelf, type: 'shelf' });
     }
-    // 도어 2장
     parts.push({ name: `신발장 도어L`, w: 2160, h: Math.round(sBoxW / 2) - 4, color: COLORS.door, type: 'door' });
     parts.push({ name: `신발장 도어R`, w: 2160, h: Math.round(sBoxW / 2) - 4, color: COLORS.door, type: 'door' });
   }
@@ -321,7 +345,7 @@ function generateFurnitureParts(state) {
     }
   }
 
-  // 자투리 공간을 꽉 채워주는 코너 마감재 & 보강 쫄대들 (자투리 제로화 부재)
+  // 자투리 공간 보강 쫄대들 (자투리 제로화 부재)
   const fillerCount = Math.max(4, Math.round(lowerLen / 500));
   for (let f = 1; f <= fillerCount; f++) {
     parts.push({ name: `코너/벽체 마감재${f}`, w: 600, h: 80, color: COLORS.filler, type: 'filler' });
@@ -332,13 +356,10 @@ function generateFurnitureParts(state) {
 }
 
 /**
- * 3. 2220 x 2440 mm 원장 2D 네스팅(Guillotine Cut & Shelf Packing) 알고리즘
- * 자투리를 거의 못 쓸 수준까지 최대한 틈새 활용
+ * 3. 2220 x 2440 mm 원장 2D 네스팅 알고리즘
  */
 function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_BOARD_HEIGHT, kerf = SAW_KERF) {
-  // 면적 큰 부재부터 내림차순 정렬 (Best-Fit Decreasing)
   const sortedParts = [...partsList].map(p => {
-    // 긴 쪽을 너비로 기본 정렬
     const w = Math.max(p.w, p.h);
     const h = Math.min(p.w, p.h);
     return { ...p, w, h, area: w * h };
@@ -353,7 +374,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
       width: boardW,
       height: boardH,
       placedParts: [],
-      // 남은 여유 공간 사각형 리스트 (Guillotine cut free rects)
       freeRects: [{ x: 0, y: 0, w: boardW, h: boardH }]
     };
   }
@@ -363,7 +383,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
   sortedParts.forEach(part => {
     let placed = false;
 
-    // 기존 시트들에서 적합한 여유 공간 탐색 (Best Short Side Fit)
     for (let sIdx = 0; sIdx < sheets.length; sIdx++) {
       const sheet = sheets[sIdx];
       let bestRectIdx = -1;
@@ -373,7 +392,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
       for (let rIdx = 0; rIdx < sheet.freeRects.length; rIdx++) {
         const fr = sheet.freeRects[rIdx];
 
-        // 정방향 확인 (part.w, part.h)
         if (part.w + kerf <= fr.w && part.h + kerf <= fr.h) {
           const leftoverX = fr.w - (part.w + kerf);
           const leftoverY = fr.h - (part.h + kerf);
@@ -385,7 +403,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
           }
         }
 
-        // 90도 회전 확인 (part.h, part.w)
         if (part.h + kerf <= fr.w && part.w + kerf <= fr.h) {
           const leftoverX = fr.w - (part.h + kerf);
           const leftoverY = fr.h - (part.w + kerf);
@@ -403,7 +420,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
         const pw = bestRotate ? part.h : part.w;
         const ph = bestRotate ? part.w : part.h;
 
-        // 부재 배치
         sheet.placedParts.push({
           ...part,
           x: fr.x,
@@ -413,7 +429,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
           rotated: bestRotate
         });
 
-        // 사용한 사각형을 2개로 분할 (Guillotine Split)
         sheet.freeRects.splice(bestRectIdx, 1);
 
         const rightRect = {
@@ -437,7 +452,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
       }
     }
 
-    // 모든 시트에 들어갈 자리가 없으면 신규 원장 생성
     if (!placed) {
       const newSheet = createNewSheet();
       const pw = (part.w <= boardW && part.h <= boardH) ? part.w : part.h;
@@ -462,7 +476,6 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
     }
   });
 
-  // 각 원장별 면적 수율 및 통계 계산
   let totalPartsArea = 0;
   sheets.forEach(sheet => {
     sheet.usedArea = sheet.placedParts.reduce((acc, p) => acc + (p.placedW * p.placedH), 0);
@@ -510,8 +523,11 @@ function calculateRawBoardCostComparison(standardQuote, nestingResult, state) {
   // 공장 현장 시공비 (현장 표준과 동일 기준)
   const installCost = standardQuote.installCost;
 
-  // 원장 기준 총 제조 원가 (공급가 기준)
-  const rawManufactureCost = totalBoardCost + totalEdgeCost + cutProcessCost + hardwareCost + installCost;
+  // 외주 대리석 상판 원가 (m당 약 130,000원 납품 원가 기준)
+  const countertopRawCost = standardQuote.hasCountertop ? Math.round(standardQuote.countertopM * 130000) : 0;
+
+  // 원장 기준 총 순제조 원가 (공급가 기준)
+  const rawManufactureCost = totalBoardCost + totalEdgeCost + cutProcessCost + hardwareCost + installCost + countertopRawCost;
   const rawManufactureVat = Math.round(rawManufactureCost * 0.1);
   const rawManufactureTotal = rawManufactureCost + rawManufactureVat;
 
@@ -522,7 +538,7 @@ function calculateRawBoardCostComparison(standardQuote, nestingResult, state) {
   const profitAmount = standardSupplyTotal - rawManufactureCost;
   const profitMarginPercent = standardSupplyTotal > 0 ? ((profitAmount / standardSupplyTotal) * 100).toFixed(1) : 0;
   
-  // 자투리 알뜰 활용으로 아낀 절감액 (약 1.5~2장 분량의 원장 자재비 세이브 효과)
+  // 자투리 알뜰 활용으로 아낀 절감액
   const savedSheets = Math.max(1, Math.round(sheetCount * (parseFloat(nestingResult.overallYield) / 100 > 0.85 ? 0.2 : 0.1)));
   const savedMaterialCost = savedSheets * boardUnitCost;
 
@@ -535,6 +551,7 @@ function calculateRawBoardCostComparison(standardQuote, nestingResult, state) {
     cutProcessCost,
     hardwareCost,
     installCost,
+    countertopRawCost,
     rawManufactureCost,
     rawManufactureVat,
     rawManufactureTotal,
@@ -562,10 +579,8 @@ function renderNestingCanvas(canvas, sheet, options = {}) {
   canvas.height = height * dpr;
   ctx.scale(dpr, dpr);
 
-  // 배경 지우기
   ctx.clearRect(0, 0, width, height);
 
-  // 원장(2220 x 2440) 스케일 계산
   const margin = 24;
   const availW = width - margin * 2;
   const availH = height - margin * 2;
@@ -578,7 +593,7 @@ function renderNestingCanvas(canvas, sheet, options = {}) {
 
   // 1) 원장 외곽선 및 합판 질감 배경
   ctx.save();
-  ctx.fillStyle = '#FEF3C7'; // 자투리(남는 합판) 기본 바탕색 (연한 우드색)
+  ctx.fillStyle = '#FEF3C7';
   ctx.fillRect(startX, startY, boardDrawW, boardDrawH);
   ctx.strokeStyle = '#B45309';
   ctx.lineWidth = 2;
@@ -609,23 +624,19 @@ function renderNestingCanvas(canvas, sheet, options = {}) {
     const pw = part.placedW * scale;
     const ph = part.placedH * scale;
 
-    // 부재 사각형 배경
     ctx.fillStyle = part.color || '#3B82F6';
     ctx.fillRect(px, py, pw, ph);
 
-    // 톱날 절단선 (커프 마감)
     ctx.strokeStyle = '#1E293B';
     ctx.lineWidth = 1;
     ctx.strokeRect(px, py, pw, ph);
 
-    // 내부 라벨 (크기가 충분할 때만 표시)
     if (pw > 35 && ph > 18) {
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 10px sans-serif';
       ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
 
-      // 텍스트 자르기
       const text = `${part.name}`;
       const dimText = `${part.placedW}×${part.placedH}`;
 
@@ -662,7 +673,6 @@ function initFormulaEngine() {
   const container = document.getElementById('view-formula');
   if (!container) return;
 
-  // 폼 입력 컨트롤 이벤트 바인딩
   const bindInput = (id, key, parser = parseInt) => {
     const el = document.getElementById(id);
     if (el) {
@@ -690,11 +700,45 @@ function initFormulaEngine() {
   bindInput('formula-shoe-w', 'shoeW');
   bindInput('formula-rawboard-price', 'rawBoardPrice');
 
+  // 신규: 상판 m 및 단가, 문짝 개수 및 단가 바인딩
+  bindInput('formula-countertop-m', 'countertopM', parseFloat);
+  bindInput('formula-countertop-price', 'countertopPricePerM', parseInt);
+  bindInput('formula-door-count', 'doorCount', parseInt);
+  bindInput('formula-door-price', 'doorPricePerPiece', parseInt);
+
   const upperCheck = document.getElementById('formula-has-upper');
   if (upperCheck) {
     upperCheck.addEventListener('change', (e) => {
       currentFormulaState.hasUpper = e.target.checked;
       updateFormulaSimulation();
+    });
+  }
+
+  const countertopCheck = document.getElementById('formula-has-countertop');
+  if (countertopCheck) {
+    countertopCheck.addEventListener('change', (e) => {
+      currentFormulaState.hasCountertop = e.target.checked;
+      updateFormulaSimulation();
+    });
+  }
+
+  // 문짝 600mm 기준 자동 재계산 리셋 버튼
+  const btnResetDoor600 = document.getElementById('btn-reset-door-600');
+  if (btnResetDoor600) {
+    btnResetDoor600.addEventListener('click', () => {
+      currentFormulaState.doorCount = null;
+      updateFormulaSimulation();
+      if (typeof showToast === 'function') showToast('문짝 수량을 600mm당 1개 기준으로 자동 재계산했습니다.');
+    });
+  }
+
+  // 상판 길이 하부장 자동 동기화 리셋 버튼
+  const btnResetCountertopM = document.getElementById('btn-reset-countertop-m');
+  if (btnResetCountertopM) {
+    btnResetCountertopM.addEventListener('click', () => {
+      currentFormulaState.countertopM = null;
+      updateFormulaSimulation();
+      if (typeof showToast === 'function') showToast('상판 연장을 하부장 실연장과 동일하게 자동 동기화했습니다.');
     });
   }
 
@@ -736,14 +780,12 @@ function initFormulaEngine() {
     });
   }
 
-  // 윈도우 리사이즈 시 캔버스 다시 그리기
   window.addEventListener('resize', () => {
     if (document.getElementById('view-formula')?.style.display !== 'none') {
       updateNestingCanvasView();
     }
   });
 
-  // 초기 렌더링
   applyFormulaPreset(FORMULA_PRESETS.preset34);
 }
 
@@ -752,6 +794,8 @@ function initFormulaEngine() {
  */
 function applyFormulaPreset(preset) {
   currentFormulaState = { ...currentFormulaState, ...preset };
+  currentFormulaState.countertopM = null; // 기본 하부장 자동연동
+  currentFormulaState.doorCount = null;   // 기본 600mm 자동연동
 
   const setVal = (id, val) => {
     const el = document.getElementById(id);
@@ -770,11 +814,15 @@ function applyFormulaPreset(preset) {
   setVal('formula-closet-w', currentFormulaState.closetW);
   setVal('formula-shoe-w', currentFormulaState.shoeW);
   setVal('formula-rawboard-price', currentFormulaState.rawBoardPrice);
+  setVal('formula-countertop-price', currentFormulaState.countertopPricePerM || 220000);
+  setVal('formula-door-price', currentFormulaState.doorPricePerPiece || 35000);
 
   const upperCheck = document.getElementById('formula-has-upper');
   if (upperCheck) upperCheck.checked = !!currentFormulaState.hasUpper;
 
-  // 씽크대 형태에 따른 서브 길이 활성/비활성화
+  const ctCheck = document.getElementById('formula-has-countertop');
+  if (ctCheck) ctCheck.checked = currentFormulaState.hasCountertop !== false;
+
   const subBox = document.getElementById('box-formula-sub-w');
   const sub2Box = document.getElementById('box-formula-sub2-w');
   if (subBox) subBox.style.display = (currentFormulaState.sinkShape !== 'I') ? 'block' : 'none';
@@ -828,6 +876,8 @@ function syncFormulaFromCurrentStudio() {
   currentFormulaState.closetW = closetW;
   currentFormulaState.shoeW = shoeW;
   currentFormulaState.tallW = tallW;
+  currentFormulaState.countertopM = null;
+  currentFormulaState.doorCount = null;
 
   applyFormulaPreset(currentFormulaState);
   if (typeof showToast === 'function') showToast('3D 도면의 가구 치수를 산출식으로 가져왔습니다.');
@@ -837,7 +887,6 @@ function syncFormulaFromCurrentStudio() {
  * 실시간 시뮬레이션 계산 및 결과 UI 업데이트
  */
 function updateFormulaSimulation() {
-  // 씽크대 형태에 따른 서브 입력창 표시 제어
   const subBox = document.getElementById('box-formula-sub-w');
   const sub2Box = document.getElementById('box-formula-sub2-w');
   if (subBox) subBox.style.display = (currentFormulaState.sinkShape !== 'I') ? 'block' : 'none';
@@ -845,6 +894,18 @@ function updateFormulaSimulation() {
 
   // 1. 표준 산출식 계산
   const stdQuote = calculateStandardFormula(currentFormulaState);
+
+  // 상판 m 입력창 동기화 (사용자가 직접 수정하지 않은 경우 자동값 표시)
+  const ctInput = document.getElementById('formula-countertop-m');
+  if (ctInput && document.activeElement !== ctInput) {
+    ctInput.value = stdQuote.countertopM.toFixed(2);
+  }
+
+  // 문짝 개수 입력창 동기화
+  const doorInput = document.getElementById('formula-door-count');
+  if (doorInput && document.activeElement !== doorInput) {
+    doorInput.value = stdQuote.doorCount;
+  }
 
   // 2. 가구 부재 리스트 및 2220x2440 원장 네스팅
   const parts = generateFurnitureParts(currentFormulaState);
@@ -860,7 +921,7 @@ function updateFormulaSimulation() {
     if (el) el.innerText = txt;
   };
 
-  // 1~5번 표준 견적 표시
+  // 표준 견적 행별 표시
   setText('val-closet-calc', `${currentFormulaState.closetW}mm (${stdQuote.closetJa.toFixed(1)}자) → ${stdQuote.closetCost.toLocaleString()}원`);
   setText('val-shoe-calc', `${currentFormulaState.shoeW}mm (${stdQuote.shoeJa.toFixed(1)}자) → ${stdQuote.shoeCost.toLocaleString()}원`);
   setText('val-sink-lower-calc', `실연장 ${stdQuote.lowerM.toFixed(2)}m (코너제외) → ${stdQuote.lowerCost.toLocaleString()}원`);
@@ -870,6 +931,12 @@ function updateFormulaSimulation() {
   setText('val-plinth-calc', `${stdQuote.plinthCount}개 × 3만원 = ${stdQuote.plinthCost.toLocaleString()}원`);
   setText('val-tall-calc', `${currentFormulaState.tallW}mm (${stdQuote.tallM.toFixed(2)}m) + EP ${stdQuote.tallEpCount}장 = ${stdQuote.tallCost.toLocaleString()}원`);
   setText('val-install-calc', `총 ${stdQuote.totalFurnitureM.toFixed(2)}m × 5만원 = ${stdQuote.installCost.toLocaleString()}원`);
+
+  // 신규: 상판 및 문짝 견적 표시
+  setText('val-countertop-calc', stdQuote.hasCountertop ? 
+    `${stdQuote.countertopM.toFixed(2)}m × ${stdQuote.countertopPricePerM.toLocaleString()}원 = ${stdQuote.countertopCost.toLocaleString()}원` : 
+    '상판 미적용 (0원)');
+  setText('val-door-calc', `총 ${stdQuote.doorCount}개 (600mm당1개) × ${stdQuote.doorPricePerPiece.toLocaleString()}원 = ${stdQuote.doorCost.toLocaleString()}원`);
 
   // 합계
   setText('std-supply-total', `${stdQuote.supplyTotal.toLocaleString()}원`);
@@ -889,6 +956,7 @@ function updateFormulaSimulation() {
   setText('comp-raw-edge-cost', `${comp.totalEdgeCost.toLocaleString()}원 (엣지 ${comp.totalEdgeLenM}m)`);
   setText('comp-raw-hardware-cost', `${comp.hardwareCost.toLocaleString()}원`);
   setText('comp-raw-install-cost', `${comp.installCost.toLocaleString()}원`);
+  setText('comp-raw-countertop-cost', `${comp.countertopRawCost.toLocaleString()}원 (상판 외주납품원가)`);
   setText('comp-raw-total-cost', `${comp.rawManufactureCost.toLocaleString()}원 (VAT별도)`);
   setText('comp-raw-grand-total', `${comp.rawManufactureTotal.toLocaleString()}원`);
 
@@ -897,7 +965,6 @@ function updateFormulaSimulation() {
   setText('comp-profit-margin', `${comp.profitMarginPercent}%`);
   setText('comp-saved-sheets', `${comp.savedSheets}장 세이브 (${comp.savedMaterialCost.toLocaleString()}원 절감)`);
 
-  // 원장 캔버스 뷰 갱신
   if (currentActiveSheetIndex >= nestingResult.sheets.length) {
     currentActiveSheetIndex = 0;
   }
@@ -914,7 +981,6 @@ function updateNestingCanvasView() {
   const sheet = currentNestingResult.sheets[currentActiveSheetIndex];
   if (!canvas || !sheet) return;
 
-  // 시트 인덱스 레이블
   const indicator = document.getElementById('raw-sheet-indicator');
   if (indicator) {
     indicator.innerText = `원장 [${sheet.index} / ${currentNestingResult.sheets.length}] (2220 × 2440 mm — 수율: ${sheet.yieldRate.toFixed(1)}%, 자투리: ${sheet.scrapRate.toFixed(1)}%)`;
