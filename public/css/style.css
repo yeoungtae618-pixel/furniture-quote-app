@@ -2031,3 +2031,22 @@ input[type="range"].styled-range {
   border-left: 3px solid var(--brand);
   margin-top: 6px;
 }
+
+
+/* =========================================================
+   피앙세가구 공장 산출식 & 원장(2220x2440) 절단 네스팅 뷰 스타일
+   ========================================================= */
+#formula-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  #formula-layout-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #raw-nesting-canvas {
+    height: 300px !important;
+  }
+}

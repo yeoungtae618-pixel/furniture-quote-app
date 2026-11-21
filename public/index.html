@@ -15,6 +15,7 @@
   <script src="/js/furniture3d.js"></script>
   <script src="/js/plan2d.js"></script>
   <script src="/js/drawingCad.js"></script>
+  <script src="/js/formulaEngine.js"></script>
   <script src="/js/app.js"></script>
 </head>
 <body>
@@ -40,6 +41,10 @@
         <button class="nav-item" data-nav="drawing">
           <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/><path d="m14 14 3 3"/></svg>
           📐 평면 도면 직접 드로잉
+        </button>
+        <button class="nav-item" data-nav="formula">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+          📊 공장 산출식 & 원장 절단
         </button>
         <button class="nav-item" data-nav="field">
           <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><circle cx="10" cy="9" r="1.5"/></svg>
@@ -803,6 +808,358 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ===================================================
+         뷰 1-1: 피앙세가구 공장 실측 산출식 & 원장(2220x2440) 절단 네스팅 엔진
+         =================================================== -->
+    <section id="view-formula" style="display:none;">
+      
+      <!-- 공장 산출식 공식 요약 & 프리셋 상단 배너 -->
+      <div class="card" style="margin-bottom:16px; border-left:4px solid var(--brand); background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">🏭</span>
+              <h2 style="font-size:16px; font-weight:800; color:var(--brand-dark); margin:0;">피앙세가구 공장 실측 산출식 & 원장(2220×2440mm) 자투리 극대화 엔진</h2>
+            </div>
+            <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">
+              현장 표준 산출 공식(자당 12만, m당 25만, EP/몰딩/걸레받이/시공비)과 2220×2440mm 원목/PB 원장 기준 2D 네스팅 원가를 실시간 비교 분석합니다.
+            </p>
+          </div>
+          
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="btn-outline btn-sm" id="btn-sync-formula-from-studio" style="font-weight:700; color:var(--brand-dark); border-color:var(--brand);">
+              🔄 현재 3D 도면 치수 불러오기
+            </button>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn-outline btn-sm" data-formula-preset="preset34" title="국민평형 34평 (ㄱ자 + 키큰장 + 붙박이장 10자)">
+                🏠 34평 국민형
+              </button>
+              <button type="button" class="btn-outline btn-sm" data-formula-preset="presetStudio" title="소형 원룸 (일자 씽크대 + 신발장 3자)">
+                🏢 원룸/오피스텔
+              </button>
+              <button type="button" class="btn-outline btn-sm" data-formula-preset="preset50" title="대형 50평 풀옵션 (ㄷ자 + 대형키큰장 + 붙박이 12자 + 신발 4자)">
+                🏰 50평 풀옵션
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1~5번 핵심 공식 요약 바 -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; background:var(--bg-subtle); padding:10px; border-radius:8px; font-size:11.5px;">
+          <div><strong>1. 붙박이장/신발장:</strong> <span style="color:var(--brand);">자당 120,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(1자=300mm, 높이무관)</span></div>
+          <div><strong>2. 씽크대:</strong> <span style="color:var(--brand);">m당 250,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(상/하부 별도, 코너중복 제외)</span></div>
+          <div><strong>2-1. EP(측면):</strong> <span style="color:var(--brand);">장당 50,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(노출 양끝 5장)</span></div>
+          <div><strong>3. 몰딩 & 걸레받이:</strong> 몰딩 <span style="color:var(--brand);">5만원</span> / 걸레받이 <span style="color:var(--brand);">3만원</span></div>
+          <div><strong>4. 시공비:</strong> <span style="color:var(--brand);">m당 50,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(전체 연장 기준)</span></div>
+          <div><strong>5. 키큰장:</strong> 폭 <span style="color:var(--brand);">m당 계산</span> + EP <span style="color:var(--brand);">장당 10만원</span></div>
+        </div>
+      </div>
+
+      <!-- 본문 2열 레이아웃 -->
+      <div style="display:grid; grid-template-columns:1fr 1.15fr; gap:16px;" id="formula-layout-grid">
+        
+        <!-- 좌측 열: 치수 입력 & 표준 산출 견적서 -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- 가구 규격 세부 입력 카드 -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                가구 품목별 실측 치수 & 부속재 설정
+              </div>
+            </div>
+
+            <!-- 1) 씽크대 -->
+            <div style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:12px;">
+              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🍽️ 주방 씽크대 (m당 25만원, 코너 600mm 중복 제외)</span>
+                <label style="font-size:11.5px; font-weight:normal; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                  <input type="checkbox" id="formula-has-upper" checked> 상부장 포함
+                </label>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+                <div>
+                  <label class="form-label" style="font-size:11px;">레이아웃 형태</label>
+                  <select id="formula-sink-shape" class="form-control" style="font-size:12px;">
+                    <option value="I">일자형 (─)</option>
+                    <option value="L" selected>ㄱ자형 (└)</option>
+                    <option value="U">ㄷ자형 (⊔)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:11px;">메인 길이 (mm)</label>
+                  <input type="number" id="formula-sink-main-w" class="form-control" value="3000" step="50" style="font-size:12px;">
+                </div>
+                <div id="box-formula-sub-w">
+                  <label class="form-label" style="font-size:11px;">보조 꺾임1 (mm)</label>
+                  <input type="number" id="formula-sink-sub-w" class="form-control" value="1800" step="50" style="font-size:12px;">
+                </div>
+                <div id="box-formula-sub2-w" style="display:none;">
+                  <label class="form-label" style="font-size:11px;">보조 꺾임2 (mm)</label>
+                  <input type="number" id="formula-sink-sub2-w" class="form-control" value="1200" step="50" style="font-size:12px;">
+                </div>
+              </div>
+
+              <!-- EP / 몰딩 / 걸레받이 -->
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px;">
+                <div>
+                  <label class="form-label" style="font-size:11px;">씽크대 EP (장당 5만)</label>
+                  <input type="number" id="formula-sink-ep" class="form-control" value="5" min="0" max="20" style="font-size:12px;">
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:11px;">몰딩 (개당 5만)</label>
+                  <input type="number" id="formula-molding-count" class="form-control" value="3" min="0" max="10" style="font-size:12px;">
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:11px;">걸레받이 (개당 3만)</label>
+                  <input type="number" id="formula-plinth-count" class="form-control" value="2" min="0" max="10" style="font-size:12px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 2) 키큰장 -->
+            <div style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:12px;">
+              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px;">
+                🗄️ 키큰장 (3개 장 복합 모듈, 폭 m당 계산 + EP 10만원)
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                  <label class="form-label" style="font-size:11px;">키큰장 폭 (mm) — 0이면 제외</label>
+                  <input type="number" id="formula-tall-w" class="form-control" value="600" step="50" style="font-size:12px;">
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:11px;">키큰장 전장 EP 수량 (장당 10만)</label>
+                  <input type="number" id="formula-tall-ep" class="form-control" value="1" min="0" max="4" style="font-size:12px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3) 붙박이장 & 신발장 -->
+            <div style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:12px;">
+              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px;">
+                🚪 붙박이장 & 신발장 (높이 무관 자당 12만원 / 1자 = 300mm)
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <div>
+                  <label class="form-label" style="font-size:11px;">붙박이장 폭 (mm) — 300mm = 1자</label>
+                  <input type="number" id="formula-closet-w" class="form-control" value="3000" step="100" style="font-size:12px;">
+                </div>
+                <div>
+                  <label class="form-label" style="font-size:11px;">신발장 폭 (mm) — 300mm = 1자</label>
+                  <input type="number" id="formula-shoe-w" class="form-control" value="0" step="100" style="font-size:12px;">
+                </div>
+              </div>
+            </div>
+
+            <!-- 4) 원장 자재 원가 설정 -->
+            <div>
+              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px;">
+                🪵 2220×2440mm 원목/PB 원장 장당 매입 원가
+              </div>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="number" id="formula-rawboard-price" class="form-control" value="68000" step="1000" style="font-size:12px; flex:1;">
+                <span style="font-size:12px; color:var(--text-secondary); white-space:nowrap;">원/장 (E0 18T 기준)</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 현장 표준 산출 견적서 카드 -->
+          <div class="card" style="border:2px solid var(--brand-light);">
+            <div class="card-header" style="background:var(--brand-soft); border-radius:6px 6px 0 0; padding:10px 14px;">
+              <div class="card-title" style="color:var(--brand-dark); font-size:14px;">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                [공식 1~5번] 현장 표준 산출 견적서 (VAT 별도 명시)
+              </div>
+            </div>
+
+            <div style="padding:14px; font-size:12.5px;">
+              <!-- 항목별 산출 내역 테이블 -->
+              <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">붙박이장 (자당 12만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-closet-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">신발장 (자당 12만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-shoe-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">씽크대 하부장 (m당 25만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-sink-lower-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">씽크대 상부장 (m당 25만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-sink-upper-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">EP 측면마감 (장당 5만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-ep-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">몰딩 (개당 5만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-molding-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">걸레받이 (개당 3만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-plinth-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">키큰장 (m당 + EP 10만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-tall-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">현장 시공비 (m당 5만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-install-calc">-</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- 합계 블록 -->
+              <div style="background:var(--bg-subtle); padding:12px; border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                  <span style="color:var(--text-secondary);">공급가액 합계 (VAT 별도):</span>
+                  <strong style="font-size:14px; color:var(--text-primary);" id="std-supply-total">0원</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                  <span style="color:var(--text-secondary);">부가가치세 (10%):</span>
+                  <span style="color:var(--text-secondary);" id="std-vat-amount">0원</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-top:8px; border-top:1px dashed var(--border-color); align-items:center;">
+                  <span style="font-weight:700; color:var(--brand-dark); font-size:14px;">최종 소비자 견적 (VAT 포함):</span>
+                  <span style="font-size:18px; font-weight:800; color:var(--brand);" id="std-grand-total">0원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 우측 열: 2220x2440 원장 네스팅 도면 & 원가/마진 비교 분석 -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          
+          <!-- 원장 2D 네스팅 배치도 카드 -->
+          <div class="card">
+            <div class="card-header" style="flex-wrap:wrap; gap:8px;">
+              <div>
+                <div class="card-title" style="font-size:14px;">
+                  <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                  2,220 × 2,440 mm 원장 2D 절단 네스팅 도면 (자투리 극소화)
+                </div>
+                <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;" id="raw-sheet-indicator">
+                  원장 [1 / 1] — 규격: 2220×2440mm
+                </div>
+              </div>
+
+              <!-- 시트 전환 버튼 -->
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="btn-outline btn-sm" id="btn-prev-raw-sheet" style="padding:4px 10px;">◀ 이전장</button>
+                <button type="button" class="btn-outline btn-sm" id="btn-next-raw-sheet" style="padding:4px 10px;">다음장 ▶</button>
+              </div>
+            </div>
+
+            <!-- 네스팅 캔버스 -->
+            <div style="padding:12px;">
+              <canvas id="raw-nesting-canvas" style="width:100%; height:380px; border-radius:8px; display:block; box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);"></canvas>
+            </div>
+
+            <!-- 범례 (Legend) -->
+            <div style="padding:8px 12px 12px; display:flex; flex-wrap:wrap; gap:10px; font-size:11px; border-top:1px solid var(--border-color);">
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#3B82F6; border-radius:2px; display:inline-block;"></span> 몸통 측판/천지판</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#10B981; border-radius:2px; display:inline-block;"></span> 선반/인출판</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#F59E0B; border-radius:2px; display:inline-block;"></span> 도어/서랍</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#8B5CF6; border-radius:2px; display:inline-block;"></span> 백패널</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#EC4899; border-radius:2px; display:inline-block;"></span> EP/몰딩</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#6B7280; border-radius:2px; display:inline-block;"></span> 자투리 보강목/쫄대</span>
+              <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px; height:12px; background:#FEF3C7; border:1px solid #B45309; border-radius:2px; display:inline-block;"></span> 잔여 자투리</span>
+            </div>
+
+            <!-- 네스팅 수율 통계 바 -->
+            <div style="padding:10px 14px; background:var(--bg-subtle); display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; font-size:11.5px; text-align:center;">
+              <div>
+                <div style="color:var(--text-secondary); font-size:10.5px;">총 원장 소요</div>
+                <strong style="color:var(--text-primary);" id="nesting-sheet-count">0장</strong>
+              </div>
+              <div>
+                <div style="color:var(--text-secondary); font-size:10.5px;">자재 수율</div>
+                <strong style="color:#059669;" id="nesting-overall-yield">0%</strong>
+              </div>
+              <div>
+                <div style="color:var(--text-secondary); font-size:10.5px;">자투리율</div>
+                <strong style="color:#D97706;" id="nesting-scrap-rate">0%</strong>
+              </div>
+              <div>
+                <div style="color:var(--text-secondary); font-size:10.5px;">총 부재수</div>
+                <strong style="color:var(--text-primary);" id="nesting-parts-count">0개</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- 표준 견적 vs 2220x2440 원장 원가/마진 비교 분석 카드 -->
+          <div class="card" style="border-top:3px solid #10B981;">
+            <div class="card-header" style="padding:10px 14px;">
+              <div class="card-title" style="font-size:14px; color:#065F46;">
+                <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                [비교 분석] 현장 표준 견적 vs 2220×2440 원장 제조원가 및 공장 마진
+              </div>
+            </div>
+
+            <div style="padding:14px; font-size:12.5px;">
+              <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
+                <tbody>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">1. 원목/PB 원장 자재비 (2220×2440mm)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="comp-raw-sheet-cost">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">2. 정밀 재단 & 타공 가공 공임</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="comp-raw-process-cost">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">3. 엣지 밴딩 마감비</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="comp-raw-edge-cost">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">4. 하드웨어/부자재 (경첩, 볼레일, 피스 등)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="comp-raw-hardware-cost">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">5. 현장 시공비 (m당 5만원)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="comp-raw-install-cost">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color); background:rgba(16, 185, 129, 0.05);">
+                    <td style="padding:8px 6px; font-weight:700; color:#065F46;">공장 순제조원가 합계 (VAT 별도)</td>
+                    <td style="padding:8px 6px; text-align:right; font-weight:800; color:#065F46;" id="comp-raw-total-cost">-</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- 마진 및 절감액 하이라이트 박스 -->
+              <div style="background:linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); border:1px solid #A7F3D0; border-radius:8px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <span style="font-weight:700; color:#065F46;">💰 공장 예상 순마진 (이익액):</span>
+                  <span style="font-size:16px; font-weight:800; color:#059669;" id="comp-profit-amount">+0원</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <span style="font-size:12px; color:#047857;">📈 예상 공장 마진율:</span>
+                  <span style="font-size:14px; font-weight:700; color:#047857;" id="comp-profit-margin">0%</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px dashed #6EE7B7;">
+                  <span style="font-size:11.5px; color:#065F46;">✨ 자투리 극대화 절감 효과:</span>
+                  <span style="font-size:12px; font-weight:700; color:#059669;" id="comp-saved-sheets">-</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </section>
 
     <!-- ===================================================
@@ -1666,6 +2023,10 @@
     <button class="mobile-nav-btn" data-nav="drawing">
       <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
       <span>도면드로잉</span>
+    </button>
+    <button class="mobile-nav-btn" data-nav="formula">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>
+      <span>공장산출</span>
     </button>
     <button class="mobile-nav-btn" data-nav="field">
       <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
