@@ -380,6 +380,30 @@ function generateFurnitureParts(state) {
  * 3. 2220 x 2440 mm 원장 2D 네스팅 알고리즘
  */
 function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_BOARD_HEIGHT, kerf = SAW_KERF) {
+  if (!partsList || partsList.length === 0) {
+    const singleSheetArea = boardW * boardH;
+    return {
+      boardWidth: boardW,
+      boardHeight: boardH,
+      sheets: [{
+        index: 1,
+        width: boardW,
+        height: boardH,
+        placedParts: [],
+        freeRects: [{ x: 0, y: 0, w: boardW, h: boardH }],
+        usedArea: 0,
+        yieldRate: 0,
+        scrapArea: singleSheetArea,
+        scrapRate: 0
+      }],
+      sheetCount: 0,
+      singleSheetAreaM2: (singleSheetArea / 1000000).toFixed(4),
+      totalRawBoardAreaM2: '0.00',
+      totalPartsAreaM2: '0.00',
+      overallYield: '0.0',
+      overallScrapRate: '0.0'
+    };
+  }
   const sortedParts = [...partsList].map(p => {
     const w = Math.max(p.w, p.h);
     const h = Math.min(p.w, p.h);
@@ -528,54 +552,56 @@ function nestPartsOnRawBoards(partsList, boardW = RAW_BOARD_WIDTH, boardH = RAW_
  * ★ 원장 보통 5만원 계산 + 문짝 별도 구매(개당 2만원) + EP/몰딩 외주비 포함
  */
 function calculateRawBoardCostComparison(standardQuote, nestingResult, state) {
-  const sheetCount = nestingResult.sheetCount;
+  const sheetCount = nestingResult.sheetCount || 0;
   const boardUnitCost = state.rawBoardPrice || 50000; // 원장 보통 5만원
   const totalBoardCost = sheetCount * boardUnitCost;
 
   // 1) 문짝(도어) 완제품 별도 구매(사입) 비용: 개당 약 20,000원 (2만원)
   const doorPurchasePrice = state.doorPurchasePrice || 20000;
-  const doorPurchaseCost = Math.round(standardQuote.doorCount * doorPurchasePrice);
+  const doorPurchaseCost = Math.round((standardQuote.doorCount || 0) * doorPurchasePrice);
 
   // 2) EP 및 몰딩/걸레받이 완제품 사입 비용 (원목원장 미제작 품목)
   const epUnitPurchase = 25000; // EP 장당 약 2.5만 매입
-  const epPurchaseCost = (standardQuote.epCount + (standardQuote.tallEpCount || 0)) * epUnitPurchase;
+  const epPurchaseCost = ((standardQuote.epCount || 0) + (standardQuote.tallEpCount || 0)) * epUnitPurchase;
   const moldingUnitPurchase = 15000; // 몰딩/걸레받이 개당 약 1.5만 매입
-  const moldingPurchaseCost = (standardQuote.moldingCount + standardQuote.plinthCount) * moldingUnitPurchase;
+  const moldingPurchaseCost = ((standardQuote.moldingCount || 0) + (standardQuote.plinthCount || 0)) * moldingUnitPurchase;
   const finishMaterialCost = epPurchaseCost + moldingPurchaseCost;
 
   // 3) 엣지 밴딩 비용 (몸통 부재 둘레 기준 m x 800원)
-  const totalEdgeLenM = Math.round(parseFloat(nestingResult.totalPartsAreaM2) * 3.5);
+  const totalPartsArea = parseFloat(nestingResult.totalPartsAreaM2 || 0);
+  const totalEdgeLenM = Math.round(totalPartsArea * 3.5);
   const totalEdgeCost = totalEdgeLenM * (state.edgeCostPerM || 800);
 
   // 4) 재단 및 가공 인건비 (원장 장당 약 20,000원)
   const cutProcessCost = sheetCount * 20000;
 
   // 5) 하드웨어 및 기본 부자재 (경첩, 볼레일, 피스 등)
-  let hardwareCost = state.hardwareBaseCost || 150000;
-  if (standardQuote.closetIsSliding) {
+  let hardwareCost = (sheetCount > 0 || (standardQuote.supplyTotal || 0) > 0) ? (state.hardwareBaseCost || 150000) : 0;
+  if (standardQuote.closetIsSliding && (standardQuote.closetCost || 0) > 0) {
     hardwareCost += 60000; // 슬라이딩 댐퍼/알루미늄 레일 하드웨어 원가
   }
 
   // 6) 현장 시공비 (붙박이장 자당 2만 + 일반 가구 m당 5만)
-  const installCost = standardQuote.totalInstallCost;
+  const installCost = standardQuote.totalInstallCost || 0;
 
   // 7) 외주 대리석 상판 납품 원가 (m당 약 130,000원)
-  const countertopRawCost = standardQuote.hasCountertop ? Math.round(standardQuote.countertopM * 130000) : 0;
+  const countertopRawCost = (standardQuote.hasCountertop && (standardQuote.countertopM || 0) > 0) ? Math.round(standardQuote.countertopM * 130000) : 0;
 
   // 원장 기준 총 순제조 원가 (공급가 기준)
-  const rawManufactureCost = totalBoardCost + doorPurchaseCost + finishMaterialCost + totalEdgeCost + cutProcessCost + hardwareCost + installCost + countertopRawCost;
+  const rawManufactureCost = (sheetCount === 0 && (standardQuote.supplyTotal || 0) === 0) ? 0 :
+    (totalBoardCost + doorPurchaseCost + finishMaterialCost + totalEdgeCost + cutProcessCost + hardwareCost + installCost + countertopRawCost);
   const rawManufactureVat = Math.round(rawManufactureCost * 0.1);
   const rawManufactureTotal = rawManufactureCost + rawManufactureVat;
 
   // 표준 산출 견적가 (소비자 판매 공급가)
-  const standardSupplyTotal = standardQuote.supplyTotal;
+  const standardSupplyTotal = standardQuote.supplyTotal || 0;
 
   // 공장 이익(마진) 및 절감액 비교
-  const profitAmount = standardSupplyTotal - rawManufactureCost;
-  const profitMarginPercent = standardSupplyTotal > 0 ? ((profitAmount / standardSupplyTotal) * 100).toFixed(1) : 0;
+  const profitAmount = (standardSupplyTotal > 0 || rawManufactureCost > 0) ? (standardSupplyTotal - rawManufactureCost) : 0;
+  const profitMarginPercent = (standardSupplyTotal > 0 && rawManufactureCost > 0) ? ((profitAmount / standardSupplyTotal) * 100).toFixed(1) : 0;
   
   // 자투리 알뜰 활용으로 아낀 절감액
-  const savedSheets = Math.max(1, Math.round(sheetCount * (parseFloat(nestingResult.overallYield) / 100 > 0.85 ? 0.2 : 0.1)));
+  const savedSheets = sheetCount > 0 ? Math.max(1, Math.round(sheetCount * (parseFloat(nestingResult.overallYield) / 100 > 0.85 ? 0.2 : 0.1))) : 0;
   const savedMaterialCost = savedSheets * boardUnitCost;
 
   return {
@@ -656,6 +682,17 @@ function renderNestingCanvas(canvas, sheet, options = {}) {
     ctx.stroke();
   }
 
+  if (!sheet.placedParts || sheet.placedParts.length === 0) {
+    ctx.fillStyle = '#64748B';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('현재 배치할 가구 부재가 없습니다.', startX + boardDrawW / 2, startY + boardDrawH / 2 - 12);
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#94A3B8';
+    ctx.fillText('좌측에서 가구 규격을 입력하거나 프리셋 버튼을 클릭해주세요.', startX + boardDrawW / 2, startY + boardDrawH / 2 + 12);
+  }
+
   sheet.placedParts.forEach((part, idx) => {
     const px = startX + part.x * scale;
     const py = startY + part.y * scale;
@@ -706,6 +743,85 @@ function renderNestingCanvas(canvas, sheet, options = {}) {
 /**
  * 6. UI 이벤트 연동 및 초기화 함수
  */
+
+/**
+ * 6-1. 공장 산출식 전체 입력값 초기화
+ */
+function resetFormulaState() {
+  currentFormulaState = {
+    sinkShape: 'I',
+    sinkMainW: 0,
+    sinkSubW: 0,
+    sinkSub2W: 0,
+    hasUpper: false,
+    sinkEpCount: 0,
+    moldingCount: 0,
+    plinthCount: 0,
+    tallW: 0,
+    tallEpCount: 0,
+    closetW: 0,
+    closetInstallCostPerJa: 20000,
+    closetIsSliding: false,
+    closetSlidingExtraPerJa: 20000,
+    shoeW: 0,
+    hasCountertop: false,
+    countertopM: 0,
+    countertopPricePerM: 220000,
+    doorCount: 0,
+    doorPricePerPiece: 35000,
+    rawBoardPrice: 50000,
+    doorPurchasePrice: 20000
+  };
+
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+
+  setVal('formula-sink-shape', 'I');
+  setVal('formula-sink-main-w', 0);
+  setVal('formula-sink-sub-w', 0);
+  setVal('formula-sink-sub2-w', 0);
+  setVal('formula-sink-ep', 0);
+  setVal('formula-molding-count', 0);
+  setVal('formula-plinth-count', 0);
+  setVal('formula-tall-w', 0);
+  setVal('formula-tall-ep', 0);
+  setVal('formula-closet-w', 0);
+  setVal('formula-closet-install-price', 20000);
+  setVal('formula-closet-sliding-extra', 20000);
+  setVal('formula-shoe-w', 0);
+  setVal('formula-rawboard-price', 50000);
+  setVal('formula-countertop-price', 220000);
+  setVal('formula-door-price', 35000);
+  setVal('formula-countertop-m', '0.00');
+  setVal('formula-door-count', '0');
+
+  const upperCheck = document.getElementById('formula-has-upper');
+  if (upperCheck) upperCheck.checked = false;
+
+  const ctCheck = document.getElementById('formula-has-countertop');
+  if (ctCheck) ctCheck.checked = false;
+
+  const slidingCheck = document.getElementById('formula-closet-is-sliding');
+  if (slidingCheck) slidingCheck.checked = false;
+
+  const subBox = document.getElementById('box-formula-sub-w');
+  const sub2Box = document.getElementById('box-formula-sub2-w');
+  if (subBox) subBox.style.display = 'none';
+  if (sub2Box) sub2Box.style.display = 'none';
+
+  const slidingExtraBox = document.getElementById('box-closet-sliding-extra');
+  if (slidingExtraBox) slidingExtraBox.style.display = 'none';
+
+  currentActiveSheetIndex = 0;
+  updateFormulaSimulation();
+
+  if (typeof showToast === 'function') {
+    showToast('공장 산출식 입력값이 모두 초기화되었습니다.');
+  }
+}
+
 function initFormulaEngine() {
   const container = document.getElementById('view-formula');
   if (!container) return;
@@ -795,6 +911,23 @@ function initFormulaEngine() {
       }
     });
   });
+
+  // 초기화 버튼 이벤트 바인딩
+  const handleResetFormula = () => {
+    if (confirm('공장 산출식에 입력된 모든 가구 규격과 수량을 초기화하시겠습니까?')) {
+      resetFormulaState();
+    }
+  };
+
+  const btnResetFormula = document.getElementById('btn-reset-formula');
+  if (btnResetFormula) {
+    btnResetFormula.addEventListener('click', handleResetFormula);
+  }
+
+  const btnResetFormulaCard = document.getElementById('btn-reset-formula-card');
+  if (btnResetFormulaCard) {
+    btnResetFormulaCard.addEventListener('click', handleResetFormula);
+  }
 
   const btnSyncStudio = document.getElementById('btn-sync-formula-from-studio');
   if (btnSyncStudio) {
@@ -1046,7 +1179,11 @@ function updateNestingCanvasView() {
 
   const indicator = document.getElementById('raw-sheet-indicator');
   if (indicator) {
-    indicator.innerText = `원장 [${sheet.index} / ${currentNestingResult.sheets.length}] (2220 × 2440 mm 몸통 전용 — 수율: ${sheet.yieldRate.toFixed(1)}%, 자투리: ${sheet.scrapRate.toFixed(1)}%)`;
+    if (currentNestingResult.sheetCount === 0 || sheet.placedParts.length === 0) {
+      indicator.innerText = '원장 [0 / 0] (입력 대기 중 — 좌측에서 가구 치수를 입력해주세요)';
+    } else {
+      indicator.innerText = `원장 [${sheet.index} / ${currentNestingResult.sheetCount || currentNestingResult.sheets.length}] (2220 × 2440 mm 몸통 전용 — 수율: ${sheet.yieldRate.toFixed(1)}%, 자투리: ${sheet.scrapRate.toFixed(1)}%)`;
+    }
   }
 
   renderNestingCanvas(canvas, sheet);
@@ -1058,6 +1195,7 @@ if (typeof window !== 'undefined') {
   window.calculateStandardFormula = calculateStandardFormula;
   window.nestPartsOnRawBoards = nestPartsOnRawBoards;
   window.calculateRawBoardCostComparison = calculateRawBoardCostComparison;
+  window.resetFormulaState = resetFormulaState;
   window.FORMULA_PRESETS = FORMULA_PRESETS;
 }
 
@@ -1067,6 +1205,7 @@ if (typeof module !== 'undefined' && module.exports) {
     calculateStandardFormula,
     nestPartsOnRawBoards,
     calculateRawBoardCostComparison,
+    resetFormulaState,
     FORMULA_PRESETS
   };
 }
