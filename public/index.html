@@ -846,16 +846,17 @@
           </div>
         </div>
 
-        <!-- 1~5번 핵심 공식 요약 바 -->
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; background:var(--bg-subtle); padding:10px; border-radius:8px; font-size:11.5px;">
-          <div><strong>1. 붙박이장/신발장:</strong> <span style="color:var(--brand);">자당 120,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(1자=300mm, 높이무관)</span></div>
-          <div><strong>2. 씽크대:</strong> <span style="color:var(--brand);">m당 250,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(상/하부 별도, 코너중복 제외)</span></div>
+        <!-- 1~8번 핵심 공식 요약 바 -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:8px; background:var(--bg-subtle); padding:10px; border-radius:8px; font-size:11.5px;">
+          <div><strong>1. 붙박이/신발장:</strong> <span style="color:var(--brand);">자당 120,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(1자=300mm)</span></div>
+          <div><strong>2. 씽크대:</strong> <span style="color:var(--brand);">m당 250,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(상/하부 별도, 코너제외)</span></div>
           <div><strong>2-1. EP(측면):</strong> <span style="color:var(--brand);">장당 50,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(노출 양끝 5장)</span></div>
-          <div><strong>3. 몰딩 & 걸레받이:</strong> 몰딩 <span style="color:var(--brand);">5만원</span> / 걸레받이 <span style="color:var(--brand);">3만원</span></div>
-          <div><strong>4. 시공비:</strong> <span style="color:var(--brand);">m당 50,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(전체 연장 기준)</span></div>
-          <div><strong>5. 키큰장:</strong> 폭 <span style="color:var(--brand);">m당 계산</span> + EP <span style="color:var(--brand);">장당 10만원</span></div>
-          <div><strong>6. 대리석 상판:</strong> <span style="color:var(--brand);">m당 220,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(하부 실연장 기준)</span></div>
-          <div><strong>7. 도어(문짝):</strong> <span style="color:var(--brand);">개당 35,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(보통 600mm당 1개)</span></div>
+          <div><strong>3. 몰딩/걸레받이:</strong> 몰딩 <span style="color:var(--brand);">5만</span> / 걸레받이 <span style="color:var(--brand);">3만</span></div>
+          <div><strong>4. 시공비:</strong> 붙박이 <span style="color:var(--brand);">자당 2만</span> / 일반 <span style="color:var(--brand);">m당 5만</span></div>
+          <div><strong>5. 키큰장:</strong> 폭 <span style="color:var(--brand);">m당</span> + EP <span style="color:var(--brand);">장당 10만</span></div>
+          <div><strong>6. 대리석 상판:</strong> <span style="color:var(--brand);">m당 220,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(하부 실연장)</span></div>
+          <div><strong>7. 도어(문짝):</strong> <span style="color:var(--brand);">개당 35,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(600mm당 1개)</span></div>
+          <div><strong>8. 슬라이딩 도어:</strong> <span style="color:var(--brand);">자당 +20,000원</span> <span style="font-size:10px; color:var(--text-tertiary);">(선택 시 추가)</span></div>
         </div>
       </div>
 
@@ -941,10 +942,10 @@
 
             <!-- 3) 붙박이장 & 신발장 -->
             <div style="border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-bottom:12px;">
-              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px;">
-                🚪 붙박이장 & 신발장 (높이 무관 자당 12만원 / 1자 = 300mm)
+              <div style="font-weight:700; font-size:13px; color:var(--brand-dark); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+                <span>🚪 붙박이장 & 신발장 (자당 12만 / 시공비 자당 2만 / 1자 = 300mm)</span>
               </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
                 <div>
                   <label class="form-label" style="font-size:11px;">붙박이장 폭 (mm) — 300mm = 1자</label>
                   <input type="number" id="formula-closet-w" class="form-control" value="3000" step="100" style="font-size:12px;">
@@ -952,6 +953,27 @@
                 <div>
                   <label class="form-label" style="font-size:11px;">신발장 폭 (mm) — 300mm = 1자</label>
                   <input type="number" id="formula-shoe-w" class="form-control" value="0" step="100" style="font-size:12px;">
+                </div>
+              </div>
+
+              <!-- 붙박이장 전용: 자당 시공비 및 슬라이딩 도어 옵션 -->
+              <div style="background:var(--bg-subtle); padding:10px; border-radius:6px; margin-top:6px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                  <label style="font-size:11.5px; font-weight:700; color:var(--brand-dark); cursor:pointer; display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" id="formula-closet-is-sliding">
+                    <span>✨ 붙박이장 슬라이딩 도어 적용 (추가 비용 발생)</span>
+                  </label>
+                  <span style="font-size:10.5px; color:var(--text-tertiary);">레일/댐퍼 하드웨어 포함</span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div>
+                    <label class="form-label" style="font-size:10.5px; color:var(--text-secondary);">붙박이장 시공비 (원/자 — 기본 2만)</label>
+                    <input type="number" id="formula-closet-install-price" class="form-control" value="20000" step="1000" style="font-size:12px;">
+                  </div>
+                  <div id="box-closet-sliding-extra" style="display:none;">
+                    <label class="form-label" style="font-size:10.5px; color:var(--brand);">슬라이딩 추가비 (원/자 — 기본 2만)</label>
+                    <input type="number" id="formula-closet-sliding-extra" class="form-control" value="20000" step="1000" style="font-size:12px; border-color:var(--brand);">
+                  </div>
                 </div>
               </div>
             </div>
@@ -1010,7 +1032,7 @@
             <div class="card-header" style="background:var(--brand-soft); border-radius:6px 6px 0 0; padding:10px 14px;">
               <div class="card-title" style="color:var(--brand-dark); font-size:14px;">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                [공식 1~7번] 현장 표준 산출 견적서 (상판 22만/m · 문짝 3.5만/개 · VAT 별도)
+                [공식 1~8번] 현장 표준 산출 견적서 (붙박이 시공 2만/자 · 슬라이딩옵션 · 상판 22만 · 문짝 3.5만 · VAT 별도)
               </div>
             </div>
 
@@ -1019,8 +1041,12 @@
               <table style="width:100%; border-collapse:collapse; margin-bottom:12px;">
                 <tbody>
                   <tr style="border-bottom:1px solid var(--border-color);">
-                    <td style="padding:6px 0; color:var(--text-secondary);">붙박이장 (자당 12만)</td>
+                    <td style="padding:6px 0; color:var(--text-secondary);">붙박이장 본체 (자당 12만)</td>
                     <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-closet-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">붙박이장 슬라이딩 도어 추가금</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-closet-sliding-calc">-</td>
                   </tr>
                   <tr style="border-bottom:1px solid var(--border-color);">
                     <td style="padding:6px 0; color:var(--text-secondary);">신발장 (자당 12만)</td>
@@ -1051,7 +1077,11 @@
                     <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-tall-calc">-</td>
                   </tr>
                   <tr style="border-bottom:1px solid var(--border-color);">
-                    <td style="padding:6px 0; color:var(--text-secondary);">현장 시공비 (m당 5만)</td>
+                    <td style="padding:6px 0; color:var(--text-secondary);">붙박이장 시공비 (자당 2만)</td>
+                    <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-closet-install-calc">-</td>
+                  </tr>
+                  <tr style="border-bottom:1px solid var(--border-color);">
+                    <td style="padding:6px 0; color:var(--text-secondary);">일반 가구 시공비 (m당 5만)</td>
                     <td style="padding:6px 0; text-align:right; font-weight:600;" id="val-install-calc">-</td>
                   </tr>
                   <tr style="border-bottom:1px solid var(--border-color);">
