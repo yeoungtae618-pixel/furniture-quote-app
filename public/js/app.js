@@ -768,14 +768,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (el) el.style.display = (v === viewName) ? 'block' : 'none';
     });
 
-    window.state = state;
-  window.switchView = switchView;
-  window.showToast = showToast;
-  window.renderOrderItemTabs = renderOrderItemTabs;
-  window.syncFormInputsFromSpec = syncFormInputsFromSpec;
-  window.calculateQuote = calculateQuote;
-
-  document.querySelectorAll('[data-nav]').forEach(btn => {
+    document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.nav === viewName);
     });
 
@@ -794,6 +787,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (viewName === 'doors') renderDoorAdminTable();
     if (viewName === 'dev') loadDevRequests();
   }
+
+  window.state = state;
+  window.switchView = switchView;
+  window.showToast = showToast;
+  window.renderOrderItemsBar = renderOrderItemsBar;
+  window.syncFormInputsFromSpec = syncFormInputsFromSpec;
+  window.calculateQuote = calculateQuote;
 
   document.querySelectorAll('[data-nav]').forEach(btn => {
     btn.addEventListener('click', () => switchView(btn.dataset.nav));

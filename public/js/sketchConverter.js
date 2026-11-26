@@ -687,7 +687,7 @@
       window.state.spec = window.state.items[0].spec;
     }
 
-    if (typeof window.renderOrderItemTabs === 'function') window.renderOrderItemTabs();
+    if (typeof window.renderOrderItemsBar === 'function') window.renderOrderItemsBar();
     if (typeof window.syncFormInputsFromSpec === 'function') window.syncFormInputsFromSpec();
     if (typeof window.calculateQuote === 'function') window.calculateQuote();
 
@@ -854,10 +854,10 @@
       </div>
 
       <!-- 2. 본문 2열 레이아웃: 좌측 스케치 이미지 뷰어 / 우측 스마트 실측 판독 & 가구 에디터 -->
-      <div style="display:grid; grid-template-columns:1fr 1.25fr; gap:16px;" id="sketch-workspace-grid">
+      <div style="display:grid; grid-template-columns:minmax(320px, 1fr) minmax(0, 1.35fr); gap:16px; align-items:start;" id="sketch-workspace-grid">
         
         <!-- 좌측: 현장 스케치 원본 이미지 뷰어 & 핀포인트 오버레이 -->
-        <div class="card" style="display:flex; flex-direction:column; min-height:550px;">
+        <div class="card" style="display:flex; flex-direction:column; min-height:550px; min-width:0;">
           <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; padding-bottom:10px; border-bottom:1px solid var(--border-color);">
             <div class="card-title">
               <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -878,8 +878,8 @@
               <span style="font-size:36px; margin-bottom:8px;">📷</span>
               <span>상단에서 사진을 업로드하거나 프리셋을 선택해주세요.</span>
             </div>
-            <div id="sketch-img-wrapper" style="position:relative; display:inline-block; max-width:100%;">
-              <img id="sketch-preview-img" src="" alt="현장 스케치 사진" style="display:block; max-width:100%; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.15s ease-out; transform-origin:center center;">
+            <div id="sketch-img-wrapper" style="position:relative; display:inline-block; width:100%; max-width:100%;">
+              <img id="sketch-preview-img" src="" alt="현장 스케치 사진" style="display:block; width:100%; max-width:100%; height:auto; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.08); transition:transform 0.15s ease-out; transform-origin:center center;">
               <div id="sketch-overlay-container" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:auto;"></div>
             </div>
           </div>
@@ -891,7 +891,7 @@
         </div>
 
         <!-- 우측: 스마트 실측 판독 & 가구 에디터 & 원클릭 도면화 버튼 -->
-        <div style="display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; flex-direction:column; gap:14px; min-width:0;">
           
           <!-- 공간 외경 치수 카드 -->
           <div class="card" style="padding:14px;">
