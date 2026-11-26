@@ -748,10 +748,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 4. 네비게이션 뷰 전환 (PC 사이드바 + 모바일 상단/하단 전환)
-  const navViews = ['studio', 'drawing', 'formula', 'field', 'orders', 'company', 'settings', 'doors', 'dev'];
+  const navViews = ['studio', 'drawing', 'sketch', 'formula', 'field', 'orders', 'company', 'settings', 'doors', 'dev'];
   const pageTitles = {
     studio: { title: '3D 도면 설계 및 현장 실측', desc: '주방 모듈별 치수 입력 및 실시간 3D 시뮬레이션과 견적을 산출합니다.' },
     drawing: { title: '📐 평면 도면 직접 드로잉 스튜디오', desc: '방 크기를 설정하고 마우스로 벽체와 맞춤 가구 모듈을 자유롭게 배치하여 3D 및 견적으로 즉시 변환합니다.' },
+    sketch: { title: '📷 현장 수기 스케치 & 실측 사진 도면 변환 AI 센터', desc: '현장 수첩이나 종이에 직접 적은 실측 메모 사진을 올리면 치수를 분석하여 2D CAD 평면도, 3D 가구 모델링, 공장 원목원장 산출식으로 원클릭 즉시 자동 반영합니다.' },
     formula: { title: '📊 피앙세가구 공장 산출식 & 원장 절단 네스팅', desc: '공장 기준 산출식(자당 12만, m당 25만, EP/몰딩/걸레받이/시공비)과 2220×2440mm 원장 자투리 극대화 2D 절단 도면 및 원가를 실시간 비교 분석합니다.' },
     field: { title: '영업사원 현장 실측 & 발주 관리 워크벤치', desc: '현장 실측 치수(전체길이, 천장고, 키큰장, 하부/상부 모듈, 배관위치, 체크리스트)를 정밀 입력하고 도면과 견적을 즉시 연동합니다.' },
     orders: { title: '수주 및 고객 견적 관리', desc: '발송된 견적 현황과 계약서 서명, 입금 완료 및 누적 매출을 관리합니다.' },
@@ -767,7 +768,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (el) el.style.display = (v === viewName) ? 'block' : 'none';
     });
 
-    document.querySelectorAll('[data-nav]').forEach(btn => {
+    window.state = state;
+  window.switchView = switchView;
+  window.showToast = showToast;
+  window.renderOrderItemTabs = renderOrderItemTabs;
+  window.syncFormInputsFromSpec = syncFormInputsFromSpec;
+  window.calculateQuote = calculateQuote;
+
+  document.querySelectorAll('[data-nav]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.nav === viewName);
     });
 
@@ -778,6 +786,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (viewName === 'drawing') initDrawingCadEngine();
+    if (viewName === 'sketch' && typeof window.initSketchConverter === 'function') window.initSketchConverter();
     if (viewName === 'formula' && typeof initFormulaEngine === 'function') initFormulaEngine();
     if (viewName === 'field') syncFieldFormFromState();
     if (viewName === 'orders') loadOrdersTable();
@@ -1187,6 +1196,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const container = document.getElementById('drawing-cad-container');
       if (container && typeof DrawingCadEngine !== 'undefined') {
         drawingEngine = new DrawingCadEngine(container);
+        window.drawingEngine = drawingEngine;
         setupDrawingCadControls();
       }
     } else {

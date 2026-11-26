@@ -1196,6 +1196,7 @@ if (typeof window !== 'undefined') {
   window.nestPartsOnRawBoards = nestPartsOnRawBoards;
   window.calculateRawBoardCostComparison = calculateRawBoardCostComparison;
   window.resetFormulaState = resetFormulaState;
+  window.applyFormulaPreset = applyFormulaPreset;
   window.FORMULA_PRESETS = FORMULA_PRESETS;
 }
 
@@ -1206,6 +1207,7 @@ if (typeof module !== 'undefined' && module.exports) {
     nestPartsOnRawBoards,
     calculateRawBoardCostComparison,
     resetFormulaState,
+    applyFormulaPreset,
     FORMULA_PRESETS
   };
 }
