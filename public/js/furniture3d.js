@@ -3479,6 +3479,12 @@ class Furniture3DEngine {
   updateDimensionBadges() {
     if (!this.overlay) return;
 
+    if (this.isFullHouseMode) {
+      Object.values(this.dimBadges).forEach(b => { if (b) b.style.display = 'none'; });
+      Object.values(this.calloutBadges).forEach(b => { if (b) b.style.display = 'none'; });
+      return;
+    }
+
     if (!this.spec.showDimensions) {
       Object.values(this.dimBadges).forEach(b => b.style.display = 'none');
     }
@@ -3878,21 +3884,25 @@ class Furniture3DEngine {
     leftWall.receiveShadow = true;
     this.roomGroup.add(leftWall);
 
-    // D. 인테리어 무드 파티션 (주방과 침실 사이)
-    const partWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, ceilH, 3.0), this.carcassWoodMat);
-    partWall.position.set(1.4, ceilH / 2, 1.5);
-    this.roomGroup.add(partWall);
+    // D. 인테리어 무드 파티션 (별도 자바라/파티션 품목이 없을 때만 기본 표시)
+    const hasCustomPartition = items.some(i => i.category === 'partition');
+    if (!hasCustomPartition) {
+      const partWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, ceilH, 3.0), this.carcassWoodMat);
+      partWall.position.set(1.4, ceilH / 2, 1.5);
+      this.roomGroup.add(partWall);
+    }
 
     // 2. 가구 그룹 생성 및 품목별 구역 자동 배치
     this.kitchenGroup = new THREE.Group();
     this.scene.add(this.kitchenGroup);
 
-    let kitchenCursorX = -3.4;
+    let kitchenCursorX = -4.2;
     let islandZ = 2.2;
     let bedroomX = 4.2;
     let livingZ = 4.8;
     let entryX = -4.2;
     let bathroomX = 3.8;
+    let partitionZ = 0.8;
 
     items.forEach((item, idx) => {
       const cat = item.category || 'sink';
@@ -3954,12 +3964,15 @@ class Furniture3DEngine {
       } else if (cat === 'partition') {
         this.buildPartitionDoor();
         subGroup.add(tempGroup);
-        subGroup.position.set(1.5, 0, 1.6);
+        const pW = (spec.totalWidth || 1350) / 1000;
+        subGroup.rotation.y = Math.PI / 2;
+        subGroup.position.set(1.2, 0, partitionZ + pW / 2);
+        partitionZ += pW + 0.3;
       } else if (cat === 'bathroom') {
         this.buildBathroomZone();
         subGroup.add(tempGroup);
         const bW = (spec.totalWidth || 3000) / 1000;
-        subGroup.position.set(bathroomX, 0, 1.6);
+        subGroup.position.set(bathroomX, 0, 0);
         bathroomX += bW + 0.4;
       } else {
         // 주방 씽크대 (연속 배치 시 겹치지 않도록 X 커서 자동 이동)
@@ -3968,6 +3981,13 @@ class Furniture3DEngine {
         const kW = (spec.totalWidth || 2700) / 1000;
         subGroup.position.set(kitchenCursorX + kW / 2, 0, 0);
         kitchenCursorX += kW + 0.05;
+      }
+
+      // 집안 전체 뷰에서는 개별 가구의 치수선/오버레이가 중앙에 겹치지 않도록 정리
+      this.dimensionLines.forEach(l => this.scene.remove(l));
+      this.dimensionLines = [];
+      if (this.dimBadges) {
+        Object.values(this.dimBadges).forEach(b => { if (b) b.style.display = 'none'; });
       }
 
       subGroup.userData.zone = cat;

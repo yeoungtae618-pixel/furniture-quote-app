@@ -287,9 +287,12 @@
       };
     }
 
-    // 8. 핵심 연동 버튼들 (2D 드로잉, 3D 스튜디오, 공장 산출식)
+    // 8. 핵심 연동 버튼들 (2D 평면/입면도, 3D 스튜디오, 공장 산출식, 자유 드로잉)
     const btnApply2D = document.getElementById('btn-sketch-apply-2d');
-    if (btnApply2D) btnApply2D.onclick = applyTo2DDrawing;
+    if (btnApply2D) btnApply2D.onclick = applyTo2DPlanAndElevation;
+
+    const btnApplyCad = document.getElementById('btn-sketch-apply-cad');
+    if (btnApplyCad) btnApplyCad.onclick = applyToManualCadDrawing;
 
     const btnApply3D = document.getElementById('btn-sketch-apply-3d');
     if (btnApply3D) btnApply3D.onclick = applyTo3DStudio;
@@ -531,142 +534,48 @@
   // =========================================================================
 
   /**
-   * 1. [2D 평면 도면에 즉시 작도]
+   * 0. 스케치 데이터를 state.items 및 통합 스펙으로 동기화
    */
-  function applyTo2DDrawing() {
-    if (!currentSketch.items || currentSketch.items.length === 0) {
-      alert('도면으로 변환할 가구 품목이 없습니다.');
-      return;
-    }
-
-    if (typeof window.switchView !== 'function') {
-      alert('도면 뷰 전환 시스템을 찾을 수 없습니다.');
-      return;
-    }
-
-    // 2D 드로잉 탭으로 전환
-    window.switchView('drawing');
-
-    setTimeout(() => {
-      const container = document.getElementById('drawing-cad-container');
-      if (!container) return;
-
-      if (!window.drawingEngine && typeof window.DrawingCadEngine !== 'undefined') {
-        window.drawingEngine = new window.DrawingCadEngine(container);
-      }
-
-      const de = window.drawingEngine;
-      if (!de) return;
-
-      // 방 크기 적용
-      de.roomW = currentSketch.room.width || 5000;
-      de.roomD = currentSketch.room.depth || 4600;
-      de.items = [];
-      de.customWalls = [];
-
-      const startX = -de.roomW / 2 + 100;
-      const startY = -de.roomD / 2 + 100;
-      let curX = startX;
-
-      currentSketch.items.forEach(it => {
-        let type = 'prep_base';
-        let cat = 'sink';
-        let col = '#F8FAFC';
-
-        if (it.category === 'sink') {
-          type = 'sink_base';
-          cat = 'sink';
-          col = '#FEE2E2';
-        } else if (it.category === 'tall') {
-          type = 'tall_pantry';
-          cat = 'sink';
-          col = '#DCFCE7';
-        } else if (it.category === 'bathroom') {
-          type = 'storage_unit';
-          cat = 'room';
-          col = '#E0F2FE';
-        } else if (it.category === 'partition') {
-          type = 'storage_unit';
-          cat = 'partition';
-          col = '#FEF3C7';
-        } else if (it.category === 'wardrobe') {
-          type = 'wardrobe';
-          cat = 'wardrobe';
-          col = '#E0E7FF';
-        } else if (it.category === 'shoe_cabinet') {
-          type = 'shoe_rack';
-          cat = 'shoe_cabinet';
-          col = '#FEF9C3';
-        }
-
-        de.addItem({
-          type,
-          name: it.name,
-          category: cat,
-          w: it.w,
-          d: it.d,
-          x: curX + it.w / 2,
-          y: startY + it.d / 2,
-          rot: 0,
-          color: col
-        });
-
-        curX += it.w + 120;
-      });
-
-      de.fitToScreen();
-      de.render();
-
-      if (window.showToast) {
-        window.showToast(`📐 현장 스케치의 ${currentSketch.items.length}개 가구가 2D 평면 도면에 성공적으로 작도되었습니다!`);
-      }
-    }, 150);
-  }
-
-  /**
-   * 2. [3D 스튜디오 모델로 생성 (집안 전체 3D)]
-   */
-  function applyTo3DStudio() {
-    if (!currentSketch.items || currentSketch.items.length === 0) {
-      alert('3D로 변환할 가구 품목이 없습니다.');
-      return;
-    }
-
-    if (!window.state) {
-      alert('3D 스튜디오 상태를 찾을 수 없습니다.');
-      return;
-    }
-
-    // state.items 일괄 재구성
+  function syncSketchToStateItems(combineTallIntoKitchen = false) {
+    if (!window.state) return false;
     window.state.items = [];
+
+    const tallItem = currentSketch.items.find(i => i.category === 'tall');
+    const sinkItem = currentSketch.items.find(i => i.category === 'sink');
 
     currentSketch.items.forEach((it, idx) => {
       const cat = it.category;
       let orderCat = 'storage';
 
-      if (cat === 'sink') {
-        orderCat = 'sink';
-      } else if (cat === 'tall') {
-        orderCat = 'tall_cabinet';
-      } else if (cat === 'wardrobe') {
-        orderCat = 'wardrobe';
-      } else if (cat === 'shoe_cabinet') {
-        orderCat = 'shoe_cabinet';
-      } else if (cat === 'bathroom') {
-        orderCat = 'bathroom';
-      } else if (cat === 'partition') {
-        orderCat = 'partition';
-      }
+      if (cat === 'sink') orderCat = 'sink';
+      else if (cat === 'tall') orderCat = 'tall_cabinet';
+      else if (cat === 'wardrobe') orderCat = 'wardrobe';
+      else if (cat === 'shoe_cabinet') orderCat = 'shoe_cabinet';
+      else if (cat === 'bathroom') orderCat = 'bathroom';
+      else if (cat === 'partition') orderCat = 'partition';
 
-      const w = Math.max(400, it.w || 1700);
+      let w = Math.max(400, it.w || 1700);
       const d = Math.max(300, it.d || 600);
       const h = it.h || 860;
       const ceilH = currentSketch.room.ceilingHeight || 2460;
 
-      // 씽크대 모듈 폭 비율 자동 배분 (싱크볼 / 조리대 / 쿡탑)
-      const sinkBay = Math.round(w * 0.50);
-      const prepBay = Math.round(w * 0.22);
-      const cookBay = Math.max(300, w - sinkBay - prepBay);
+      let tallCabinet = 'none';
+      let tallCabinetWidth = w;
+      let tallCabinetType = 'appliance';
+      let counterW = w;
+
+      // 2D 평면/입면 통합 도면 생성 시 냉장고장 + 씽크대를 한 도면에 나란히 결합
+      if (combineTallIntoKitchen && orderCat === 'sink' && tallItem) {
+        tallCabinet = 'left';
+        tallCabinetWidth = Math.max(400, tallItem.w || 1965);
+        tallCabinetType = 'fridge';
+        counterW = w;
+        w = tallCabinetWidth + counterW;
+      }
+
+      const sinkBay = Math.round(counterW * 0.50);
+      const prepBay = Math.round(counterW * 0.22);
+      const cookBay = Math.max(300, counterW - sinkBay - prepBay);
 
       window.state.items.push({
         id: 'item_sk_' + idx + '_' + Date.now(),
@@ -684,9 +593,9 @@
           sinkBayWidth: sinkBay,
           prepBayWidth: prepBay,
           cooktopBayWidth: cookBay,
-          tallCabinet: 'none',
-          tallCabinetWidth: w,
-          tallCabinetType: 'appliance',
+          tallCabinet,
+          tallCabinetWidth,
+          tallCabinetType,
           wardrobeDepth: d,
           islandDepth: d,
           upperHeight: 700,
@@ -713,14 +622,131 @@
       });
     });
 
-    window.state.activeItemIndex = 0;
-    if (window.state.items[0]) {
-      window.state.spec = window.state.items[0].spec;
+    // 주방 씽크대 항목을 기본 활성 항목으로 선택 (2D 평면·입면도 표시용)
+    const sinkIdx = window.state.items.findIndex(i => i.category === 'sink');
+    window.state.activeItemIndex = sinkIdx >= 0 ? sinkIdx : 0;
+    if (window.state.items[window.state.activeItemIndex]) {
+      window.state.spec = window.state.items[window.state.activeItemIndex].spec;
     }
 
     if (typeof window.renderOrderItemsBar === 'function') window.renderOrderItemsBar();
     if (typeof window.syncFormInputsFromSpec === 'function') window.syncFormInputsFromSpec();
     if (typeof window.calculateQuote === 'function') window.calculateQuote();
+    return true;
+  }
+
+  /**
+   * 1. [2D 평면·입면 통합 도면 생성] (PLAN + ELEV)
+   */
+  function applyTo2DPlanAndElevation() {
+    if (!currentSketch.items || currentSketch.items.length === 0) {
+      alert('도면으로 변환할 가구 품목이 없습니다.');
+      return;
+    }
+
+    if (!syncSketchToStateItems(true)) {
+      alert('도면 상태 시스템을 찾을 수 없습니다.');
+      return;
+    }
+
+    if (typeof window.switchView === 'function') {
+      window.switchView('studio');
+      setTimeout(() => {
+        const btn2d = document.querySelector('[data-viewmode="2d"]');
+        if (btn2d) btn2d.click();
+
+        if (window.showToast) {
+          window.showToast('📐 현장 스케치 치수 기반 KS 2D 평면도 + 입면도 통합 도면이 생성되었습니다!');
+        }
+      }, 150);
+    }
+  }
+
+  /**
+   * 1-B. [자유 드로잉(CAD) 탭으로 보내기]
+   */
+  function applyToManualCadDrawing() {
+    if (!currentSketch.items || currentSketch.items.length === 0) {
+      alert('도면으로 변환할 가구 품목이 없습니다.');
+      return;
+    }
+
+    if (typeof window.switchView !== 'function') {
+      alert('도면 뷰 전환 시스템을 찾을 수 없습니다.');
+      return;
+    }
+
+    window.switchView('drawing');
+
+    setTimeout(() => {
+      const container = document.getElementById('drawing-cad-container');
+      if (!container) return;
+
+      if (!window.drawingEngine && typeof window.DrawingCadEngine !== 'undefined') {
+        window.drawingEngine = new window.DrawingCadEngine(container);
+      }
+
+      const de = window.drawingEngine;
+      if (!de) return;
+
+      de.roomW = currentSketch.room.width || 5000;
+      de.roomD = currentSketch.room.depth || 4600;
+      de.items = [];
+      de.customWalls = [];
+
+      const startX = -de.roomW / 2 + 100;
+      const startY = -de.roomD / 2 + 100;
+      let curX = startX;
+
+      currentSketch.items.forEach(it => {
+        let type = 'prep_base';
+        let cat = 'sink';
+        let col = '#F8FAFC';
+
+        if (it.category === 'sink') { type = 'sink_base'; cat = 'sink'; col = '#FEE2E2'; }
+        else if (it.category === 'tall') { type = 'tall_pantry'; cat = 'sink'; col = '#DCFCE7'; }
+        else if (it.category === 'bathroom') { type = 'storage_unit'; cat = 'room'; col = '#E0F2FE'; }
+        else if (it.category === 'partition') { type = 'storage_unit'; cat = 'partition'; col = '#FEF3C7'; }
+        else if (it.category === 'wardrobe') { type = 'wardrobe'; cat = 'wardrobe'; col = '#E0E7FF'; }
+        else if (it.category === 'shoe_cabinet') { type = 'shoe_rack'; cat = 'shoe_cabinet'; col = '#FEF9C3'; }
+
+        de.addItem({
+          type,
+          name: it.name,
+          category: cat,
+          w: it.w,
+          d: it.d,
+          x: curX + it.w / 2,
+          y: startY + it.d / 2,
+          rot: 0,
+          color: col
+        });
+
+        curX += it.w + 120;
+      });
+
+      de.fitToScreen();
+      de.render();
+
+      if (window.showToast) {
+        window.showToast(`✏️ 현장 스케치의 ${currentSketch.items.length}개 품목이 자유 드로잉 탭에 배치되었습니다.`);
+      }
+    }, 150);
+  }
+
+  /**
+   * 2. [3D 스튜디오 모델로 생성 (집안 전체 3D)]
+   */
+  function applyTo3DStudio() {
+    if (!currentSketch.items || currentSketch.items.length === 0) {
+      alert('3D로 변환할 가구 품목이 없습니다.');
+      return;
+    }
+
+    if (!syncSketchToStateItems(false)) {
+      alert('3D 스튜디오 상태를 찾을 수 없습니다.');
+      return;
+    }
 
     // 3D 뷰로 전환
     if (typeof window.switchView === 'function') {
@@ -985,8 +1011,8 @@
               <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
                 <button type="button" class="btn-primary" id="btn-sketch-apply-2d" style="padding:12px 10px; font-size:13px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:4px; box-shadow:0 4px 12px rgba(140,98,57,0.25);">
                   <span style="font-size:16px;">📐</span>
-                  <span>2D 평면 도면 작도</span>
-                  <span style="font-size:10px; opacity:0.85; font-weight:normal;">CAD 도면 캔버스에 배치</span>
+                  <span>2D 평면·입면도 생성</span>
+                  <span style="font-size:10px; opacity:0.85; font-weight:normal;">평면도(PLAN)+입면도(ELEV)</span>
                 </button>
 
                 <button type="button" class="btn-primary" id="btn-sketch-apply-3d" style="background:#2563EB; border-color:#1D4ED8; padding:12px 10px; font-size:13px; font-weight:800; display:flex; flex-direction:column; align-items:center; gap:4px; box-shadow:0 4px 12px rgba(37,99,235,0.25);">
@@ -1002,7 +1028,10 @@
                 </button>
               </div>
 
-              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px; flex-wrap:wrap;">
+                <button type="button" class="btn-outline btn-sm" id="btn-sketch-apply-cad" style="font-size:11.5px;">
+                  ✏️ 자유 드로잉 탭으로 보내기
+                </button>
                 <button type="button" class="btn-outline btn-sm" id="btn-sketch-copy-report" style="font-size:11.5px;">
                   📋 실측 분석 리포트 텍스트 복사
                 </button>
