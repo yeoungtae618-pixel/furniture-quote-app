@@ -1203,6 +1203,10 @@ class Furniture3DEngine {
       this.buildDedicatedBaseCorner();
     } else if (cat === 'upper_corner') {
       this.buildDedicatedUpperCorner();
+    } else if (cat === 'partition') {
+      this.buildPartitionDoor();
+    } else if (cat === 'bathroom') {
+      this.buildBathroomZone();
     } else {
       this.buildKitchenLayout();
     }
@@ -2325,9 +2329,9 @@ class Furniture3DEngine {
   // B-9. 단독 키큰장 (Tall Appliance Cabinet)
   // =========================================================
   buildStandaloneTallCabinet() {
-    const W = (this.spec.tallCabinetWidth || 600) / 1000;
+    const W = (this.spec.tallCabinetWidth || this.spec.totalWidth || 600) / 1000;
     const CH = (this.spec.ceilingHeight || 2350) / 1000;
-    const D = 0.60;
+    const D = (this.spec.lowerDepth || 600) / 1000;
     const plinthH = 0.12;
     this.buildTallCabinet(0, W, CH, D, plinthH, this.spec.tallCabinetType || 'appliance');
 
@@ -3713,6 +3717,108 @@ class Furniture3DEngine {
   }
 
   // =========================================================
+  // B-13. 자바라 홀딩도어 / 공간 분할 가벽 (Accordion Partition)
+  // =========================================================
+  buildPartitionDoor() {
+    const W = (this.spec.totalWidth || 1350) / 1000;
+    const H = (this.spec.ceilingHeight || 2460) / 1000;
+    const D = 0.08;
+
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.7 });
+    const slatMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.55, metalness: 0.05 });
+
+    // 상부 알루미늄 레일 & 좌우 포스트
+    const topRail = new THREE.Mesh(new THREE.BoxGeometry(W, 0.05, D), railMat);
+    topRail.position.set(0, H - 0.025, D / 2);
+    this.kitchenGroup.add(topRail);
+
+    const postL = new THREE.Mesh(new THREE.BoxGeometry(0.04, H, D), railMat);
+    postL.position.set(-W / 2 + 0.02, H / 2, D / 2);
+    this.kitchenGroup.add(postL);
+
+    const postR = new THREE.Mesh(new THREE.BoxGeometry(0.04, H, D), railMat);
+    postR.position.set(W / 2 - 0.02, H / 2, D / 2);
+    this.kitchenGroup.add(postR);
+
+    // 주름(자바라) 슬랫 판넬
+    const foldCount = Math.max(6, Math.round(W / 0.14));
+    const slatW = (W - 0.08) / foldCount;
+    for (let i = 0; i < foldCount; i++) {
+      const sx = -W / 2 + 0.04 + slatW * (i + 0.5);
+      const slat = new THREE.Mesh(new THREE.BoxGeometry(slatW * 0.94, H - 0.06, 0.018), slatMat);
+      slat.position.set(sx, (H - 0.05) / 2, D / 2 + ((i % 2 === 0) ? 0.015 : -0.015));
+      slat.rotation.y = (i % 2 === 0) ? 0.25 : -0.25;
+      slat.castShadow = true;
+      slat.receiveShadow = true;
+      this.kitchenGroup.add(slat);
+    }
+
+    if (this.dimBadges && this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `자바라 W:${Math.round(W * 1000)} × H:${Math.round(H * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
+  // B-14. 화장실 바닥 타일 & 욕실 구역 (Bathroom Zone)
+  // =========================================================
+  buildBathroomZone() {
+    const W = (this.spec.totalWidth || 3000) / 1000;
+    const D = (this.spec.lowerDepth || 3000) / 1000;
+    const H = (this.spec.ceilingHeight || 2460) / 1000;
+
+    // 1. 타일 마감 바닥 슬래브 (방수 턱 20mm)
+    const tileFloorMat = new THREE.MeshStandardMaterial({ color: 0xCBD5E1, roughness: 0.4, metalness: 0.05 });
+    const floorSlab = new THREE.Mesh(new THREE.BoxGeometry(W, 0.025, D), tileFloorMat);
+    floorSlab.position.set(0, 0.0125, D / 2);
+    floorSlab.receiveShadow = true;
+    this.kitchenGroup.add(floorSlab);
+
+    // 타일 격자 라인
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0x94A3B8 });
+    for (let gx = -W / 2 + 0.5; gx < W / 2; gx += 0.5) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.002, D), lineMat);
+      line.position.set(gx, 0.026, D / 2);
+      this.kitchenGroup.add(line);
+    }
+    for (let gz = 0.5; gz < D; gz += 0.5) {
+      const line = new THREE.Mesh(new THREE.BoxGeometry(W, 0.002, 0.006), lineMat);
+      line.position.set(0, 0.026, gz);
+      this.kitchenGroup.add(line);
+    }
+
+    // 2. 강화유리 샤워 파티션
+    const glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xE0F2FE, transparent: true, opacity: 0.38, roughness: 0.1, metalness: 0.1
+    });
+    const glassWall = new THREE.Mesh(new THREE.BoxGeometry(0.015, Math.min(H - 0.1, 2.1), D * 0.45), glassMat);
+    glassWall.position.set(0, Math.min(H - 0.1, 2.1) / 2 + 0.025, D * 0.25);
+    this.kitchenGroup.add(glassWall);
+
+    // 3. 하부 플로팅 세면대 하부장 + 세면볼 + 거울
+    const vanityW = Math.min(0.9, W * 0.35);
+    const vanity = new THREE.Mesh(new THREE.BoxGeometry(vanityW, 0.55, 0.48), this.doorMat);
+    vanity.position.set(-W / 2 + vanityW / 2 + 0.2, 0.50, 0.26);
+    vanity.castShadow = true;
+    this.kitchenGroup.add(vanity);
+
+    const ceramicMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, roughness: 0.15, metalness: 0.05 });
+    const basin = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.16, 0.12, 24), ceramicMat);
+    basin.position.set(-W / 2 + vanityW / 2 + 0.2, 0.83, 0.26);
+    this.kitchenGroup.add(basin);
+
+    const mirrorMat = new THREE.MeshStandardMaterial({ color: 0xE2E8F0, roughness: 0.05, metalness: 0.85 });
+    const mirror = new THREE.Mesh(new THREE.BoxGeometry(vanityW * 0.9, 0.75, 0.02), mirrorMat);
+    mirror.position.set(-W / 2 + vanityW / 2 + 0.2, 1.48, 0.02);
+    this.kitchenGroup.add(mirror);
+
+    if (this.dimBadges && this.dimBadges.totalW) {
+      this.dimBadges.totalW.innerText = `화장실 바닥 ${Math.round(W * 1000)} × ${Math.round(D * 1000)}mm`;
+      this.dimBadges.totalW.style.display = 'block';
+    }
+  }
+
+  // =========================================================
   // C. 집안 전체 맞춤 가구 통합 3D 쇼룸 (Full House Showroom)
   // 모든 발주 품목을 가상 주택/아파트 실내 공간에 유기적으로 동시 배치
   // =========================================================
@@ -3781,11 +3887,12 @@ class Furniture3DEngine {
     this.kitchenGroup = new THREE.Group();
     this.scene.add(this.kitchenGroup);
 
-    let kitchenX = -2.6;
+    let kitchenCursorX = -3.4;
     let islandZ = 2.2;
     let bedroomX = 4.2;
     let livingZ = 4.8;
     let entryX = -4.2;
+    let bathroomX = 3.8;
 
     items.forEach((item, idx) => {
       const cat = item.category || 'sink';
@@ -3832,11 +3939,35 @@ class Furniture3DEngine {
         this.buildStorageCabinet();
         subGroup.add(tempGroup);
         subGroup.position.set(-5.4, 0, 1.6);
+      } else if (cat === 'tall_cabinet') {
+        this.buildStandaloneTallCabinet();
+        subGroup.add(tempGroup);
+        const tallW = (spec.tallCabinetWidth || spec.totalWidth || 600) / 1000;
+        subGroup.position.set(kitchenCursorX + tallW / 2, 0, 0);
+        kitchenCursorX += tallW + 0.02;
+      } else if (cat === 'prep_counter') {
+        this.buildPrepCounter();
+        subGroup.add(tempGroup);
+        const prepW = (spec.totalWidth || 1000) / 1000;
+        subGroup.position.set(kitchenCursorX + prepW / 2, 0, 0);
+        kitchenCursorX += prepW + 0.02;
+      } else if (cat === 'partition') {
+        this.buildPartitionDoor();
+        subGroup.add(tempGroup);
+        subGroup.position.set(1.5, 0, 1.6);
+      } else if (cat === 'bathroom') {
+        this.buildBathroomZone();
+        subGroup.add(tempGroup);
+        const bW = (spec.totalWidth || 3000) / 1000;
+        subGroup.position.set(bathroomX, 0, 1.6);
+        bathroomX += bW + 0.4;
       } else {
-        // 주방 씽크대 & 조리대
+        // 주방 씽크대 (연속 배치 시 겹치지 않도록 X 커서 자동 이동)
         this.buildKitchenLayout();
         subGroup.add(tempGroup);
-        subGroup.position.set(kitchenX, 0, 0);
+        const kW = (spec.totalWidth || 2700) / 1000;
+        subGroup.position.set(kitchenCursorX + kW / 2, 0, 0);
+        kitchenCursorX += kW + 0.05;
       }
 
       subGroup.userData.zone = cat;

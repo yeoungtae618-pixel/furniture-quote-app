@@ -640,27 +640,33 @@
     // state.items 일괄 재구성
     window.state.items = [];
 
-    let mainSinkW = 1700;
-    let mainSinkD = 700;
-
     currentSketch.items.forEach((it, idx) => {
       const cat = it.category;
       let orderCat = 'storage';
-      let layoutType = 'straight';
 
       if (cat === 'sink') {
         orderCat = 'sink';
-        mainSinkW = it.w;
-        mainSinkD = it.d;
       } else if (cat === 'tall') {
-        orderCat = 'tall';
+        orderCat = 'tall_cabinet';
       } else if (cat === 'wardrobe') {
         orderCat = 'wardrobe';
       } else if (cat === 'shoe_cabinet') {
-        orderCat = 'shoe';
-      } else if (cat === 'bathroom' || cat === 'partition') {
+        orderCat = 'shoe_cabinet';
+      } else if (cat === 'bathroom') {
+        orderCat = 'bathroom';
+      } else if (cat === 'partition') {
         orderCat = 'partition';
       }
+
+      const w = Math.max(400, it.w || 1700);
+      const d = Math.max(300, it.d || 600);
+      const h = it.h || 860;
+      const ceilH = currentSketch.room.ceilingHeight || 2460;
+
+      // 씽크대 모듈 폭 비율 자동 배분 (싱크볼 / 조리대 / 쿡탑)
+      const sinkBay = Math.round(w * 0.50);
+      const prepBay = Math.round(w * 0.22);
+      const cookBay = Math.max(300, w - sinkBay - prepBay);
 
       window.state.items.push({
         id: 'item_sk_' + idx + '_' + Date.now(),
@@ -669,15 +675,40 @@
         spec: {
           category: orderCat,
           layoutType: 'straight',
-          totalWidth: it.w,
-          lowerDepth: it.d,
-          wardrobeDepth: it.d,
-          islandDepth: it.d,
-          lowerHeight: it.h || 860,
-          ceilingHeight: currentSketch.room.ceilingHeight || 2460,
+          sideLength: 1800,
+          wingHasUpper: false,
+          totalWidth: w,
+          ceilingHeight: ceilH,
+          lowerHeight: (orderCat === 'sink') ? h : 860,
+          lowerDepth: d,
+          sinkBayWidth: sinkBay,
+          prepBayWidth: prepBay,
+          cooktopBayWidth: cookBay,
+          tallCabinet: 'none',
+          tallCabinetWidth: w,
+          tallCabinetType: 'appliance',
+          wardrobeDepth: d,
+          islandDepth: d,
+          upperHeight: 700,
+          upperDepth: 350,
+          midwayHeight: 650,
+          hasUpperCabinets: (orderCat === 'sink'),
           doorColor: '#fcfcfc',
-          countertopType: 'crystal_beige',
-          hasUpperCabinets: (cat === 'sink' || cat === 'tall')
+          doorStyle: 'flat',
+          countertopType: 'white_marble',
+          countertopLabel: '',
+          handleType: 'j_channel',
+          handleColor: 'matte_black',
+          wallDesign: 'warm_greige',
+          tileDesign: 'white_subway',
+          floorDesign: 'natural_oak',
+          underlightTemp: 'warm',
+          hoodType: 'hidden',
+          cooktopType: 'black_ind',
+          faucetType: 'gooseneck',
+          sinkFaucetCombo: 'square_gooseneck',
+          hardwareCombo: 'damper_3ball',
+          showDimensions: true
         }
       });
     });
